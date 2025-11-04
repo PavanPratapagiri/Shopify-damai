@@ -557,6 +557,7 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
       super();
       this.input = this.querySelector('input');
       this.changeEvent = new Event('change', { bubbles: true });
+      this.isUpdating = false;
 
       // wire up input change and button clicks
       this.input.addEventListener('change', this.onInputChange.bind(this));
@@ -570,13 +571,15 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
       // enforce min/max every time the user types a value
       this.validateQtyRules();
       // Only trigger cart update on 'change' event (when user is done typing)
-      if (event.type === 'change') {
+      if (event.type === 'change' && !this.isUpdating) {
         this.updateCartFromInput();
       }
     }
 
     updateCartFromInput() {
       const row = this.closest('tr[data-variant-id]');
+      if (!row) return;
+      
       const vid = row.dataset.variantId;
       const newQty = parseInt(this.input.value) || 0;
       
@@ -676,6 +679,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // — wire up each variant row —
+  const processedVariants = new Set();
+  
   document.querySelectorAll('tr[data-variant-id]').forEach(row => {
     const vid = row.dataset.variantId;
     const priceCents = parseInt(row.dataset.price, 10);
@@ -684,6 +689,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
     const incBtn = row.querySelector(".MA-quantity__button[name='plus']");
     const remBtn = row.querySelector('.remove-variant');
+    const quantityElement = row.querySelector('ma-quantity-input');
 
     // Initialize the quantity display and button states
     async function initializeRow() {
@@ -691,6 +697,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const cart = await fetch('/cart.js').then(r => r.json());
         const item = cart.items.find(i => i.variant_id == vid);
         const qty = item ? item.quantity : 0;
+        
+        if (quantityElement) {
+          quantityElement.isUpdating = true;
+        }
         
         qtyInput.value = qty;
         totalCell.textContent = formatPrice(item ? item.line_price : 0);
@@ -703,10 +713,19 @@ document.addEventListener('DOMContentLoaded', function() {
           remBtn.classList.remove('hidden');
         }
         
+        if (quantityElement) {
+          setTimeout(() => {
+            quantityElement.isUpdating = false;
+          }, 100);
+        }
+        
         // Update summary on init
         refreshSummary(cart);
       } catch (error) {
         console.error('Failed to initialize row:', error);
+        if (quantityElement) {
+          quantityElement.isUpdating = false;
+        }
       }
     }
 
@@ -747,6 +766,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const item = cart.items.find(i => i.variant_id == vid);
         const qty = item ? item.quantity : 0;
         
+        if (quantityElement) {
+          quantityElement.isUpdating = true;
+        }
+        
         qtyInput.value = qty;
         totalCell.textContent = formatPrice(item ? item.line_price : 0);
         decBtn.disabled = qty <= 0;
@@ -758,11 +781,20 @@ document.addEventListener('DOMContentLoaded', function() {
           remBtn.classList.remove('hidden');
         }
         
+        if (quantityElement) {
+          setTimeout(() => {
+            quantityElement.isUpdating = false;
+          }, 100);
+        }
+        
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
         refreshSummary(cart);
       } catch (error) {
         console.error('Failed to handle response:', error);
+        if (quantityElement) {
+          quantityElement.isUpdating = false;
+        }
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
       }
@@ -771,12 +803,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize on page load
     initializeRow();
 
-    // Listen for quantity changes from the custom element
-    document.addEventListener('quantityChanged', function(event) {
-      if (event.detail.variantId == vid) {
-        handleCartUpdate(event.detail.quantity);
-      }
-    });
+    // Listen for quantity changes from the custom element - only attach once per variant
+    if (!processedVariants.has(vid)) {
+      processedVariants.add(vid);
+      
+      const handler = function(event) {
+        if (event.detail.variantId == vid) {
+          handleCartUpdate(event.detail.quantity);
+        }
+      };
+      
+      document.addEventListener('quantityChanged', handler);
+    }
 
     remBtn.addEventListener('click', async () => {
       await handleCartUpdate(0);
