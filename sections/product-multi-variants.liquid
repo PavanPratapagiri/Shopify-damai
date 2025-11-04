@@ -315,11 +315,13 @@
         {% for variant in product.variants %}
           {%- assign variant_qty = 0 -%}
           {%- assign variant_key = 0 -%}
+          {%- assign line_price = 0 -%}
           
           {% for item in cart.items %}
             {% if item.variant_id == variant.id %}
               {%- assign variant_qty = item.quantity -%}
               {%- assign variant_key = item.key -%}
+              {%- assign line_price = item.line_price -%}
             {% endif %}
           {% endfor %}
           <tr
@@ -366,12 +368,10 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                 <button type="button" name="minus" class="MA-quantity__button">−</button>
                 <input
                   type="number"
-                  min="0"
-                  max="50"
+                  min="1"
+                  max="10"
                   step="1"
                   value="{{ variant_qty }}"
-                  data-min="1"
-                  data-max="10"
                   class="MA-quantity__input qty"
                 />
                 <button type="button" name="plus" class="MA-quantity__button">+</button>
@@ -405,7 +405,7 @@ data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds =
 data-wpd-cart-drawer-product-id="{{ product.id }}"                                  
 data-wpd-cart-drawer-line-price                                  
 data-wpd-cart-drawer-item="{{ variant_key }}"                              
-data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ variant.price | times: variant_qty | money }}</td>
+data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -524,8 +524,8 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ variant.price | times: vari
 
       if (event.target.name === 'plus') {
         // if zero and min is higher, jump to min
-        if (prev === 0 && this.input.dataset.min) {
-          this.input.value = this.input.dataset.min;
+        if (prev === 0 && this.input.min) {
+          this.input.value = this.input.min;
         } else {
           this.input.stepUp();
         }
@@ -549,13 +549,13 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ variant.price | times: vari
       // disable "–" if at or below min
       if (this.input.min) {
         const btnMinus = this.querySelector("button[name='minus']");
-        btnMinus.classList.toggle('disabled', val <= parseInt(this.input.min, 10));
+        btnMinus.disabled = val <= parseInt(this.input.min, 10);
       }
 
       // disable "+" if at or above max
       if (this.input.max) {
         const btnPlus = this.querySelector("button[name='plus']");
-        btnPlus.classList.toggle('disabled', val >= parseInt(this.input.max, 10));
+        btnPlus.disabled = val >= parseInt(this.input.max, 10);
       }
     }
   }
@@ -622,8 +622,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const qty = item ? item.quantity : 0;
       
       qtyInput.value = qty;
-      totalCell.textContent = formatPrice(qty * priceCents);
-      decBtn.disabled = qty === 0;
+      totalCell.textContent = formatPrice(item ? item.line_price : 0);
+      decBtn.disabled = qty <= 1;
       
       if (qty === 0) {
         remBtn.classList.add('hidden');
@@ -667,8 +667,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const qty = item ? item.quantity : 0;
       
       qtyInput.value = qty;
-      totalCell.textContent = formatPrice(qty * priceCents);
-      decBtn.disabled = qty === 0;
+      totalCell.textContent = formatPrice(item ? item.line_price : 0);
+      decBtn.disabled = qty <= 1;
       
       if (qty === 0) {
         remBtn.classList.add('hidden');
