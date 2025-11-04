@@ -691,16 +691,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    incBtn.addEventListener('click', async () => {
-      const currentQty = parseInt(qtyInput.value) || 0;
-      await handleCartUpdate(currentQty);
-    });
-
-    decBtn.addEventListener('click', async () => {
-      const currentQty = parseInt(qtyInput.value) || 0;
-      await handleCartUpdate(currentQty);
-    });
-
     remBtn.addEventListener('click', async () => {
       await handleCartUpdate(0);
     });
