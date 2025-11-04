@@ -607,31 +607,32 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
 
     onButtonClick(event) {
       event.preventDefault();
+      event.stopPropagation();
       
       if (this.isUpdating) return; // Prevent clicks while updating
       
-      const prev = this.input.valueAsNumber || 0;
+      const currentVal = parseInt(this.input.value) || 0;
+      const minVal = parseInt(this.input.min, 10) || 0;
+      const maxVal = parseInt(this.input.max, 10) || Infinity;
+      let newVal = currentVal;
 
       if (event.target.name === 'plus') {
-        const maxVal = parseInt(this.input.max, 10);
-        if (prev >= maxVal) return; // Don't increment beyond max
+        if (currentVal >= maxVal) return; // Don't increment beyond max
         
         // if zero and min is higher, jump to min
-        if (prev === 0 && this.input.min) {
-          this.input.value = this.input.min;
+        if (currentVal === 0 && minVal > 0) {
+          newVal = minVal;
         } else {
-          this.input.stepUp();
+          newVal = currentVal + 1;
         }
-      } else {
-        const minVal = parseInt(this.input.min, 10) || 0;
-        if (prev <= minVal) return; // Don't decrement below min
-        
-        this.input.stepDown();
+      } else if (event.target.name === 'minus') {
+        if (currentVal <= minVal) return; // Don't decrement below min
+        newVal = currentVal - 1;
       }
 
-      // fire change if value really changed
-      const now = this.input.valueAsNumber || 0;
-      if (now !== prev) {
+      // Update the input value explicitly
+      if (newVal !== currentVal) {
+        this.input.value = newVal;
         this.input.dispatchEvent(this.changeEvent);
       }
 
