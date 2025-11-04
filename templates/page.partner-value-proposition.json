@@ -98,7 +98,7 @@
       "name": "Image banner",
       "settings": {
         "image": "shopify://shop_images/KCFW-FW-2025-THR-IMG_1165-EliStack.png",
-        "height": "use_screen_three_quarters",
+        "height": "use_pixels_800",
         "overlay_opacity": 0,
         "overlay_color": "#000",
         "enable_overlay_text": false,
