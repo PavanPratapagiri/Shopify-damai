@@ -53,6 +53,22 @@
     display:none;
   }
 
+  .variant-table .price-cell {
+    text-align: end;
+  }
+  
+  .variant-table .price-cell .msrp {
+    font-size: 12px;
+    color: #666;
+    text-decoration: line-through;
+    margin-bottom: 2px;
+  }
+  
+  .variant-table .price-cell .current-price {
+    font-weight: 600;
+    color: #000;
+  }
+
 /* — Quantity controls — */
   ma-quantity-input{
     display: flex;
@@ -338,10 +354,14 @@ data-wpd-cart-drawer-variant-compare-at-price="{{ variant.compare_at_price }}"
 data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds = product.collections | map:'id' %}{{ wpdProductCollectionIds | join:',' }}"                                  
 data-wpd-cart-drawer-product-id="{{ product.id }}"                                   
 data-wpd-cart-drawer-item="{{ variant_key }}"                          
-data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ variant.price | money }}</span>
+data-wpd-cart-drawer-quantity="{{ variant_qty }}">
+                {% if variant.compare_at_price > variant.price %}
+                  <span class="msrp">MSRP: {{ variant.compare_at_price | money }}</span><br>
+                {% endif %}
+                {{ variant.price | money }}
+              </span>
             </td>
             <td class="quantity-cell">
-              <!-- somewhere in your page -->
               <ma-quantity-input>
                 <button type="button" name="minus" class="MA-quantity__button">−</button>
                 <input
@@ -349,28 +369,33 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ variant.price | money }}</s
                   min="0"
                   max="50"
                   step="1"
-                  value="0"
+                  value="{{ variant_qty }}"
                   data-min="1"
                   data-max="10"
                   class="MA-quantity__input qty"
                 />
                 <button type="button" name="plus" class="MA-quantity__button">+</button>
               </ma-quantity-input>
-              <button class="remove-variant hidden">
+              <button class="remove-variant {% if variant_qty == 0 %}hidden{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true" focusable="false" class="icon icon-remove">
                   <path d="M14 3h-3.53a3.07 3.07 0 00-.6-1.65C9.44.82 8.8.5 8 .5s-1.44.32-1.87.85A3.06 3.06 0 005.53 3H2a.5.5 0 000 1h1.25v10c0 .28.22.5.5.5h8.5a.5.5 0 00.5-.5V4H14a.5.5 0 000-1zM6.91 1.98c.23-.29.58-.48 1.09-.48s.85.19 1.09.48c.2.24.3.6.36 1.02h-2.9c.05-.42.17-.78.36-1.02zm4.84 11.52h-7.5V4h7.5v9.5z" fill="currentColor"></path>
                   <path d="M6.55 5.25a.5.5 0 00-.5.5v6a.5.5 0 001 0v-6a.5.5 0 00-.5-.5zM9.45 5.25a.5.5 0 00-.5.5v6a.5.5 0 001 0v-6a.5.5 0 00-.5-.5z" fill="currentColor"></path>
                 </svg>
               </button>
             </td>
-            <td class="price"  data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
+            <td class="price-cell" data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
 data-wpd-cart-drawer-variant-id="{{ variant.id }}"                                   
 data-wpd-cart-drawer-variant-price="{{ variant.price }}"                                  
 data-wpd-cart-drawer-variant-compare-at-price="{{ variant.compare_at_price }}"                                  
 data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds = product.collections | map:'id' %}{{ wpdProductCollectionIds | join:',' }}"                                  
 data-wpd-cart-drawer-product-id="{{ product.id }}"                                   
 data-wpd-cart-drawer-item="{{ variant }}"                          
-data-wpd-cart-drawer-quantity="{{ variant.quantity }}">{{ variant.price | money }}</td>
+data-wpd-cart-drawer-quantity="{{ variant.quantity }}">
+              {% if variant.compare_at_price > variant.price %}
+                <div class="msrp">MSRP: {{ variant.compare_at_price | money }}</div>
+              {% endif %}
+              <div class="current-price">{{ variant.price | money }}</div>
+            </td>
             <td class="total" 
               data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
 data-wpd-cart-drawer-variant-id="{{ variant.id }}"                                   
@@ -477,6 +502,20 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ variant.price | times: vari
     onInputChange() {
       // enforce min/max every time the user types a value
       this.validateQtyRules();
+      // Trigger cart update when user manually changes input
+      this.updateCartFromInput();
+    }
+
+    updateCartFromInput() {
+      const row = this.closest('tr[data-variant-id]');
+      const vid = row.dataset.variantId;
+      const newQty = parseInt(this.input.value) || 0;
+      
+      // Find and trigger the update function for this variant
+      const updateEvent = new CustomEvent('quantityChanged', {
+        detail: { variantId: vid, quantity: newQty }
+      });
+      document.dispatchEvent(updateEvent);
     }
 
     onButtonClick(event) {
@@ -507,13 +546,13 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ variant.price | times: vari
     validateQtyRules() {
       const val = this.input.valueAsNumber || 0;
 
-      // disable “–” if at or below min
+      // disable "–" if at or below min
       if (this.input.min) {
         const btnMinus = this.querySelector("button[name='minus']");
         btnMinus.classList.toggle('disabled', val <= parseInt(this.input.min, 10));
       }
 
-      // disable “+” if at or above max
+      // disable "+" if at or above max
       if (this.input.max) {
         const btnPlus = this.querySelector("button[name='plus']");
         btnPlus.classList.toggle('disabled', val >= parseInt(this.input.max, 10));
@@ -524,14 +563,14 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ variant.price | times: vari
   customElements.define('ma-quantity-input', QuantityInput);
 
 document.addEventListener('DOMContentLoaded', function() {
-  const loadingSvg     = document.querySelector('.loading__spinner');
+  const loadingSvg = document.querySelector('.loading__spinner');
   const btn = document.querySelector('.remove-all');
   
   const currency = "{{ shop.currency }}";
-  const locale   = "{{ shop.locale | default: "" }}" || navigator.language;
+  const locale = "{{ shop.locale | default: "" }}" || navigator.language;
 
   let moneyFmt = new Intl.NumberFormat(locale, {
-    style:    "currency",
+    style: "currency",
     currency: currency
   });
 
@@ -568,90 +607,106 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // — wire up each variant row —
   document.querySelectorAll('tr[data-variant-id]').forEach(row => {
-    const vid        = row.dataset.variantId;
+    const vid = row.dataset.variantId;
     const priceCents = parseInt(row.dataset.price, 10);
-    const qtySpan    = row.querySelector('.qty');
-    const totalCell  = row.querySelector('.total');
-    const decBtn     = row.querySelector(".MA-quantity__button[name='minus']");
-    const incBtn     = row.querySelector(".MA-quantity__button[name='plus']");
-    const remBtn     = row.querySelector('.remove-variant');
+    const qtyInput = row.querySelector('.qty');
+    const totalCell = row.querySelector('.total');
+    const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
+    const incBtn = row.querySelector(".MA-quantity__button[name='plus']");
+    const remBtn = row.querySelector('.remove-variant');
 
-    async function qtyUpdate(){
+    // Initialize the quantity display and button states
+    async function initializeRow() {
       const cart = await fetch('/cart.js').then(r => r.json());
       const item = cart.items.find(i => i.variant_id == vid);
-      const qty  = item ? item.quantity : 0;
-      qtySpan.value          = qty;
-      totalCell.textContent        = formatPrice(qty * priceCents);
-      decBtn.disabled              = qty === 0;
-      if(qty === 0){
+      const qty = item ? item.quantity : 0;
+      
+      qtyInput.value = qty;
+      totalCell.textContent = formatPrice(qty * priceCents);
+      decBtn.disabled = qty === 0;
+      
+      if (qty === 0) {
         remBtn.classList.add('hidden');
-      }else{
+      } else {
         remBtn.classList.remove('hidden');
       }
     }
-    qtyUpdate();
+
+    async function handleCartUpdate(newQty) {
+      loadingSvg.classList.remove('hidden');
+      btn.classList.add('hidden');
+      
+      const cart = await fetch('/cart.js').then(r => r.json());
+      const item = cart.items.find(i => i.variant_id == vid);
+      const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
+      
+      try {
+        if (item && newQty > 0) {
+          // Update existing item
+          await updateCart(newQty, lineIndex);
+        } else if (!item && newQty > 0) {
+          // Add new item
+          await addCart(vid, newQty);
+        } else if (item && newQty === 0) {
+          // Remove item
+          await updateCart(0, lineIndex);
+        }
+        
+        // Refresh the display
+        await handleResponse();
+      } catch (error) {
+        console.error('Cart update failed:', error);
+        loadingSvg.classList.add('hidden');
+        btn.classList.remove('hidden');
+      }
+    }
 
     async function handleResponse() {
       const cart = await fetch('/cart.js').then(r => r.json());
       const item = cart.items.find(i => i.variant_id == vid);
-      const qty  = item ? item.quantity : 0;
-      totalCell.textContent        = formatPrice(qty * priceCents);
-      decBtn.disabled              = qty === 0;
-      if(qty === 0){
+      const qty = item ? item.quantity : 0;
+      
+      qtyInput.value = qty;
+      totalCell.textContent = formatPrice(qty * priceCents);
+      decBtn.disabled = qty === 0;
+      
+      if (qty === 0) {
         remBtn.classList.add('hidden');
-      }else{
+      } else {
         remBtn.classList.remove('hidden');
       }
+      
       loadingSvg.classList.add('hidden');
       btn.classList.remove('hidden');
-      if(qty === 0){
-        qtySpan.value          = 0;
-      }
       refreshSummary(cart);
     }
 
-    incBtn.addEventListener('click', async () => {
-      loadingSvg.classList.remove('hidden');
-      btn.classList.add('hidden');
-      const cart = await fetch('/cart.js').then(r => r.json());
-      const item = cart.items.find(i => i.variant_id == vid);
-      const qtySpan    = parseInt(row.querySelector('.qty').value);
-      const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
-      if(item != undefined){
-        updateCart(qtySpan, lineIndex).then(handleResponse);
-      }else{
-        addCart(vid, qtySpan).then(handleResponse);
+    // Initialize on page load
+    initializeRow();
+
+    // Listen for quantity changes from the custom element
+    document.addEventListener('quantityChanged', function(event) {
+      if (event.detail.variantId == vid) {
+        handleCartUpdate(event.detail.quantity);
       }
+    });
+
+    incBtn.addEventListener('click', async () => {
+      const currentQty = parseInt(qtyInput.value) || 0;
+      await handleCartUpdate(currentQty);
     });
 
     decBtn.addEventListener('click', async () => {
-      loadingSvg.classList.remove('hidden');
-      btn.classList.add('hidden');
-      const cart = await fetch('/cart.js').then(r => r.json());
-      const item = cart.items.find(i => i.variant_id == vid);
-      const qtySpan    = parseInt(row.querySelector('.qty').value);
-      const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
-      if(item != undefined){
-        console.log(qtySpan, lineIndex);
-        updateCart(qtySpan, lineIndex).then(handleResponse);
-      }else{
-        addCart(vid, qtySpan).then(handleResponse);
-      }
+      const currentQty = parseInt(qtyInput.value) || 0;
+      await handleCartUpdate(currentQty);
     });
 
     remBtn.addEventListener('click', async () => {
-      loadingSvg.classList.remove('hidden');
-      btn.classList.add('hidden');
-      const cart = await fetch('/cart.js').then(r => r.json());
-      const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
-      const item = cart.items.find(i => i.variant_id == vid);
-      if(item != undefined){
-        updateCart(0, lineIndex).then(handleResponse);
-      }
+      await handleCartUpdate(0);
     });
   });
 
-  // — “Remove all” button —
+  // — "Remove all" button —
   document.querySelector('.remove-all').addEventListener('click', function() {
     loadingSvg.classList.remove('hidden');
     btn.classList.add('hidden');
@@ -659,11 +714,15 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(res => res.json())
       .then(cart => {
         document.querySelectorAll('tr[data-variant-id]').forEach(row => {
-          row.querySelector('.qty').textContent = '0';
-          row.querySelector('.total').textContent = formatPrice(0);
-          row.querySelector(".MA-quantity__button[name='minus']").disabled = true;
-          row.querySelector('.remove-variant').style.display = 'none';
-          row.querySelector('.qty').value = 0;
+          const qtyInput = row.querySelector('.qty');
+          const totalCell = row.querySelector('.total');
+          const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
+          const remBtn = row.querySelector('.remove-variant');
+          
+          qtyInput.value = 0;
+          totalCell.textContent = formatPrice(0);
+          decBtn.disabled = true;
+          remBtn.classList.add('hidden');
         });
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
