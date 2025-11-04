@@ -376,6 +376,7 @@
           {%- assign line_price = 0 -%}
           {%- assign msrp_price = variant.compare_at_price | default: variant.price -%}
           {%- assign discounted_total = 0 -%}
+          {%- assign actual_unit_price = variant.price -%}
           
           {% for item in cart.items %}
             {% if item.variant_id == variant.id %}
@@ -383,12 +384,14 @@
               {%- assign variant_key = item.key -%}
               {%- assign line_price = item.line_price -%}
               {%- assign discounted_total = item.final_line_price -%}
+              {%- assign actual_unit_price = item.final_price -%}
             {% endif %}
           {% endfor %}
           <tr
             data-variant-id="{{ variant.id }}"
-            data-price="{{ variant.price }}"
+            data-price="{{ actual_unit_price }}"
             data-msrp-price="{{ msrp_price }}"
+            data-base-price="{{ variant.price }}"
           >
             <input type="hidden"
               data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
@@ -774,16 +777,8 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.disabled = cart.item_count === 0;
     if (count) count.textContent = cart.item_count;
     
-    // Calculate total based on discounted prices (sale prices)
-    let discountedTotal = 0;
-    document.querySelectorAll('tr[data-variant-id]').forEach(row => {
-      const price = parseInt(row.dataset.price, 10);
-      const qtyInput = row.querySelector('.qty');
-      const qty = parseInt(qtyInput.value) || 0;
-      discountedTotal += price * qty;
-    });
-    
-    if (subtotal) subtotal.textContent = formatPrice(discountedTotal);
+    // Use cart's actual total price which includes all discounts
+    if (subtotal) subtotal.textContent = formatPrice(cart.total_price);
   }
 
   // — wire up each variant row —
@@ -792,10 +787,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
   document.querySelectorAll('tr[data-variant-id]').forEach(row => {
     const vid = row.dataset.variantId;
-    const priceCents = parseInt(row.dataset.price, 10);
+    let priceCents = parseInt(row.dataset.price, 10);
+    const basePriceCents = parseInt(row.dataset.basePrice, 10);
     const msrpPriceCents = parseInt(row.dataset.msrpPrice, 10);
     const qtyInput = row.querySelector('.qty');
     const totalCell = row.querySelector('.total');
+    const priceCell = row.querySelector('.price-cell .current-price');
     const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
     const incBtn = row.querySelector(".MA-quantity__button[name='plus']");
     const remBtn = row.querySelector('.remove-variant');
@@ -816,23 +813,40 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // Calculate total based on discounted price (sale price)
-    function calculateDiscountedTotal(quantity) {
-      return priceCents * quantity;
+    // Calculate total based on actual item price from cart
+    function calculateTotal(quantity, unitPrice) {
+      return unitPrice * quantity;
     }
 
     // Initialize button states on page load (use server-rendered values)
     updateButtonStates();
     
-    // Initialize the total display based on current quantity
-    const initialQty = parseInt(qtyInput.value) || 0;
-    if (initialQty > 0) {
-      totalCell.textContent = formatPrice(calculateDiscountedTotal(initialQty));
-    }
-    
-    // Fetch initial cart state for summary (only once)
+    // Fetch initial cart state for summary and update prices (only once)
     if (!processedVariants.size) {
       fetch('/cart.js').then(r => r.json()).then(cart => {
+        // Update each row with actual cart prices
+        document.querySelectorAll('tr[data-variant-id]').forEach(r => {
+          const variantId = r.dataset.variantId;
+          const item = cart.items.find(i => i.variant_id == variantId);
+          
+          if (item) {
+            // Update data-price with actual discounted unit price from cart
+            r.dataset.price = item.final_price || item.price;
+            
+            // Update the displayed price if different from base
+            const pc = r.querySelector('.price-cell .current-price');
+            if (pc && item.final_price && item.final_price !== item.price) {
+              pc.textContent = formatPrice(item.final_price);
+            }
+            
+            // Update total
+            const tc = r.querySelector('.total');
+            if (tc) {
+              tc.textContent = formatPrice(item.final_line_price || item.line_price);
+            }
+          }
+        });
+        
         refreshSummary(cart);
       });
     }
@@ -904,8 +918,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const item = cart.items.find(i => i.variant_id == vid);
         const qty = item ? item.quantity : 0;
         
+        // Update data-price with actual discounted unit price
+        if (item) {
+          priceCents = item.final_price || item.price;
+          row.dataset.price = priceCents;
+          
+          // Update the displayed unit price if it has changed
+          if (priceCell && item.final_price && item.final_price !== basePriceCents) {
+            priceCell.textContent = formatPrice(item.final_price);
+          }
+        }
+        
         qtyInput.value = qty;
-        totalCell.textContent = formatPrice(calculateDiscountedTotal(qty));
+        
+        // Use actual line price from cart item (includes all discounts)
+        if (item) {
+          totalCell.textContent = formatPrice(item.final_line_price || item.line_price);
+        } else {
+          totalCell.textContent = formatPrice(0);
+        }
+        
         updateButtonStates();
         
         loadingSvg.classList.add('hidden');
@@ -927,8 +959,15 @@ document.addEventListener('DOMContentLoaded', function() {
           
           // Update display with wholesale prices
           if (updatedItem) {
+            priceCents = updatedItem.final_price || updatedItem.price;
+            row.dataset.price = priceCents;
+            
             qtyInput.value = updatedItem.quantity;
-            totalCell.textContent = formatPrice(calculateDiscountedTotal(updatedItem.quantity));
+            totalCell.textContent = formatPrice(updatedItem.final_line_price || updatedItem.line_price);
+            
+            if (priceCell) {
+              priceCell.textContent = formatPrice(updatedItem.final_price || updatedItem.price);
+            }
           }
           refreshSummary(updatedCart);
         }, 1500); // Wait for WCP calculations to complete
