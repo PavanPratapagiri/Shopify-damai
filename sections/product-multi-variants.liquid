@@ -691,45 +691,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const remBtn = row.querySelector('.remove-variant');
     const quantityElement = row.querySelector('ma-quantity-input');
 
-    // Initialize the quantity display and button states
-    async function initializeRow() {
-      try {
-        const cart = await fetch('/cart.js').then(r => r.json());
-        const item = cart.items.find(i => i.variant_id == vid);
-        const qty = item ? item.quantity : 0;
-        
-        if (quantityElement) {
-          quantityElement.isUpdating = true;
-        }
-        
-        qtyInput.value = qty;
-        totalCell.textContent = formatPrice(item ? item.line_price : 0);
-        decBtn.disabled = qty <= 0;
-        incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
-        
-        if (qty === 0) {
-          remBtn.classList.add('hidden');
-        } else {
-          remBtn.classList.remove('hidden');
-        }
-        
-        if (quantityElement) {
-          setTimeout(() => {
-            quantityElement.isUpdating = false;
-          }, 100);
-        }
-        
-        // Update summary on init
-        refreshSummary(cart);
-      } catch (error) {
-        console.error('Failed to initialize row:', error);
-        if (quantityElement) {
-          quantityElement.isUpdating = false;
-        }
+    // Initialize button states based on current value
+    function updateButtonStates() {
+      const qty = parseInt(qtyInput.value) || 0;
+      decBtn.disabled = qty <= 0;
+      incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
+      
+      if (qty === 0) {
+        remBtn.classList.add('hidden');
+      } else {
+        remBtn.classList.remove('hidden');
       }
     }
 
     async function handleCartUpdate(newQty) {
+      if (quantityElement) {
+        quantityElement.isUpdating = true;
+      }
+      
       loadingSvg.classList.remove('hidden');
       btn.classList.add('hidden');
       
@@ -738,70 +717,72 @@ document.addEventListener('DOMContentLoaded', function() {
         const item = cart.items.find(i => i.variant_id == vid);
         const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
         
+        let updatedCart;
         if (item && newQty > 0) {
           // Update existing item
-          await updateCart(newQty, lineIndex);
+          updatedCart = await updateCart(newQty, lineIndex);
         } else if (!item && newQty > 0) {
           // Add new item
-          await addCart(vid, newQty);
+          updatedCart = await addCart(vid, newQty);
         } else if (item && newQty === 0) {
           // Remove item
-          await updateCart(0, lineIndex);
+          updatedCart = await updateCart(0, lineIndex);
         }
         
-        // Refresh the display
-        await handleResponse();
+        // Refresh the display with the updated cart
+        await handleResponse(updatedCart);
       } catch (error) {
         console.error('Cart update failed:', error);
-        // Revert to previous value on error
-        await initializeRow();
-        loadingSvg.classList.add('hidden');
-        btn.classList.remove('hidden');
-      }
-    }
-
-    async function handleResponse() {
-      try {
+        // Fetch current cart state on error
         const cart = await fetch('/cart.js').then(r => r.json());
         const item = cart.items.find(i => i.variant_id == vid);
-        const qty = item ? item.quantity : 0;
-        
-        if (quantityElement) {
-          quantityElement.isUpdating = true;
-        }
-        
-        qtyInput.value = qty;
+        qtyInput.value = item ? item.quantity : 0;
         totalCell.textContent = formatPrice(item ? item.line_price : 0);
-        decBtn.disabled = qty <= 0;
-        incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
-        
-        if (qty === 0) {
-          remBtn.classList.add('hidden');
-        } else {
-          remBtn.classList.remove('hidden');
-        }
-        
+        updateButtonStates();
+        loadingSvg.classList.add('hidden');
+        btn.classList.remove('hidden');
+      } finally {
         if (quantityElement) {
           setTimeout(() => {
             quantityElement.isUpdating = false;
           }, 100);
         }
+      }
+    }
+
+    async function handleResponse(cart) {
+      try {
+        // If cart not provided, fetch it
+        if (!cart) {
+          cart = await fetch('/cart.js').then(r => r.json());
+        }
+        
+        const item = cart.items.find(i => i.variant_id == vid);
+        const qty = item ? item.quantity : 0;
+        
+        qtyInput.value = qty;
+        totalCell.textContent = formatPrice(item ? item.line_price : 0);
+        updateButtonStates();
         
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
         refreshSummary(cart);
       } catch (error) {
         console.error('Failed to handle response:', error);
-        if (quantityElement) {
-          quantityElement.isUpdating = false;
-        }
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
       }
     }
 
-    // Initialize on page load
-    initializeRow();
+    // Initialize button states on page load (use server-rendered values)
+    updateButtonStates();
+    
+    // Fetch initial cart state for summary
+    if (!processedVariants.size) {
+      fetch('/cart.js').then(r => r.json()).then(cart => {
+        refreshSummary(cart);
+      });
+    }
 
     // Listen for quantity changes from the custom element - only attach once per variant
     if (!processedVariants.has(vid)) {
