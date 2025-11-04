@@ -281,37 +281,146 @@
 <script>
   document.addEventListener('DOMContentLoaded', function(){
     {% if wcp_wholesale_customer == true %}
-    // For wholesale customers, wait for WCP data before enabling reload
+    // For wholesale customers, update prices via AJAX without page reload
     setTimeout(function(){
       var x=document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
+      
+      function updateCartDisplay() {
+        // Wait for WCP to calculate prices
+        var checkWCPInterval = setInterval(function(){
+          if(window.wcp_data && window.wcp_data.discounted_hash){
+            clearInterval(checkWCPInterval);
+            
+            // Fetch updated cart data
+            fetch('/cart.js')
+              .then(response => response.json())
+              .then(cart => {
+                // Update line item prices
+                document.querySelectorAll('[data-wpd-cart-item]').forEach(function(element) {
+                  var itemKey = element.getAttribute('data-wpd-cart-item');
+                  var variantId = element.getAttribute('data-wpd-cart-variant-id');
+                  
+                  if (itemKey && variantId) {
+                    var cartItem = cart.items.find(item => item.key === itemKey);
+                    if (cartItem) {
+                      // Update individual price
+                      if (element.classList.contains('line__price') || element.tagName === 'MARK' || element.tagName === 'SPAN') {
+                        var formattedPrice = (cartItem.final_price / 100).toLocaleString('en-US', {
+                          style: 'currency',
+                          currency: '{{ cart.currency.iso_code }}'
+                        });
+                        element.textContent = formattedPrice;
+                      }
+                    }
+                  }
+                });
+                
+                // Update line totals
+                document.querySelectorAll('[data-wpd-cart-line-price]').forEach(function(element) {
+                  var itemKey = element.getAttribute('data-wpd-cart-item');
+                  if (itemKey) {
+                    var cartItem = cart.items.find(item => item.key === itemKey);
+                    if (cartItem) {
+                      var formattedLinePrice = (cartItem.final_line_price / 100).toLocaleString('en-US', {
+                        style: 'currency',
+                        currency: '{{ cart.currency.iso_code }}'
+                      });
+                      element.textContent = formattedLinePrice;
+                    }
+                  }
+                });
+                
+                // Update cart subtotal (original price)
+                var subtotalElement = document.querySelector('[data-cart-final]');
+                if (subtotalElement) {
+                  var formattedTotal = (cart.total_price / 100).toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: '{{ cart.currency.iso_code }}'
+                  });
+                  subtotalElement.textContent = formattedTotal;
+                }
+                
+                // Trigger WCP to recalculate and update discounted prices
+                if (window.wcpRefreshCartTotal) {
+                  window.wcpRefreshCartTotal();
+                }
+              })
+              .catch(error => {
+                console.error('Error updating cart display:', error);
+                // Fallback to page reload on error
+                window.location.reload();
+              });
+          }
+        }, 100);
+        
+        // Fallback: reload after 4 seconds if WCP not detected
+        setTimeout(function(){
+          clearInterval(checkWCPInterval);
+          if (!window.wcp_data || !window.wcp_data.discounted_hash) {
+            window.location.reload();
+          }
+        }, 4000);
+      }
+      
       for (var i = 0; i < x.length; i++) {
         x[i].addEventListener('click', function(){
-          // Wait longer for WCP to recalculate prices
-          setTimeout(function(){
-            // Check if WCP data is loaded before reloading
-            var checkWCPInterval = setInterval(function(){
-              if(window.wcp_data && window.wcp_data.discounted_hash){
-                clearInterval(checkWCPInterval);
-                window.location.reload();
-              }
-            }, 100);
-            
-            // Fallback: reload after 3.5 seconds even if WCP not detected
-            setTimeout(function(){
-              clearInterval(checkWCPInterval);
-              window.location.reload();
-            }, 3500);
-          }, 500);
+          setTimeout(updateCartDisplay, 500);
         }, false);
       }
     }, 2500);
     {% else %}
-    // For regular customers, use standard timing
+    // For regular customers, use standard timing with AJAX update
     setTimeout(function(){
       var x=document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
+      
+      function updateCartDisplay() {
+        fetch('/cart.js')
+          .then(response => response.json())
+          .then(cart => {
+            // Update line item prices and quantities
+            document.querySelectorAll('[data-cart-item]').forEach(function(element) {
+              var itemKey = element.getAttribute('data-cart-item');
+              if (itemKey) {
+                var cartItem = cart.items.find(item => item.key === itemKey);
+                if (cartItem) {
+                  // Update quantity input
+                  var qtyInput = element.querySelector('.quantity__input');
+                  if (qtyInput) {
+                    qtyInput.value = cartItem.quantity;
+                  }
+                  
+                  // Update line total
+                  var lineTotal = element.querySelector('[data-wpd-cart-line-price]');
+                  if (lineTotal) {
+                    var formattedLinePrice = (cartItem.final_line_price / 100).toLocaleString('en-US', {
+                      style: 'currency',
+                      currency: '{{ cart.currency.iso_code }}'
+                    });
+                    lineTotal.textContent = formattedLinePrice;
+                  }
+                }
+              }
+            });
+            
+            // Update cart subtotal
+            var subtotalElement = document.querySelector('[data-cart-final]');
+            if (subtotalElement) {
+              var formattedTotal = (cart.total_price / 100).toLocaleString('en-US', {
+                style: 'currency',
+                currency: '{{ cart.currency.iso_code }}'
+              });
+              subtotalElement.textContent = formattedTotal;
+            }
+          })
+          .catch(error => {
+            console.error('Error updating cart display:', error);
+            window.location.reload();
+          });
+      }
+      
       for (var i = 0; i < x.length; i++) {
         x[i].addEventListener('click', function(){
-          setTimeout(function(){window.location.reload();},2500);
+          setTimeout(updateCartDisplay, 2500);
         }, false);
       }
     }, 2500);

@@ -538,18 +538,81 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
 {% if wcp_wholesale_customer == true %}
 <script>
   document.addEventListener('DOMContentLoaded', function(){
-    let reloadTimeout;
-    
-    // Listen for cart updates completion
+    // Listen for cart updates completion - refresh display without full page reload
     document.addEventListener('cartUpdateComplete', function() {
-      // Clear any existing reload timeout
-      if (reloadTimeout) {
-        clearTimeout(reloadTimeout);
-      }
-      // Reload after cart update completes
-      reloadTimeout = setTimeout(function(){
-        window.location.reload();
-      }, 1000);
+      // Wait for WCP to calculate prices
+      setTimeout(function(){
+        if(window.wcp_data && window.wcp_data.discounted_hash){
+          // Fetch updated cart to get new prices
+          fetch('/cart.js')
+            .then(response => response.json())
+            .then(cart => {
+              // Update each variant row with new prices and quantities
+              document.querySelectorAll('tr[data-variant-id]').forEach(row => {
+                const vid = row.dataset.variantId;
+                const item = cart.items.find(i => i.variant_id == vid);
+                
+                if (item) {
+                  // Update quantity input
+                  const qtyInput = row.querySelector('.qty');
+                  if (qtyInput) {
+                    qtyInput.value = item.quantity;
+                  }
+                  
+                  // Update line total
+                  const totalCell = row.querySelector('.total');
+                  if (totalCell) {
+                    const formattedPrice = (item.line_price / 100).toLocaleString('en-US', {
+                      style: 'currency',
+                      currency: cart.currency
+                    });
+                    totalCell.textContent = formattedPrice;
+                  }
+                  
+                  // Show/hide remove button
+                  const remBtn = row.querySelector('.remove-variant');
+                  if (remBtn) {
+                    if (item.quantity === 0) {
+                      remBtn.classList.add('hidden');
+                    } else {
+                      remBtn.classList.remove('hidden');
+                    }
+                  }
+                } else {
+                  // Item not in cart, reset to 0
+                  const qtyInput = row.querySelector('.qty');
+                  const totalCell = row.querySelector('.total');
+                  const remBtn = row.querySelector('.remove-variant');
+                  
+                  if (qtyInput) qtyInput.value = 0;
+                  if (totalCell) totalCell.textContent = '$0.00';
+                  if (remBtn) remBtn.classList.add('hidden');
+                }
+              });
+              
+              // Update summary
+              const count = document.querySelector('.action-total strong');
+              const subtotal = document.querySelector('.summary .price');
+              
+              if (count) count.textContent = cart.item_count;
+              if (subtotal) {
+                const formattedTotal = (cart.total_price / 100).toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: cart.currency
+                });
+                subtotal.textContent = formattedTotal;
+              }
+              
+              // Trigger WCP to recalculate discounted prices if available
+              if (window.wcpRefreshCartTotal) {
+                window.wcpRefreshCartTotal();
+              }
+            })
+            .catch(error => {
+              console.error('Error updating cart display:', error);
+            });
+        }
+      }, 1500);
     });
   }, false);
 </script>
