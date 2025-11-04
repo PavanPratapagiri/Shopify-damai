@@ -374,17 +374,21 @@
           {%- assign variant_qty = 0 -%}
           {%- assign variant_key = 0 -%}
           {%- assign line_price = 0 -%}
+          {%- assign msrp_price = variant.compare_at_price | default: variant.price -%}
+          {%- assign discounted_total = 0 -%}
           
           {% for item in cart.items %}
             {% if item.variant_id == variant.id %}
               {%- assign variant_qty = item.quantity -%}
               {%- assign variant_key = item.key -%}
               {%- assign line_price = item.line_price -%}
+              {%- assign discounted_total = variant.price | times: variant_qty -%}
             {% endif %}
           {% endfor %}
           <tr
             data-variant-id="{{ variant.id }}"
             data-price="{{ variant.price }}"
+            data-msrp-price="{{ msrp_price }}"
           >
             <input type="hidden"
               data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
@@ -471,7 +475,7 @@ data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds =
 data-wpd-cart-drawer-product-id="{{ product.id }}"                                  
 data-wpd-cart-drawer-line-price                                  
 data-wpd-cart-drawer-item="{{ variant_key }}"                              
-data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
+data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ discounted_total | money }}</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -769,7 +773,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     btn.disabled = cart.item_count === 0;
     if (count) count.textContent = cart.item_count;
-    if (subtotal) subtotal.textContent = formatPrice(cart.total_price);
+    
+    // Calculate total based on discounted prices (sale prices)
+    let discountedTotal = 0;
+    document.querySelectorAll('tr[data-variant-id]').forEach(row => {
+      const price = parseInt(row.dataset.price, 10);
+      const qtyInput = row.querySelector('.qty');
+      const qty = parseInt(qtyInput.value) || 0;
+      discountedTotal += price * qty;
+    });
+    
+    if (subtotal) subtotal.textContent = formatPrice(discountedTotal);
   }
 
   // — wire up each variant row —
@@ -779,6 +793,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('tr[data-variant-id]').forEach(row => {
     const vid = row.dataset.variantId;
     const priceCents = parseInt(row.dataset.price, 10);
+    const msrpPriceCents = parseInt(row.dataset.msrpPrice, 10);
     const qtyInput = row.querySelector('.qty');
     const totalCell = row.querySelector('.total');
     const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
@@ -799,6 +814,11 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         remBtn.classList.remove('hidden');
       }
+    }
+    
+    // Calculate total based on discounted price (sale price)
+    function calculateDiscountedTotal(quantity) {
+      return priceCents * quantity;
     }
 
     async function handleCartUpdate(newQty) {
@@ -869,7 +889,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const qty = item ? item.quantity : 0;
         
         qtyInput.value = qty;
-        totalCell.textContent = formatPrice(item ? item.line_price : 0);
+        totalCell.textContent = formatPrice(calculateDiscountedTotal(qty));
         updateButtonStates();
         
         loadingSvg.classList.add('hidden');
@@ -892,7 +912,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // Update display with wholesale prices
           if (updatedItem) {
             qtyInput.value = updatedItem.quantity;
-            totalCell.textContent = formatPrice(updatedItem.line_price);
+            totalCell.textContent = formatPrice(calculateDiscountedTotal(updatedItem.quantity));
           }
           refreshSummary(updatedCart);
         }, 1500); // Wait for WCP calculations to complete
