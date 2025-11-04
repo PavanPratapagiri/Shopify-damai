@@ -97,25 +97,79 @@
       ],
       "name": "Image banner",
       "settings": {
-        "image": "shopify://shop_images/KCFW-FW-2025-THR-IMG_1165-EliStack.jpg",
+        "image": "shopify://shop_images/KCFW-FW-2025-THR-IMG_1165-EliStack.png",
         "height": "use_screen_three_quarters",
         "overlay_opacity": 0,
         "overlay_color": "#000",
         "enable_overlay_text": false,
         "preload_image": false,
-        "content_width": 2000,
-        "text_align": "align--middle-center",
-        "text_color": "text--white",
-        "color_bg": "hero__content--transparent",
+        "content_width": 1400,
+        "text_align": "align--bottom-center",
+        "text_color": "text--secondary",
+        "color_bg": "palette--light bg--neutral",
         "width": "wrapper--none",
         "padding_top": 0,
         "padding_bottom": 0
+      }
+    },
+    "section_double_t3qBy3": {
+      "type": "section-double",
+      "blocks": {
+        "image_medVTk": {
+          "type": "image",
+          "settings": {
+            "overlay_opacity": 15,
+            "overlay_color": "#000",
+            "enable_overlay_text": false,
+            "kicker": "",
+            "title": "",
+            "richtext": "",
+            "text_align": "align--middle-center",
+            "text_color": "text--white",
+            "link_text": "Shop Now",
+            "link": "",
+            "button_color": "btn--white",
+            "button_style": "btn"
+          }
+        },
+        "text_AkA8am": {
+          "type": "text",
+          "settings": {
+            "kicker": "Image with text",
+            "title": "",
+            "text": "<p>Use this text to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.</p>",
+            "font_size": 5,
+            "text_columns": 1,
+            "align_text": "text-left",
+            "button_text": "",
+            "button_url": "",
+            "button_color": "btn--neutral",
+            "button_style": "btn-text-thick-line",
+            "text_color": "text--neutral",
+            "bg_color": ""
+          }
+        }
+      },
+      "block_order": [
+        "image_medVTk",
+        "text_AkA8am"
+      ],
+      "name": "Image with text",
+      "settings": {
+        "height": "use_screen_one_half",
+        "brick_gutter": 0,
+        "borders": false,
+        "bg_color": "",
+        "width": "wrapper",
+        "padding_top": 36,
+        "padding_bottom": 36
       }
     }
   },
   "order": [
     "main",
     "section_double_PkinzT",
-    "section_hero_PNytrn"
+    "section_hero_PNytrn",
+    "section_double_t3qBy3"
   ]
 }
