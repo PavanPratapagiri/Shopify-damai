@@ -567,9 +567,23 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
       );
     }
 
+    connectedCallback() {
+      // Initialize button states when element is added to DOM
+      this.validateQtyRules();
+    }
+
     onInputChange(event) {
+      // Prevent negative values and enforce integer
+      let value = parseInt(this.input.value) || 0;
+      if (value < 0) value = 0;
+      if (this.input.max && value > parseInt(this.input.max)) {
+        value = parseInt(this.input.max);
+      }
+      this.input.value = value;
+      
       // enforce min/max every time the user types a value
       this.validateQtyRules();
+      
       // Only trigger cart update on 'change' event (when user is done typing)
       if (event.type === 'change' && !this.isUpdating) {
         this.updateCartFromInput();
@@ -593,9 +607,15 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
 
     onButtonClick(event) {
       event.preventDefault();
+      
+      if (this.isUpdating) return; // Prevent clicks while updating
+      
       const prev = this.input.valueAsNumber || 0;
 
       if (event.target.name === 'plus') {
+        const maxVal = parseInt(this.input.max, 10);
+        if (prev >= maxVal) return; // Don't increment beyond max
+        
         // if zero and min is higher, jump to min
         if (prev === 0 && this.input.min) {
           this.input.value = this.input.min;
@@ -603,6 +623,9 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
           this.input.stepUp();
         }
       } else {
+        const minVal = parseInt(this.input.min, 10) || 0;
+        if (prev <= minVal) return; // Don't decrement below min
+        
         this.input.stepDown();
       }
 
@@ -618,17 +641,19 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
 
     validateQtyRules() {
       const val = this.input.valueAsNumber || 0;
+      const minVal = this.input.min ? parseInt(this.input.min, 10) : 0;
+      const maxVal = this.input.max ? parseInt(this.input.max, 10) : Infinity;
 
       // disable "–" if at or below min
-      if (this.input.min) {
-        const btnMinus = this.querySelector("button[name='minus']");
-        if (btnMinus) btnMinus.disabled = val <= parseInt(this.input.min, 10);
+      const btnMinus = this.querySelector("button[name='minus']");
+      if (btnMinus) {
+        btnMinus.disabled = val <= minVal;
       }
 
       // disable "+" if at or above max
-      if (this.input.max) {
-        const btnPlus = this.querySelector("button[name='plus']");
-        if (btnPlus) btnPlus.disabled = val >= parseInt(this.input.max, 10);
+      const btnPlus = this.querySelector("button[name='plus']");
+      if (btnPlus) {
+        btnPlus.disabled = val >= maxVal;
       }
     }
   }
@@ -680,6 +705,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // — wire up each variant row —
   const processedVariants = new Set();
+  const updateQueue = new Map(); // Track pending updates per variant
   
   document.querySelectorAll('tr[data-variant-id]').forEach(row => {
     const vid = row.dataset.variantId;
@@ -694,8 +720,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize button states based on current value
     function updateButtonStates() {
       const qty = parseInt(qtyInput.value) || 0;
+      const maxQty = parseInt(qtyInput.max, 10);
+      
       decBtn.disabled = qty <= 0;
-      incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
+      incBtn.disabled = qty >= maxQty;
       
       if (qty === 0) {
         remBtn.classList.add('hidden');
@@ -705,6 +733,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function handleCartUpdate(newQty) {
+      // Prevent multiple simultaneous updates for same variant
+      if (updateQueue.has(vid)) {
+        return updateQueue.get(vid);
+      }
+      
       if (quantityElement) {
         quantityElement.isUpdating = true;
       }
@@ -712,42 +745,48 @@ document.addEventListener('DOMContentLoaded', function() {
       loadingSvg.classList.remove('hidden');
       btn.classList.add('hidden');
       
-      try {
-        const cart = await fetch('/cart.js').then(r => r.json());
-        const item = cart.items.find(i => i.variant_id == vid);
-        const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
-        
-        let updatedCart;
-        if (item && newQty > 0) {
-          // Update existing item
-          updatedCart = await updateCart(newQty, lineIndex);
-        } else if (!item && newQty > 0) {
-          // Add new item
-          updatedCart = await addCart(vid, newQty);
-        } else if (item && newQty === 0) {
-          // Remove item
-          updatedCart = await updateCart(0, lineIndex);
+      const updatePromise = (async () => {
+        try {
+          const cart = await fetch('/cart.js').then(r => r.json());
+          const item = cart.items.find(i => i.variant_id == vid);
+          const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
+          
+          let updatedCart;
+          if (item && newQty > 0) {
+            // Update existing item
+            updatedCart = await updateCart(newQty, lineIndex);
+          } else if (!item && newQty > 0) {
+            // Add new item
+            updatedCart = await addCart(vid, newQty);
+          } else if (item && newQty === 0) {
+            // Remove item
+            updatedCart = await updateCart(0, lineIndex);
+          }
+          
+          // Refresh the display with the updated cart
+          await handleResponse(updatedCart);
+        } catch (error) {
+          console.error('Cart update failed:', error);
+          // Fetch current cart state on error
+          const cart = await fetch('/cart.js').then(r => r.json());
+          const item = cart.items.find(i => i.variant_id == vid);
+          qtyInput.value = item ? item.quantity : 0;
+          totalCell.textContent = formatPrice(item ? item.line_price : 0);
+          updateButtonStates();
+          loadingSvg.classList.add('hidden');
+          btn.classList.remove('hidden');
+        } finally {
+          updateQueue.delete(vid);
+          if (quantityElement) {
+            setTimeout(() => {
+              quantityElement.isUpdating = false;
+            }, 100);
+          }
         }
-        
-        // Refresh the display with the updated cart
-        await handleResponse(updatedCart);
-      } catch (error) {
-        console.error('Cart update failed:', error);
-        // Fetch current cart state on error
-        const cart = await fetch('/cart.js').then(r => r.json());
-        const item = cart.items.find(i => i.variant_id == vid);
-        qtyInput.value = item ? item.quantity : 0;
-        totalCell.textContent = formatPrice(item ? item.line_price : 0);
-        updateButtonStates();
-        loadingSvg.classList.add('hidden');
-        btn.classList.remove('hidden');
-      } finally {
-        if (quantityElement) {
-          setTimeout(() => {
-            quantityElement.isUpdating = false;
-          }, 100);
-        }
-      }
+      })();
+      
+      updateQueue.set(vid, updatePromise);
+      return updatePromise;
     }
 
     async function handleResponse(cart) {
