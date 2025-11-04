@@ -1,4 +1,3 @@
-
 {% comment %}BSS B2B Login{% endcomment %}
 {% capture redirectScript %}{% render 'bsscommerce-redirect-product-page-logic', product: product, collection: collection %}{% endcapture %}{% unless redirectScript contains "Liquid error" %}{%- assign redirectScript = redirectScript | strip | split: ',' -%}{%- if redirectScript[0] != blank -%}<script type="text/javascript" id="hp-behavior">const url = "https://login-to-access-page-api.bsscommerce.com/behavior"; fetch(url, { method: "POST", headers: { "Content-Type": "application/json", }, body: JSON.stringify({domain: window.Shopify.shop, events: "hp-access" })});</script><script id="bss-redirect" type="text/javascript">if ( "{{ routes.root_url }}" != "/" && "{{ redirectScript[0] }}".indexOf("-") === -1) {window.location.replace( "{{ routes.root_url }}" + "{{ redirectScript[0] }}" )} else { window.location.replace("{{ redirectScript[0] }}")}</script>{% endif %}{%- if redirectScript[1] != blank -%}{{ redirectScript[1] }}{% endif -%}{% endunless %}
 {% comment %}BSS B2B Login{% endcomment %}
@@ -176,56 +175,125 @@
 
       <div class="product__main__content grid__item {{ product_description_width }}">
         <div class="product__inner is-sticky">
-          ```liquid
-{% if product.variants.size > 1 %}
+          {% if product.variants.size > 1 %}
   <div class="variant-matrix mt-6">
     <h3 class="text-base font-semibold mb-4">Order Multiple Sizes</h3>
     <form id="variant-matrix-form">
       <table class="table-auto w-full text-sm border-t border-b">
         <thead>
           <tr class="text-left">
-            <th class="py-2">Size</th>
             <th class="py-2">SKU</th>
-            <th class="py-2">Price</th>
+            <th class="py-2">Size</th>
+            <th class="py-2">MSRP</th>
             <th class="py-2">Quantity</th>
+            <th class="py-2">Total</th>
           </tr>
         </thead>
         <tbody>
           {% for variant in product.variants %}
             <tr class="border-t">
-              <td class="py-2">{{ variant.title }}</td>
               <td class="py-2">{{ variant.sku }}</td>
-              <td class="py-2">{{ variant.price | money }}</td>
+              <td class="py-2">{{ variant.title }}</td>
+              <td class="py-2"><strong>MSRP:</strong> {{ variant.price | money }}</td>
               <td class="py-2">
                 {% if variant.available %}
-                  <input
-                    type="number"
-                    name="quantity_{{ variant.id }}"
-                    min="0"
-                    value="0"
-                    class="border w-16 px-2 py-1 rounded quantity-input"
-                    data-variant-id="{{ variant.id }}">
+                  <div class="quantity__wrapper" style="display: inline-flex; align-items: center;">
+                    <button class="quantity__button quantity__button--minus" type="button" onclick="decreaseQuantity('{{ variant.id }}')">&minus;</button>
+                    <input
+                      type="number"
+                      name="quantity_{{ variant.id }}"
+                      id="quantity_{{ variant.id }}"
+                      min="0"
+                      value="0"
+                      class="quantity__input border w-16 px-2 py-1 rounded"
+                      data-variant-id="{{ variant.id }}"
+                      style="margin: 0 4px; text-align: center;">
+                    <button class="quantity__button quantity__button--plus" type="button" onclick="increaseQuantity('{{ variant.id }}')">&plus;</button>
+                    <span class="quantity-display ml-2" id="qty-display-{{ variant.id }}" style="font-weight: bold;">Qty: 0</span>
+                  </div>
                 {% else %}
                   <span class="text-red-500">Out of Stock</span>
                 {% endif %}
+              </td>
+              <td class="py-2">
+                <span id="total-{{ variant.id }}" data-variant-price="{{ variant.price }}" style="font-weight: bold;">$0.00</span>
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
-      <button type="submit" class="mt-4 bg-black text-white px-4 py-2 rounded hover:bg-gray-800">
-        Add Selected to Cart
-      </button>
+      <div class="mt-4 flex justify-between items-center">
+        <div class="text-lg font-bold">
+          Total Items: <span id="total-items">0</span> | 
+          Grand Total: <span id="grand-total">$0.00</span>
+        </div>
+        <button type="submit" class="bg-black text-white px-6 py-3 rounded hover:bg-gray-800 font-semibold">
+          Add Selected to Cart
+        </button>
+      </div>
     </form>
   </div>
 
   <script>
+    function updateQuantityDisplay(variantId) {
+      const input = document.getElementById('quantity_' + variantId);
+      const display = document.getElementById('qty-display-' + variantId);
+      const totalSpan = document.getElementById('total-' + variantId);
+      const qty = parseInt(input.value) || 0;
+      const price = parseFloat(totalSpan.dataset.variantPrice);
+      
+      display.textContent = 'Qty: ' + qty;
+      totalSpan.textContent = '$' + (qty * price / 100).toFixed(2);
+      
+      updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+      let totalItems = 0;
+      let grandTotal = 0;
+      
+      document.querySelectorAll('[id^="quantity_"]').forEach(input => {
+        const qty = parseInt(input.value) || 0;
+        const variantId = input.dataset.variantId;
+        const totalSpan = document.getElementById('total-' + variantId);
+        const price = parseFloat(totalSpan.dataset.variantPrice);
+        
+        totalItems += qty;
+        grandTotal += qty * price;
+      });
+      
+      document.getElementById('total-items').textContent = totalItems;
+      document.getElementById('grand-total').textContent = '$' + (grandTotal / 100).toFixed(2);
+    }
+
+    function increaseQuantity(variantId) {
+      const input = document.getElementById('quantity_' + variantId);
+      input.value = parseInt(input.value) + 1;
+      updateQuantityDisplay(variantId);
+    }
+
+    function decreaseQuantity(variantId) {
+      const input = document.getElementById('quantity_' + variantId);
+      const currentValue = parseInt(input.value);
+      if (currentValue > 0) {
+        input.value = currentValue - 1;
+        updateQuantityDisplay(variantId);
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
       const form = document.getElementById("variant-matrix-form");
 
+      // Add event listeners to all quantity inputs
+      document.querySelectorAll('[id^="quantity_"]').forEach(input => {
+        input.addEventListener('input', function() {
+          updateQuantityDisplay(this.dataset.variantId);
+        });
+      });
+
       form.addEventListener("submit", function (e) {
         e.preventDefault();
-        const inputs = document.querySelectorAll(".quantity-input");
+        const inputs = document.querySelectorAll('[id^="quantity_"]');
         const addPromises = [];
 
         inputs.forEach(input => {
@@ -242,12 +310,16 @@
           }
         });
 
-        Promise.all(addPromises)
-          .then(() => window.location.href = "/cart")
-          .catch(err => {
-            console.error("Cart add error:", err);
-            alert("There was an issue adding items to your cart.");
-          });
+        if (addPromises.length > 0) {
+          Promise.all(addPromises)
+            .then(() => window.location.href = "/cart")
+            .catch(err => {
+              console.error("Cart add error:", err);
+              alert("There was an issue adding items to your cart.");
+            });
+        } else {
+          alert("Please select at least one item to add to cart.");
+        }
       });
     });
   </script>
