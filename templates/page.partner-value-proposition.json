@@ -72,7 +72,7 @@
       ],
       "name": "Image with text",
       "settings": {
-        "height": "use_screen_one_half",
+        "height": "use_screen_two_thirds",
         "brick_gutter": 0,
         "borders": false,
         "bg_color": "",
@@ -118,7 +118,8 @@
         "image_medVTk": {
           "type": "image",
           "settings": {
-            "overlay_opacity": 15,
+            "image": "shopify://shop_images/Untitled_design-2_62b799fd-fbe3-44b7-8f5a-fd804a09a1a5.png",
+            "overlay_opacity": 10,
             "overlay_color": "#000",
             "enable_overlay_text": false,
             "kicker": "",
@@ -156,7 +157,7 @@
       ],
       "name": "Image with text",
       "settings": {
-        "height": "use_screen_one_half",
+        "height": "use_screen_two_thirds",
         "brick_gutter": 0,
         "borders": false,
         "bg_color": "",
