@@ -1,0 +1,10 @@
+{%- assign w_continue = 'no' -%}
+{% assign wlmHideItem_Search = false %}{% assign wlmLockedTags348353 = false %}
+{% for tag in customer.tags %}
+{% if tag == 'wholesale' %}{% assign wlmLockedTags348353 = true %}{% endif %}
+{% endfor %}
+
+
+
+{% if wlmHideItem_Search == true %}{% continue %}{% endif %} {%- if wlm_is_render == 'yes' -%}{{- w_continue -}}{%-endif -%} 
+
