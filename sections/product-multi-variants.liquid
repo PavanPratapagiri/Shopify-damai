@@ -913,7 +913,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const basePriceCents = parseInt(row.dataset.basePrice, 10);
     const msrpPriceCents = parseInt(row.dataset.msrpPrice, 10);
     const qtyInput = row.querySelector('.qty');
-    const totalCell = row.querySelector('.total');
+    const totalCell = row.querySelector('.total-cell');
     const priceCell = row.querySelector('.price-cell .current-price');
     const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
     const incBtn = row.querySelector(".MA-quantity__button[name='plus']");
@@ -1031,20 +1031,31 @@ document.addEventListener('DOMContentLoaded', function() {
             const itemQty = item.quantity;
             const msrp = parseInt(r.dataset.msrpPrice, 10);
             const discountedPrice = getDiscountedPrice(itemQty, msrp);
+            const discountPercent = getDiscountPercentage(itemQty);
+            const savings = msrp - discountedPrice;
 
             // Update data-price with actual discounted unit price from cart
             r.dataset.price = discountedPrice;
             
-            // Update the displayed price if different from base
+            // Update the displayed price with discount info
             const pc = r.querySelector('.price-cell .current-price');
-            if (pc) {
-              pc.textContent = formatPrice(discountedPrice);
+            if (pc && itemQty > 0) {
+              pc.innerHTML = `
+                ${formatPrice(discountedPrice)}
+                ${discountPercent > 0 ? `<span class="discount-badge">Save ${discountPercent}%</span>` : ''}
+                ${savings > 0 ? `<span class="savings-text">You save ${formatPrice(savings)}</span>` : ''}
+              `;
             }
             
-            // Update total
-            const tc = r.querySelector('.total');
+            // Update total with next tier hint
+            const tc = r.querySelector('.total-cell');
+            const nextTier = getNextTierInfo(itemQty);
             if (tc) {
-              tc.textContent = formatPrice(discountedPrice * itemQty);
+              let totalHTML = `<span class="total-amount">${formatPrice(discountedPrice * itemQty)}</span>`;
+              if (nextTier && itemQty > 0) {
+                totalHTML += `<span class="next-tier-hint">Buy ${nextTier.itemsNeeded} more to save ${nextTier.nextTierDiscount}%</span>`;
+              }
+              tc.innerHTML = totalHTML;
             }
           }
         });
@@ -1122,26 +1133,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const item = cart.items.find(i => i.variant_id == vid);
         const qty = item ? item.quantity : 0;
         
-        // Update data-price with actual discounted unit price
+        // Update data-price and display
         if (item) {
           const discountedPrice = getDiscountedPrice(item.quantity, msrpPriceCents);
           priceCents = discountedPrice;
           row.dataset.price = priceCents;
           
-          // Update the displayed unit price if it has changed
-          if (priceCell) {
-            priceCell.textContent = formatPrice(discountedPrice);
-          }
+          // Update the displayed unit price with full formatting
+          updatePriceDisplay(item.quantity);
+        } else {
+          // Reset display when item removed
+          updatePriceDisplay(0);
         }
         
         qtyInput.value = qty;
         
-        // Use actual line price from cart item (includes all discounts)
+        // Update total with next tier hint
         if (item) {
-          const discountedPrice = getDiscountedPrice(item.quantity, msrpPriceCents);
-          totalCell.textContent = formatPrice(discountedPrice * item.quantity);
+          updateTotalDisplay(item.quantity);
         } else {
-          totalCell.textContent = formatPrice(0);
+          totalCell.innerHTML = '<span class="total-amount">$0.00</span>';
         }
         
         updateButtonStates();
@@ -1170,11 +1181,10 @@ document.addEventListener('DOMContentLoaded', function() {
             row.dataset.price = priceCents;
             
             qtyInput.value = updatedItem.quantity;
-            totalCell.textContent = formatPrice(discountedPrice * updatedItem.quantity);
             
-            if (priceCell) {
-              priceCell.textContent = formatPrice(discountedPrice);
-            }
+            // Update with full formatting
+            updatePriceDisplay(updatedItem.quantity);
+            updateTotalDisplay(updatedItem.quantity);
           }
           refreshSummary(updatedCart);
         }, 1500); // Wait for WCP calculations to complete
@@ -1213,12 +1223,17 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(cart => {
         document.querySelectorAll('tr[data-variant-id]').forEach(row => {
           const qtyInput = row.querySelector('.qty');
-          const totalCell = row.querySelector('.total');
+          const totalCell = row.querySelector('.total-cell');
+          const priceCell = row.querySelector('.price-cell .current-price');
           const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
           const remBtn = row.querySelector('.remove-variant');
           
           qtyInput.value = 0;
-          totalCell.textContent = formatPrice(0);
+          totalCell.innerHTML = '<span class="total-amount">$0.00</span>';
+          if (priceCell) {
+            const msrpPrice = parseInt(row.dataset.msrpPrice, 10);
+            priceCell.innerHTML = formatPrice(msrpPrice);
+          }
           decBtn.disabled = true;
           remBtn.classList.add('hidden');
         });
