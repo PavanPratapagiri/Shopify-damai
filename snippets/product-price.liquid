@@ -11,10 +11,8 @@
 <div class="product__block__price" style="--PB: {{ block.settings.padding_bottom }}px;" {{ block.shopify_attributes }}>
   <div class="product__price__wrap">
     <div class="product__price__main" data-price-wrapper>
-      <div class="product__price__msrp">
-        <span class="product__price__msrp__label">MSRP</span>
-      </div>
       <span class="product__price {{ price_size_class }}">
+        <span class="product__price__msrp__label">MSRP</span>
         <span data-product-price {% if current_variant.compare_at_price > current_variant.price %} class="product__price--sale"{% endif %}
           data-wpd-product-handle="{{ product.handle }}"         
           data-wpd-variant-id="{{ current_variant.id }}"         
