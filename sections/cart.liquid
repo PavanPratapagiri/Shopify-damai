@@ -280,14 +280,42 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function(){
+    {% if wcp_wholesale_customer == true %}
+    // For wholesale customers, wait for WCP data before enabling reload
     setTimeout(function(){
-    var x=document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
-    for (var i = 0; i < x.length; i++) {
-      x[i].addEventListener('click', function(){
-        setTimeout(function(){window.location.reload();},2500);
-      }, false);
-    }
-    },2500);
+      var x=document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
+      for (var i = 0; i < x.length; i++) {
+        x[i].addEventListener('click', function(){
+          // Wait longer for WCP to recalculate prices
+          setTimeout(function(){
+            // Check if WCP data is loaded before reloading
+            var checkWCPInterval = setInterval(function(){
+              if(window.wcp_data && window.wcp_data.discounted_hash){
+                clearInterval(checkWCPInterval);
+                window.location.reload();
+              }
+            }, 100);
+            
+            // Fallback: reload after 3.5 seconds even if WCP not detected
+            setTimeout(function(){
+              clearInterval(checkWCPInterval);
+              window.location.reload();
+            }, 3500);
+          }, 500);
+        }, false);
+      }
+    }, 2500);
+    {% else %}
+    // For regular customers, use standard timing
+    setTimeout(function(){
+      var x=document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
+      for (var i = 0; i < x.length; i++) {
+        x[i].addEventListener('click', function(){
+          setTimeout(function(){window.location.reload();},2500);
+        }, false);
+      }
+    }, 2500);
+    {% endif %}
   }, false);
 </script>
             

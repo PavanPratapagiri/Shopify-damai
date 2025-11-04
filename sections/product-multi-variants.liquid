@@ -817,6 +817,23 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
           document.dispatchEvent(new Event('cartUpdateComplete'));
         }, 100);
+        
+        // Wait for wholesale pricing to recalculate before refreshing display
+        {% if wcp_wholesale_customer == true %}
+        // For wholesale customers, wait for WCP to recalculate prices
+        setTimeout(async function() {
+          // Fetch updated cart with wholesale prices applied
+          const updatedCart = await fetch('/cart.js').then(r => r.json());
+          const updatedItem = updatedCart.items.find(i => i.variant_id == vid);
+          
+          // Update display with wholesale prices
+          if (updatedItem) {
+            qtyInput.value = updatedItem.quantity;
+            totalCell.textContent = formatPrice(updatedItem.line_price);
+          }
+          refreshSummary(updatedCart);
+        }, 1500); // Wait for WCP calculations to complete
+        {% endif %}
       } catch (error) {
         console.error('Failed to handle response:', error);
         loadingSvg.classList.add('hidden');
