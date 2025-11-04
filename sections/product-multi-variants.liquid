@@ -617,18 +617,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize the quantity display and button states
     async function initializeRow() {
-      const cart = await fetch('/cart.js').then(r => r.json());
-      const item = cart.items.find(i => i.variant_id == vid);
-      const qty = item ? item.quantity : 0;
-      
-      qtyInput.value = qty;
-      totalCell.textContent = formatPrice(item ? item.line_price : 0);
-      decBtn.disabled = qty < 1;
-      
-      if (qty === 0) {
-        remBtn.classList.add('hidden');
-      } else {
-        remBtn.classList.remove('hidden');
+      try {
+        const cart = await fetch('/cart.js').then(r => r.json());
+        const item = cart.items.find(i => i.variant_id == vid);
+        const qty = item ? item.quantity : 0;
+        
+        qtyInput.value = qty;
+        totalCell.textContent = formatPrice(item ? item.line_price : 0);
+        decBtn.disabled = qty < 1;
+        incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
+        
+        if (qty === 0) {
+          remBtn.classList.add('hidden');
+        } else {
+          remBtn.classList.remove('hidden');
+        }
+        
+        // Update summary on init
+        refreshSummary(cart);
+      } catch (error) {
+        console.error('Failed to initialize row:', error);
       }
     }
 
@@ -636,11 +644,11 @@ document.addEventListener('DOMContentLoaded', function() {
       loadingSvg.classList.remove('hidden');
       btn.classList.add('hidden');
       
-      const cart = await fetch('/cart.js').then(r => r.json());
-      const item = cart.items.find(i => i.variant_id == vid);
-      const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
-      
       try {
+        const cart = await fetch('/cart.js').then(r => r.json());
+        const item = cart.items.find(i => i.variant_id == vid);
+        const lineIndex = cart.items.findIndex(i => i.variant_id == vid) + 1;
+        
         if (item && newQty > 0) {
           // Update existing item
           await updateCart(newQty, lineIndex);
@@ -656,29 +664,38 @@ document.addEventListener('DOMContentLoaded', function() {
         await handleResponse();
       } catch (error) {
         console.error('Cart update failed:', error);
+        // Revert to previous value on error
+        await initializeRow();
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
       }
     }
 
     async function handleResponse() {
-      const cart = await fetch('/cart.js').then(r => r.json());
-      const item = cart.items.find(i => i.variant_id == vid);
-      const qty = item ? item.quantity : 0;
-      
-      qtyInput.value = qty;
-      totalCell.textContent = formatPrice(item ? item.line_price : 0);
-      decBtn.disabled = qty < 1;
-      
-      if (qty === 0) {
-        remBtn.classList.add('hidden');
-      } else {
-        remBtn.classList.remove('hidden');
+      try {
+        const cart = await fetch('/cart.js').then(r => r.json());
+        const item = cart.items.find(i => i.variant_id == vid);
+        const qty = item ? item.quantity : 0;
+        
+        qtyInput.value = qty;
+        totalCell.textContent = formatPrice(item ? item.line_price : 0);
+        decBtn.disabled = qty < 1;
+        incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
+        
+        if (qty === 0) {
+          remBtn.classList.add('hidden');
+        } else {
+          remBtn.classList.remove('hidden');
+        }
+        
+        loadingSvg.classList.add('hidden');
+        btn.classList.remove('hidden');
+        refreshSummary(cart);
+      } catch (error) {
+        console.error('Failed to handle response:', error);
+        loadingSvg.classList.add('hidden');
+        btn.classList.remove('hidden');
       }
-      
-      loadingSvg.classList.add('hidden');
-      btn.classList.remove('hidden');
-      refreshSummary(cart);
     }
 
     // Initialize on page load
