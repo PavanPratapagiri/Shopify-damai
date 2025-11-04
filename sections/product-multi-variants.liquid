@@ -768,8 +768,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const subtotal = document.querySelector('.summary .price');
     
     btn.disabled = cart.item_count === 0;
-    count.textContent = cart.item_count;
-    subtotal.innerText = formatPrice(cart.total_price);
+    if (count) count.textContent = cart.item_count;
+    if (subtotal) subtotal.textContent = formatPrice(cart.total_price);
   }
 
   // — wire up each variant row —
