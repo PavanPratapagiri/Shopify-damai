@@ -1,1 +1,175 @@
-{"sections":{"section_double_3AtGb4":{"type":"section-double","blocks":{"text_YdVech":{"type":"text","settings":{"kicker":"Experience the beauty and craftsmanship of Bali while growing your business with Damai Designs.","title":"","text":"<ul><li>Access to exclusive, handcrafted sterling silver jewelry designed with authenticity and artistry.<\/li><li>Competitive wholesale pricing with strong profit margins for retailers.<\/li><li>Reliable production and timely fulfillment from our vertically integrated team.<\/li><li>Dedicated account support to help you curate collections tailored to your customers.<\/li><li>Marketing assets and professional photography to help you promote and sell with ease.<\/li><\/ul><p>Join our family of retail partners today — create your wholesale account and start offering your customers the timeless elegance of Damai Designs.<\/p>","font_size":4,"text_columns":1,"align_text":"text-center","button_text":"Become a Retail Partner","button_url":"https:\/\/damaidesigns.com\/apps\/wpdapp","button_color":"btn--secondary","button_style":"btn-text-thick-line","text_color":"text--neutral","bg_color":""}},"image_AtBFzT":{"type":"image","settings":{"image":"shopify:\/\/shop_images\/2025_08_Damai_Designs_BY_RICARDO_SOLIS_02_124c0139-73ed-4da5-9d95-0ee35e342a92.jpg","overlay_opacity":0,"overlay_color":"#000000","enable_overlay_text":false,"kicker":"","title":"","richtext":"","text_align":"align--middle-center","text_color":"text--white","link_text":"","link":"https:\/\/damaidesigns.com\/apps\/wpdapp","button_color":"btn--white","button_style":"btn"}}},"block_order":["text_YdVech","image_AtBFzT"],"disabled":true,"name":"Image with text","settings":{"height":"use_screen_one_fifth","brick_gutter":0,"borders":false,"bg_color":"","width":"wrapper","padding_top":10,"padding_bottom":10}},"main":{"type":"customer-login","settings":{}},"section_hero_KaD3hR":{"type":"section-hero","blocks":{"spacer_qMk6iP":{"type":"spacer","settings":{"spacer_padding":20,"show_line":false}},"kicker_yCJU73":{"type":"kicker","disabled":true,"settings":{"kicker":"Welcome!!","enable_line":false,"text_size":4}},"text_3Bhtj4":{"type":"text","settings":{"richtext":"<p>We look forward to partnering with you and serving your fine sterling silver jewelry procurement needs.<\/p>","text_size":7}},"heading_wyK79n":{"type":"heading","settings":{"title":"Welcome to the World of Damai!","text_size":6}},"spacer_ggYFYd":{"type":"spacer","settings":{"spacer_padding":40,"show_line":false}},"image_eBr9j6":{"type":"image","settings":{"image":"shopify:\/\/shop_images\/Final-Logo-Rectangle.png","image_max_limit":260,"image_link":""}},"button_Q9WKn9":{"type":"button","disabled":true,"settings":{"link_text_1":"Become a Retail Partner","link_1":"https:\/\/damaidesigns.com\/apps\/wpdapp","button_size_1":"btn--long","button_style_1":"btn","button_color_1":"btn--white","link_text_2":"","link_2":"","button_size_2":"btn--long","button_style_2":"btn-text-thick-line","button_color_2":"btn--white","link_text_3":"","link_3":"","button_size_3":"btn--long","button_style_3":"btn-text-thick-line","button_color_3":"btn--white"}}},"block_order":["spacer_qMk6iP","kicker_yCJU73","text_3Bhtj4","heading_wyK79n","spacer_ggYFYd","image_eBr9j6","button_Q9WKn9"],"name":"Image banner","settings":{"image":"shopify:\/\/shop_images\/2025_08_Damai_Designs_BY_RICARDO_SOLIS_08_dcaeac0a-51c2-474a-b0a3-1aef780bd637.jpg","mobile_image":"shopify:\/\/shop_images\/2025_08_Damai_Designs_BY_RICARDO_SOLIS_11_bc6e06b6-98a7-4af1-abd3-4e3f0e66233e.jpg","height":"use_screen_two_thirds","overlay_opacity":0,"overlay_color":"#424242","enable_overlay_text":false,"preload_image":true,"content_width":700,"text_align":"align--middle-right","text_color":"text--secondary","color_bg":"hero__content--transparent","width":"wrapper--none","padding_top":0,"padding_bottom":0}}},"order":["section_double_3AtGb4","main","section_hero_KaD3hR"]}
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "section_double_3AtGb4": {
+      "type": "section-double",
+      "blocks": {
+        "text_YdVech": {
+          "type": "text",
+          "settings": {
+            "kicker": "Experience the beauty and craftsmanship of Bali while growing your business with Damai Designs.",
+            "title": "",
+            "text": "<ul><li>Access to exclusive, handcrafted sterling silver jewelry designed with authenticity and artistry.</li><li>Competitive wholesale pricing with strong profit margins for retailers.</li><li>Reliable production and timely fulfillment from our vertically integrated team.</li><li>Dedicated account support to help you curate collections tailored to your customers.</li><li>Marketing assets and professional photography to help you promote and sell with ease.</li></ul><p>Join our family of retail partners today — create your wholesale account and start offering your customers the timeless elegance of Damai Designs.</p>",
+            "font_size": 4,
+            "text_columns": 1,
+            "align_text": "text-center",
+            "button_text": "Become a Retail Partner",
+            "button_url": "https://damaidesigns.com/apps/wpdapp",
+            "button_color": "btn--secondary",
+            "button_style": "btn-text-thick-line",
+            "text_color": "text--neutral",
+            "bg_color": ""
+          }
+        },
+        "image_AtBFzT": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/2025_08_Damai_Designs_BY_RICARDO_SOLIS_02_124c0139-73ed-4da5-9d95-0ee35e342a92.jpg",
+            "overlay_opacity": 0,
+            "overlay_color": "#000000",
+            "enable_overlay_text": false,
+            "kicker": "",
+            "title": "",
+            "richtext": "",
+            "text_align": "align--middle-center",
+            "text_color": "text--white",
+            "link_text": "",
+            "link": "https://damaidesigns.com/apps/wpdapp",
+            "button_color": "btn--white",
+            "button_style": "btn"
+          }
+        }
+      },
+      "block_order": [
+        "text_YdVech",
+        "image_AtBFzT"
+      ],
+      "disabled": true,
+      "name": "Image with text",
+      "settings": {
+        "height": "use_screen_one_fifth",
+        "brick_gutter": 0,
+        "borders": false,
+        "bg_color": "",
+        "width": "wrapper",
+        "padding_top": 10,
+        "padding_bottom": 10
+      }
+    },
+    "main": {
+      "type": "customer-login",
+      "settings": {}
+    },
+    "section_hero_KaD3hR": {
+      "type": "section-hero",
+      "blocks": {
+        "spacer_qMk6iP": {
+          "type": "spacer",
+          "settings": {
+            "spacer_padding": 20,
+            "show_line": false
+          }
+        },
+        "kicker_yCJU73": {
+          "type": "kicker",
+          "disabled": true,
+          "settings": {
+            "kicker": "Welcome!!",
+            "enable_line": false,
+            "text_size": 4
+          }
+        },
+        "text_3Bhtj4": {
+          "type": "text",
+          "settings": {
+            "richtext": "<p>We look forward to partnering with you and serving your fine sterling silver jewelry procurement needs.</p>",
+            "text_size": 7
+          }
+        },
+        "heading_wyK79n": {
+          "type": "heading",
+          "settings": {
+            "title": "Welcome to the World of Damai!",
+            "text_size": 6
+          }
+        },
+        "spacer_ggYFYd": {
+          "type": "spacer",
+          "settings": {
+            "spacer_padding": 40,
+            "show_line": false
+          }
+        },
+        "image_eBr9j6": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/Final-Logo-Rectangle.png",
+            "image_max_limit": 260,
+            "image_link": ""
+          }
+        },
+        "button_Q9WKn9": {
+          "type": "button",
+          "disabled": true,
+          "settings": {
+            "link_text_1": "Become a Retail Partner",
+            "link_1": "https://damaidesigns.com/apps/wpdapp",
+            "button_size_1": "btn--long",
+            "button_style_1": "btn",
+            "button_color_1": "btn--white",
+            "link_text_2": "",
+            "link_2": "",
+            "button_size_2": "btn--long",
+            "button_style_2": "btn-text-thick-line",
+            "button_color_2": "btn--white",
+            "link_text_3": "",
+            "link_3": "",
+            "button_size_3": "btn--long",
+            "button_style_3": "btn-text-thick-line",
+            "button_color_3": "btn--white"
+          }
+        }
+      },
+      "block_order": [
+        "spacer_qMk6iP",
+        "kicker_yCJU73",
+        "text_3Bhtj4",
+        "heading_wyK79n",
+        "spacer_ggYFYd",
+        "image_eBr9j6",
+        "button_Q9WKn9"
+      ],
+      "disabled": true,
+      "name": "Image banner",
+      "settings": {
+        "image": "shopify://shop_images/2025_08_Damai_Designs_BY_RICARDO_SOLIS_08_dcaeac0a-51c2-474a-b0a3-1aef780bd637.jpg",
+        "mobile_image": "shopify://shop_images/2025_08_Damai_Designs_BY_RICARDO_SOLIS_11_bc6e06b6-98a7-4af1-abd3-4e3f0e66233e.jpg",
+        "height": "use_screen_two_thirds",
+        "overlay_opacity": 0,
+        "overlay_color": "#424242",
+        "enable_overlay_text": false,
+        "preload_image": true,
+        "content_width": 700,
+        "text_align": "align--middle-right",
+        "text_color": "text--secondary",
+        "color_bg": "hero__content--transparent",
+        "width": "wrapper--none",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    }
+  },
+  "order": [
+    "section_double_3AtGb4",
+    "main",
+    "section_hero_KaD3hR"
+  ]
+}
