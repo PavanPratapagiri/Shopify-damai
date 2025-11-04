@@ -2,6 +2,19 @@
   .product-section-variants{
     margin-bottom: 50px;
   }
+  
+  .product-quantity-heading {
+    font-size: 24px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 20px;
+  }
+  
+  .product-quantity-heading .quantity-count {
+    color: #000;
+    font-weight: 700;
+  }
+  
   /* — Variant table — */
 .variant-table {
   width: 100%;
@@ -302,6 +315,10 @@
 
 <div class="wrapper">
   <div class="product-section-variants">
+    <h2 class="product-quantity-heading">
+      Products in Cart: <span class="quantity-count">{{ cart.item_count }}</span>
+    </h2>
+    
     <table class="variant-table">
       <thead>
         <tr>
@@ -599,10 +616,16 @@ document.addEventListener('DOMContentLoaded', function() {
   function refreshSummary(cart) {
     const count = document.querySelector('.action-total strong');
     const subtotal = document.querySelector('.summary .price');
+    const quantityHeading = document.querySelector('.product-quantity-heading .quantity-count');
     
     btn.disabled = cart.item_count === 0;
     count.textContent = cart.item_count;
     subtotal.innerText = formatPrice(cart.total_price);
+    
+    // Update the heading quantity
+    if (quantityHeading) {
+      quantityHeading.textContent = cart.item_count;
+    }
   }
 
   // — wire up each variant row —
