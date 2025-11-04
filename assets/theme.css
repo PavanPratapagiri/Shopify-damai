@@ -7852,6 +7852,20 @@ input[type=search]::-webkit-search-decoration {
 /* ============================================================================
   #Typography
 ============================================================================== */
+
+/* Custom MSRP styling */
+.product__price__msrp {
+  margin-bottom: 8px;
+}
+
+.product__price__msrp__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-color);
+  opacity: 0.8;
+}
 /* stylelint-disable selector-list-comma-newline-after */
 :root {
   --leading-none: 1;
