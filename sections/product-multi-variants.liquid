@@ -382,7 +382,7 @@
               {%- assign variant_qty = item.quantity -%}
               {%- assign variant_key = item.key -%}
               {%- assign line_price = item.line_price -%}
-              {%- assign discounted_total = variant.price | times: variant_qty -%}
+              {%- assign discounted_total = item.final_line_price -%}
             {% endif %}
           {% endfor %}
           <tr
