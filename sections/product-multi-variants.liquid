@@ -821,6 +821,22 @@ document.addEventListener('DOMContentLoaded', function() {
       return priceCents * quantity;
     }
 
+    // Initialize button states on page load (use server-rendered values)
+    updateButtonStates();
+    
+    // Initialize the total display based on current quantity
+    const initialQty = parseInt(qtyInput.value) || 0;
+    if (initialQty > 0) {
+      totalCell.textContent = formatPrice(calculateDiscountedTotal(initialQty));
+    }
+    
+    // Fetch initial cart state for summary (only once)
+    if (!processedVariants.size) {
+      fetch('/cart.js').then(r => r.json()).then(cart => {
+        refreshSummary(cart);
+      });
+    }
+
     async function handleCartUpdate(newQty) {
       // Prevent multiple simultaneous updates for same variant
       if (updateQueue.has(vid)) {
@@ -922,16 +938,6 @@ document.addEventListener('DOMContentLoaded', function() {
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
       }
-    }
-
-    // Initialize button states on page load (use server-rendered values)
-    updateButtonStates();
-    
-    // Fetch initial cart state for summary
-    if (!processedVariants.size) {
-      fetch('/cart.js').then(r => r.json()).then(cart => {
-        refreshSummary(cart);
-      });
     }
 
     // Listen for quantity changes from the custom element - only attach once per variant
