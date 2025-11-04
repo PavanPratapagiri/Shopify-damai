@@ -127,7 +127,7 @@
             "richtext": "",
             "text_align": "align--middle-center",
             "text_color": "text--white",
-            "link_text": "Shop Now",
+            "link_text": "",
             "link": "",
             "button_color": "btn--white",
             "button_style": "btn"
@@ -165,12 +165,79 @@
         "padding_top": 36,
         "padding_bottom": 36
       }
+    },
+    "section_hero_TRKVaE": {
+      "type": "section-hero",
+      "blocks": {
+        "kicker_4rcXrQ": {
+          "type": "kicker",
+          "settings": {
+            "kicker": "Welcome to the World of Damai!",
+            "enable_line": false,
+            "text_size": 5
+          }
+        },
+        "heading_XFjUxf": {
+          "type": "heading",
+          "disabled": true,
+          "settings": {
+            "title": "Image banner",
+            "text_size": 10
+          }
+        },
+        "text_nePMAY": {
+          "type": "text",
+          "settings": {
+            "richtext": "<p>We look forward to partnering with you and serving your fine sterling silver jewelry procurement needs.</p>",
+            "text_size": 7
+          }
+        },
+        "spacer_M9LECX": {
+          "type": "spacer",
+          "settings": {
+            "spacer_padding": 40,
+            "show_line": false
+          }
+        },
+        "image_qdEfHK": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/Final-Logo-Rectangle.png",
+            "image_max_limit": 230,
+            "image_link": ""
+          }
+        }
+      },
+      "block_order": [
+        "kicker_4rcXrQ",
+        "heading_XFjUxf",
+        "text_nePMAY",
+        "spacer_M9LECX",
+        "image_qdEfHK"
+      ],
+      "name": "Image banner",
+      "settings": {
+        "image": "shopify://shop_images/2025_08_Damai_Designs_BY_RICARDO_SOLIS_08_dcaeac0a-51c2-474a-b0a3-1aef780bd637.jpg",
+        "height": "use_screen_two_thirds",
+        "overlay_opacity": 0,
+        "overlay_color": "#000",
+        "enable_overlay_text": false,
+        "preload_image": false,
+        "content_width": 700,
+        "text_align": "align--middle-right",
+        "text_color": "text--secondary",
+        "color_bg": "hero__content--transparent",
+        "width": "wrapper--none",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
     }
   },
   "order": [
     "main",
     "section_double_PkinzT",
     "section_hero_PNytrn",
-    "section_double_t3qBy3"
+    "section_double_t3qBy3",
+    "section_hero_TRKVaE"
   ]
 }
