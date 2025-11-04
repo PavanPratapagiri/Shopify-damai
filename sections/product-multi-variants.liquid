@@ -536,15 +536,15 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
 {% endif %}
  
 {% if wcp_wholesale_customer == true %}
- <script></script>
+<script>
   document.addEventListener('DOMContentLoaded', function(){
     setTimeout(function(){
-    var x=document.querySelectorAll("ma-quantity-input .MA-quantity__button , ma-quantity-input .MA-quantity__input, .product-section-variants .remove-variant");
-    for (var i = 0; i < x.length; i++) {
-      x[i].addEventListener('click', function(){
-        setTimeout(function(){window.location.reload();},2500);
-      }, false);
-    }
+      var x=document.querySelectorAll("ma-quantity-input .MA-quantity__button , ma-quantity-input .MA-quantity__input, .product-section-variants .remove-variant");
+      for (var i = 0; i < x.length; i++) {
+        x[i].addEventListener('click', function(){
+          setTimeout(function(){window.location.reload();},2500);
+        }, false);
+      }
     },2500);
   }, false);
 </script>
@@ -560,16 +560,19 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
 
       // wire up input change and button clicks
       this.input.addEventListener('change', this.onInputChange.bind(this));
+      this.input.addEventListener('input', this.onInputChange.bind(this));
       this.querySelectorAll('button').forEach(button =>
         button.addEventListener('click', this.onButtonClick.bind(this))
       );
     }
 
-    onInputChange() {
+    onInputChange(event) {
       // enforce min/max every time the user types a value
       this.validateQtyRules();
-      // Trigger cart update when user manually changes input
-      this.updateCartFromInput();
+      // Only trigger cart update on 'change' event (when user is done typing)
+      if (event.type === 'change') {
+        this.updateCartFromInput();
+      }
     }
 
     updateCartFromInput() {
@@ -579,7 +582,8 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
       
       // Find and trigger the update function for this variant
       const updateEvent = new CustomEvent('quantityChanged', {
-        detail: { variantId: vid, quantity: newQty }
+        detail: { variantId: vid, quantity: newQty },
+        bubbles: true
       });
       document.dispatchEvent(updateEvent);
     }
@@ -615,13 +619,13 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
       // disable "–" if at or below min
       if (this.input.min) {
         const btnMinus = this.querySelector("button[name='minus']");
-        btnMinus.disabled = val < parseInt(this.input.min, 10);
+        if (btnMinus) btnMinus.disabled = val <= parseInt(this.input.min, 10);
       }
 
       // disable "+" if at or above max
       if (this.input.max) {
         const btnPlus = this.querySelector("button[name='plus']");
-        btnPlus.disabled = val >= parseInt(this.input.max, 10);
+        if (btnPlus) btnPlus.disabled = val >= parseInt(this.input.max, 10);
       }
     }
   }
@@ -650,7 +654,7 @@ document.addEventListener('DOMContentLoaded', function() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ line: lineIndex, quantity: quantity })
-    })
+    }).then(res => res.json());
   }
 
   async function addCart(variantId, quantity) {
@@ -690,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         qtyInput.value = qty;
         totalCell.textContent = formatPrice(item ? item.line_price : 0);
-        decBtn.disabled = qty < 1;
+        decBtn.disabled = qty <= 0;
         incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
         
         if (qty === 0) {
@@ -745,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         qtyInput.value = qty;
         totalCell.textContent = formatPrice(item ? item.line_price : 0);
-        decBtn.disabled = qty < 1;
+        decBtn.disabled = qty <= 0;
         incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
         
         if (qty === 0) {
