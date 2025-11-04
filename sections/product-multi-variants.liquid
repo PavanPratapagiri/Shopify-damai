@@ -307,7 +307,7 @@
         <tr>
           <th>SKU</th>
           <th class="quantity-heading">Quantity</th>
-          <th class="price-heading">Price(MSRP)</th>
+          <th class="price-heading">M.S.R.Price</th>
           <th class="total-heading">Total</th>
         </tr>
       </thead>
@@ -368,7 +368,7 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                 <button type="button" name="minus" class="MA-quantity__button">−</button>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   max="10"
                   step="1"
                   value="{{ variant_qty }}"
@@ -549,7 +549,7 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
       // disable "–" if at or below min
       if (this.input.min) {
         const btnMinus = this.querySelector("button[name='minus']");
-        btnMinus.disabled = val <= parseInt(this.input.min, 10);
+        btnMinus.disabled = val < parseInt(this.input.min, 10);
       }
 
       // disable "+" if at or above max
@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       qtyInput.value = qty;
       totalCell.textContent = formatPrice(item ? item.line_price : 0);
-      decBtn.disabled = qty <= 1;
+      decBtn.disabled = qty < 1;
       
       if (qty === 0) {
         remBtn.classList.add('hidden');
@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       qtyInput.value = qty;
       totalCell.textContent = formatPrice(item ? item.line_price : 0);
-      decBtn.disabled = qty <= 1;
+      decBtn.disabled = qty < 1;
       
       if (qty === 0) {
         remBtn.classList.add('hidden');
