@@ -84,54 +84,16 @@
     "section_hero_PNytrn": {
       "type": "section-hero",
       "blocks": {
-        "kicker_PYg3qX": {
-          "type": "kicker",
-          "settings": {
-            "kicker": "Introducing",
-            "enable_line": false,
-            "text_size": 4
-          }
-        },
-        "heading_xBqXzc": {
-          "type": "heading",
-          "settings": {
-            "title": "Image banner",
-            "text_size": 10
-          }
-        },
         "text_xhCKPz": {
           "type": "text",
           "settings": {
-            "richtext": "<p>This area is used to describe your store.</p>",
+            "richtext": "<p>Damai is building a brand that blends innovation with tradition—creating modern, handcrafted jewelry that stays true to authentic artistry while continually pushing the boundaries of design.</p>",
             "text_size": 6
-          }
-        },
-        "button_664eKN": {
-          "type": "button",
-          "settings": {
-            "link_text_1": "View products",
-            "link_1": "",
-            "button_size_1": "btn--long",
-            "button_style_1": "btn",
-            "button_color_1": "btn--white",
-            "link_text_2": "Learn more",
-            "link_2": "",
-            "button_size_2": "btn--long",
-            "button_style_2": "btn-text-thick-line",
-            "button_color_2": "btn--white",
-            "link_text_3": "",
-            "link_3": "",
-            "button_size_3": "btn--long",
-            "button_style_3": "btn-text-thick-line",
-            "button_color_3": "btn--white"
           }
         }
       },
       "block_order": [
-        "kicker_PYg3qX",
-        "heading_xBqXzc",
-        "text_xhCKPz",
-        "button_664eKN"
+        "text_xhCKPz"
       ],
       "name": "Image banner",
       "settings": {
