@@ -81,112 +81,33 @@
     overflow: hidden;
     background: #fff;
     min-width: 140px;
-    position: relative;
-    transition: all 0.3s ease;
   }
-
-  ma-quantity-input.updating {
-    opacity: 0.6;
-    pointer-events: none;
-  }
-
-  ma-quantity-input.error {
-    border-color: #d9534f;
-    animation: shake 0.5s;
-  }
-
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-  }
-
-  ma-quantity-input.success {
-    border-color: #5cb85c;
-  }
-
 .variant-table .quantity-cell {
   display: flex;
   align-items: center;
   gap: 15px;
   padding-block: 17px; 
   justify-content: center;
-  position: relative;
 }
 
-.variant-table .quantity-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  width: 100%;
+.variant-table .stock-cell {
+  text-align: center;
+  font-size: 16px;
+  color: #000;
 }
 
-.variant-table .quick-select {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.variant-table .quick-select-btn {
-  padding: 4px 10px;
-  font-size: 11px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 600;
-  color: #333;
-}
-
-.variant-table .quick-select-btn:hover {
-  background: #e0e0e0;
-  border-color: #bbb;
-}
-
-.variant-table .quick-select-btn.active {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-.variant-table .quantity-error {
-  position: absolute;
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
+.variant-table .stock-cell.low-stock {
   color: #d9534f;
-  white-space: nowrap;
-  animation: fadeIn 0.3s;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(-5px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+.variant-table .stock-cell.out-of-stock {
+  color: #999;
 }
 
-.variant-table .undo-action {
-  position: absolute;
-  top: -25px;
-  right: 0;
+.variant-table .quantity-cell .stock-info {
   font-size: 11px;
-  color: #0066cc;
-  cursor: pointer;
-  text-decoration: underline;
-  display: none;
-  animation: slideDown 0.3s;
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.variant-table .undo-action.show {
-  display: block;
+  color: #666;
+  font-weight: 500;
 }
 
 .qty-btn {
@@ -222,17 +143,11 @@
     justify-content: center;
     color: #000;
     padding: 0;
-    transition: all 0.2s ease;
-    position: relative;
+    transition: background-color 0.2s;
 }
 
   .MA-quantity__button:hover:not(:disabled) {
     background-color: #e0e0e0;
-    transform: scale(1.05);
-  }
-
-  .MA-quantity__button:active:not(:disabled) {
-    transform: scale(0.95);
   }
 
   .MA-quantity__button:disabled{
@@ -255,21 +170,10 @@
     margin: 0px;
     padding: 10px 6px;
     min-height: 40px;
-    transition: all 0.2s ease;
 }
 
   .product-section-variants .MA-quantity__input:focus {
     outline: none;
-    background-color: #f9f9f9;
-  }
-
-  .product-section-variants .MA-quantity__input.changed {
-    animation: pulse 0.3s;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
   }
   
 .remove-variant {
@@ -443,15 +347,6 @@
       color: #666;
       margin-top: 5px;
     }
-    .variant-table .quick-select {
-      order: 2;
-    }
-    .variant-table .undo-action {
-      top: auto;
-      bottom: -25px;
-      right: 50%;
-      transform: translateX(50%);
-    }
     .action-btns{
       order: 3;
     }
@@ -527,27 +422,18 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
               </span>
             </td>
             <td class="quantity-cell">
-              <div class="quantity-wrapper">
-                <ma-quantity-input>
-                  <button type="button" name="minus" class="MA-quantity__button">−</button>
-                  <input
-                    type="number"
-                    min="0"
-                    max="{{ variant.inventory_quantity }}"
-                    step="1"
-                    value="{{ variant_qty }}"
-                    class="MA-quantity__input qty"
-                  />
-                  <button type="button" name="plus" class="MA-quantity__button">+</button>
-                </ma-quantity-input>
-                <div class="quick-select">
-                  <button type="button" class="quick-select-btn" data-qty="1">1</button>
-                  <button type="button" class="quick-select-btn" data-qty="5">5</button>
-                  <button type="button" class="quick-select-btn" data-qty="10">10</button>
-                </div>
-                <div class="quantity-error hidden">Invalid quantity</div>
-                <div class="undo-action hidden">Undo</div>
-              </div>
+              <ma-quantity-input>
+                <button type="button" name="minus" class="MA-quantity__button">−</button>
+                <input
+                  type="number"
+                  min="0"
+                  max="{{ variant.inventory_quantity }}"
+                  step="1"
+                  value="{{ variant_qty }}"
+                  class="MA-quantity__input qty"
+                />
+                <button type="button" name="plus" class="MA-quantity__button">+</button>
+              </ma-quantity-input>
               <div class="stock-info-mobile">In stock: {{ variant.inventory_quantity }}</div>
               <button class="remove-variant {% if variant_qty == 0 %}hidden{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true" focusable="false" class="icon icon-remove">
@@ -671,44 +557,12 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
       super();
       this.input = this.querySelector('input');
       this.changeEvent = new Event('change', { bubbles: true });
-      this.debounceTimer = null;
-      this.previousValue = this.input.value;
 
       // wire up input change and button clicks
       this.input.addEventListener('change', this.onInputChange.bind(this));
-      this.input.addEventListener('keydown', this.onKeyDown.bind(this));
-      this.input.addEventListener('input', this.onInputTyping.bind(this));
-      
       this.querySelectorAll('button').forEach(button =>
         button.addEventListener('click', this.onButtonClick.bind(this))
       );
-    }
-
-    onKeyDown(event) {
-      // Arrow up/down for increment/decrement
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        this.querySelector("button[name='plus']").click();
-      } else if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        this.querySelector("button[name='minus']").click();
-      }
-    }
-
-    onInputTyping(event) {
-      // Add visual feedback
-      this.input.classList.add('changed');
-      setTimeout(() => this.input.classList.remove('changed'), 300);
-      
-      // Clear previous timer
-      if (this.debounceTimer) {
-        clearTimeout(this.debounceTimer);
-      }
-      
-      // Debounce the update
-      this.debounceTimer = setTimeout(() => {
-        this.validateQtyRules();
-      }, 500);
     }
 
     onInputChange() {
@@ -722,9 +576,6 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
       const row = this.closest('tr[data-variant-id]');
       const vid = row.dataset.variantId;
       const newQty = parseInt(this.input.value) || 0;
-      
-      // Store previous value for undo
-      this.previousValue = this.input.value;
       
       // Find and trigger the update function for this variant
       const updateEvent = new CustomEvent('quantityChanged', {
@@ -760,44 +611,18 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ line_price | money }}</td>
 
     validateQtyRules() {
       const val = this.input.valueAsNumber || 0;
-      const max = parseInt(this.input.max, 10);
-      const min = parseInt(this.input.min, 10);
-
-      // Check if value exceeds max
-      if (max && val > max) {
-        this.showError(`Maximum quantity is ${max}`);
-        this.input.value = max;
-      }
 
       // disable "–" if at or below min
       if (this.input.min) {
         const btnMinus = this.querySelector("button[name='minus']");
-        btnMinus.disabled = val <= min;
+        btnMinus.disabled = val < parseInt(this.input.min, 10);
       }
 
       // disable "+" if at or above max
       if (this.input.max) {
         const btnPlus = this.querySelector("button[name='plus']");
-        btnPlus.disabled = val >= max;
+        btnPlus.disabled = val >= parseInt(this.input.max, 10);
       }
-    }
-
-    showError(message) {
-      this.classList.add('error');
-      const errorEl = this.closest('.quantity-wrapper')?.querySelector('.quantity-error');
-      if (errorEl) {
-        errorEl.textContent = message;
-        errorEl.classList.remove('hidden');
-        setTimeout(() => {
-          errorEl.classList.add('hidden');
-          this.classList.remove('error');
-        }, 3000);
-      }
-    }
-
-    showSuccess() {
-      this.classList.add('success');
-      setTimeout(() => this.classList.remove('success'), 1000);
     }
   }
 
@@ -851,71 +676,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const vid = row.dataset.variantId;
     const priceCents = parseInt(row.dataset.price, 10);
     const qtyInput = row.querySelector('.qty');
-    const quantityInputEl = row.querySelector('ma-quantity-input');
     const totalCell = row.querySelector('.total');
     const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
     const incBtn = row.querySelector(".MA-quantity__button[name='plus']");
     const remBtn = row.querySelector('.remove-variant');
-    const quickSelectBtns = row.querySelectorAll('.quick-select-btn');
-    const undoBtn = row.querySelector('.undo-action');
-    
-    let undoStack = [];
-    let isUpdating = false;
-
-    // Quick select buttons functionality
-    quickSelectBtns.forEach(btn => {
-      btn.addEventListener('click', function() {
-        const selectedQty = parseInt(this.dataset.qty);
-        const maxQty = parseInt(qtyInput.max, 10);
-        
-        // Check if quantity is available
-        if (selectedQty > maxQty) {
-          quantityInputEl.showError(`Only ${maxQty} available`);
-          return;
-        }
-        
-        // Update active state
-        quickSelectBtns.forEach(b => b.classList.remove('active'));
-        
-        if (parseInt(qtyInput.value) === selectedQty) {
-          // If clicking the same quantity, set to 0
-          qtyInput.value = 0;
-        } else {
-          // Set to selected quantity
-          qtyInput.value = selectedQty;
-          this.classList.add('active');
-        }
-        
-        qtyInput.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-    });
-
-    // Update quick select active state based on current value
-    function updateQuickSelectState() {
-      const currentQty = parseInt(qtyInput.value);
-      quickSelectBtns.forEach(btn => {
-        if (parseInt(btn.dataset.qty) === currentQty) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
-    }
-
-    // Undo functionality
-    if (undoBtn) {
-      undoBtn.addEventListener('click', function() {
-        if (undoStack.length > 0) {
-          const previousQty = undoStack.pop();
-          qtyInput.value = previousQty;
-          qtyInput.dispatchEvent(new Event('change', { bubbles: true }));
-          
-          if (undoStack.length === 0) {
-            undoBtn.classList.remove('show');
-          }
-        }
-      });
-    }
 
     // Initialize the quantity display and button states
     async function initializeRow() {
@@ -928,8 +692,6 @@ document.addEventListener('DOMContentLoaded', function() {
         totalCell.textContent = formatPrice(item ? item.line_price : 0);
         decBtn.disabled = qty < 1;
         incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
-        
-        updateQuickSelectState();
         
         if (qty === 0) {
           remBtn.classList.add('hidden');
@@ -945,22 +707,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function handleCartUpdate(newQty) {
-      if (isUpdating) return;
-      
-      isUpdating = true;
-      quantityInputEl.classList.add('updating');
       loadingSvg.classList.remove('hidden');
       btn.classList.add('hidden');
-      
-      // Save to undo stack
-      const currentQty = parseInt(qtyInput.value);
-      if (undoStack.length === 0 || undoStack[undoStack.length - 1] !== currentQty) {
-        undoStack.push(currentQty);
-        if (undoStack.length > 1 && undoBtn) {
-          undoBtn.classList.add('show');
-          setTimeout(() => undoBtn.classList.remove('show'), 5000);
-        }
-      }
       
       try {
         const cart = await fetch('/cart.js').then(r => r.json());
@@ -980,18 +728,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Refresh the display
         await handleResponse();
-        quantityInputEl.showSuccess();
       } catch (error) {
         console.error('Cart update failed:', error);
-        quantityInputEl.showError('Update failed. Please try again.');
         // Revert to previous value on error
-        if (undoStack.length > 0) {
-          qtyInput.value = undoStack[undoStack.length - 1];
-        }
         await initializeRow();
-      } finally {
-        isUpdating = false;
-        quantityInputEl.classList.remove('updating');
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
       }
@@ -1008,17 +748,19 @@ document.addEventListener('DOMContentLoaded', function() {
         decBtn.disabled = qty < 1;
         incBtn.disabled = qty >= parseInt(qtyInput.max, 10);
         
-        updateQuickSelectState();
-        
         if (qty === 0) {
           remBtn.classList.add('hidden');
         } else {
           remBtn.classList.remove('hidden');
         }
         
+        loadingSvg.classList.add('hidden');
+        btn.classList.remove('hidden');
         refreshSummary(cart);
       } catch (error) {
         console.error('Failed to handle response:', error);
+        loadingSvg.classList.add('hidden');
+        btn.classList.remove('hidden');
       }
     }
 
@@ -1049,33 +791,16 @@ document.addEventListener('DOMContentLoaded', function() {
           const totalCell = row.querySelector('.total');
           const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
           const remBtn = row.querySelector('.remove-variant');
-          const quickSelectBtns = row.querySelectorAll('.quick-select-btn');
           
           qtyInput.value = 0;
           totalCell.textContent = formatPrice(0);
           decBtn.disabled = true;
           remBtn.classList.add('hidden');
-          quickSelectBtns.forEach(btn => btn.classList.remove('active'));
         });
         loadingSvg.classList.add('hidden');
         btn.classList.remove('hidden');
         refreshSummary(cart);
       });
-  });
-
-  // Keyboard shortcuts
-  document.addEventListener('keydown', function(event) {
-    // Ctrl/Cmd + A to select all quantities
-    if ((event.ctrlKey || event.metaKey) && event.key === 'a' && event.target.tagName !== 'INPUT') {
-      event.preventDefault();
-      const inputs = document.querySelectorAll('.MA-quantity__input');
-      inputs.forEach(input => {
-        if (input.value === '0') {
-          input.value = '1';
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      });
-    }
   });
 });
 </script>
