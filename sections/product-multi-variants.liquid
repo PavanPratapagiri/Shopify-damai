@@ -743,6 +743,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const currency = "{{ shop.currency }}";
   const locale = "{{ shop.locale | default: "" }}" || navigator.language;
 
+  const discountTiers = [
+    { min: 1, max: 4, discount: 0.39 },
+    { min: 5, max: 9, discount: 0.43 },
+    { min: 10, max: Infinity, discount: 0.45 }
+  ];
+
   let moneyFmt = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: currency
@@ -818,6 +824,23 @@ document.addEventListener('DOMContentLoaded', function() {
       return unitPrice * quantity;
     }
 
+    function getDiscountedPrice(quantity, msrp) {
+      const tier = discountTiers.find(t => quantity >= t.min && quantity <= t.max);
+      if (tier) {
+        return msrp * (1 - tier.discount);
+      }
+      return msrp; // No discount if quantity is 0 or doesn't match any tier
+    }
+
+    function updatePriceAndTotal(quantity) {
+      const newUnitPrice = getDiscountedPrice(quantity, msrpPriceCents);
+      const newTotal = newUnitPrice * quantity;
+      
+      priceCell.textContent = formatPrice(newUnitPrice);
+      totalCell.textContent = formatPrice(newTotal);
+      row.dataset.price = newUnitPrice;
+    }
+
     // Initialize button states on page load (use server-rendered values)
     updateButtonStates();
     
@@ -830,19 +853,23 @@ document.addEventListener('DOMContentLoaded', function() {
           const item = cart.items.find(i => i.variant_id == variantId);
           
           if (item) {
+            const itemQty = item.quantity;
+            const msrp = parseInt(r.dataset.msrpPrice, 10);
+            const discountedPrice = getDiscountedPrice(itemQty, msrp);
+
             // Update data-price with actual discounted unit price from cart
-            r.dataset.price = item.final_price || item.price;
+            r.dataset.price = discountedPrice;
             
             // Update the displayed price if different from base
             const pc = r.querySelector('.price-cell .current-price');
-            if (pc && item.final_price && item.final_price !== item.price) {
-              pc.textContent = formatPrice(item.final_price);
+            if (pc) {
+              pc.textContent = formatPrice(discountedPrice);
             }
             
             // Update total
             const tc = r.querySelector('.total');
             if (tc) {
-              tc.textContent = formatPrice(item.final_line_price || item.line_price);
+              tc.textContent = formatPrice(discountedPrice * itemQty);
             }
           }
         });
@@ -857,6 +884,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return updateQueue.get(vid);
       }
       
+      updatePriceAndTotal(newQty);
+
       if (quantityElement) {
         quantityElement.isUpdating = true;
       }
@@ -920,12 +949,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update data-price with actual discounted unit price
         if (item) {
-          priceCents = item.final_price || item.price;
+          const discountedPrice = getDiscountedPrice(item.quantity, msrpPriceCents);
+          priceCents = discountedPrice;
           row.dataset.price = priceCents;
           
           // Update the displayed unit price if it has changed
-          if (priceCell && item.final_price && item.final_price !== basePriceCents) {
-            priceCell.textContent = formatPrice(item.final_price);
+          if (priceCell) {
+            priceCell.textContent = formatPrice(discountedPrice);
           }
         }
         
@@ -933,7 +963,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Use actual line price from cart item (includes all discounts)
         if (item) {
-          totalCell.textContent = formatPrice(item.final_line_price || item.line_price);
+          const discountedPrice = getDiscountedPrice(item.quantity, msrpPriceCents);
+          totalCell.textContent = formatPrice(discountedPrice * item.quantity);
         } else {
           totalCell.textContent = formatPrice(0);
         }
@@ -959,14 +990,15 @@ document.addEventListener('DOMContentLoaded', function() {
           
           // Update display with wholesale prices
           if (updatedItem) {
-            priceCents = updatedItem.final_price || updatedItem.price;
+            const discountedPrice = getDiscountedPrice(updatedItem.quantity, msrpPriceCents);
+            priceCents = discountedPrice;
             row.dataset.price = priceCents;
             
             qtyInput.value = updatedItem.quantity;
-            totalCell.textContent = formatPrice(updatedItem.final_line_price || updatedItem.line_price);
+            totalCell.textContent = formatPrice(discountedPrice * updatedItem.quantity);
             
             if (priceCell) {
-              priceCell.textContent = formatPrice(updatedItem.final_price || updatedItem.price);
+              priceCell.textContent = formatPrice(discountedPrice);
             }
           }
           refreshSummary(updatedCart);
