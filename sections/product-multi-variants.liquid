@@ -2,6 +2,50 @@
   .product-section-variants{
     margin-bottom: 50px;
   }
+
+  /* Discount tier banner */
+  .discount-tier-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+
+  .discount-tier-banner h3 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .tier-info {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .tier-badge {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.3);
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .tier-badge strong {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .tier-badge span {
+    font-size: 13px;
+    opacity: 0.9;
+  }
+
   /* — Variant table — */
 .variant-table {
   width: 100%;
@@ -18,7 +62,19 @@
 }
 .variant-table tr{
   border-bottom: 1px solid #e1e1e1;
+  transition: background-color 0.3s ease;
 }
+
+.variant-table tr.price-updated {
+  background-color: #fff3cd;
+  animation: highlightFade 2s ease-out forwards;
+}
+
+@keyframes highlightFade {
+  0% { background-color: #fff3cd; }
+  100% { background-color: transparent; }
+}
+
 .variant-table td.price,
 .variant-table td.total{
   text-align: end;
@@ -69,6 +125,42 @@
   .variant-table .price-cell .current-price {
     font-weight: 600;
     color: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .variant-table .price-cell .discount-badge {
+    background: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .variant-table .price-cell .savings-text {
+    color: #28a745;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .variant-table .total-cell {
+    position: relative;
+  }
+
+  .variant-table .total-cell .total-amount {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .variant-table .total-cell .next-tier-hint {
+    font-size: 10px;
+    color: #667eea;
+    margin-top: 2px;
+    font-weight: 600;
   }
 
 /* — Quantity controls — */
@@ -359,6 +451,23 @@
 
 <div class="wrapper">
   <div class="product-section-variants">
+    <div class="discount-tier-banner">
+      <h3>Discount Tiers</h3>
+      <div class="tier-info">
+        <div class="tier-badge">
+          <strong>1-4 items</strong>
+          <span>Save 39%</span>
+        </div>
+        <div class="tier-badge">
+          <strong>5-9 items</strong>
+          <span>Save 43%</span>
+        </div>
+        <div class="tier-badge">
+          <strong>10+ items</strong>
+          <span>Save 45%</span>
+        </div>
+      </div>
+    </div>
     <table class="variant-table">
       <thead>
         <tr>
@@ -467,9 +576,13 @@ data-wpd-cart-drawer-quantity="{{ variant.quantity }}">
               {% if variant.compare_at_price > variant.price %}
                 <div class="msrp">MSRP: {{ variant.compare_at_price | money }}</div>
               {% endif %}
-              <div class="current-price">{{ variant.price | money }}</div>
+              <div class="current-price">
+                {{ variant.price | money }}
+                <span class="discount-badge">Save 39%</span>
+                <span class="savings-text">You save $10.00</span>
+              </div>
             </td>
-            <td class="total" 
+            <td class="total-cell" 
               data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
 data-wpd-cart-drawer-variant-id="{{ variant.id }}"                                   
 data-wpd-cart-drawer-variant-price="{{ variant.price }}"                                  
@@ -478,7 +591,10 @@ data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds =
 data-wpd-cart-drawer-product-id="{{ product.id }}"                                  
 data-wpd-cart-drawer-line-price                                  
 data-wpd-cart-drawer-item="{{ variant_key }}"                              
-data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ discounted_total | money }}</td>
+data-wpd-cart-drawer-quantity="{{ variant_qty }}">
+              <span class="total-amount">{{ discounted_total | money }}</span>
+              <span class="next-tier-hint">Buy 2 more to save 5%</span>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
@@ -832,13 +948,72 @@ document.addEventListener('DOMContentLoaded', function() {
       return msrp; // No discount if quantity is 0 or doesn't match any tier
     }
 
+    function getDiscountPercentage(quantity) {
+      const tier = discountTiers.find(t => quantity >= t.min && quantity <= t.max);
+      return tier ? Math.round(tier.discount * 100) : 0;
+    }
+
+    function getNextTierInfo(quantity) {
+      const nextTier = discountTiers.find(t => quantity < t.min);
+      if (nextTier) {
+        const itemsNeeded = nextTier.min - quantity;
+        const additionalDiscount = Math.round((nextTier.discount - (discountTiers.find(t => quantity >= t.min && quantity <= t.max)?.discount || 0)) * 100);
+        return {
+          itemsNeeded,
+          additionalDiscount,
+          nextTierDiscount: Math.round(nextTier.discount * 100)
+        };
+      }
+      return null;
+    }
+
+    function updatePriceDisplay(quantity) {
+      if (quantity === 0) {
+        // Reset to base display when quantity is 0
+        const basePrice = formatPrice(msrpPriceCents);
+        priceCell.innerHTML = basePrice;
+        return;
+      }
+
+      const discountedPrice = getDiscountedPrice(quantity, msrpPriceCents);
+      const discountPercent = getDiscountPercentage(quantity);
+      const savings = msrpPriceCents - discountedPrice;
+      
+      // Update price cell with discount badge and savings
+      priceCell.innerHTML = `
+        ${formatPrice(discountedPrice)}
+        ${discountPercent > 0 ? `<span class="discount-badge">Save ${discountPercent}%</span>` : ''}
+        ${savings > 0 ? `<span class="savings-text">You save ${formatPrice(savings)}</span>` : ''}
+      `;
+    }
+
+    function updateTotalDisplay(quantity) {
+      const discountedPrice = getDiscountedPrice(quantity, msrpPriceCents);
+      const total = discountedPrice * quantity;
+      const nextTier = getNextTierInfo(quantity);
+      
+      let totalHTML = `<span class="total-amount">${formatPrice(total)}</span>`;
+      
+      if (nextTier && quantity > 0) {
+        totalHTML += `<span class="next-tier-hint">Buy ${nextTier.itemsNeeded} more to save ${nextTier.nextTierDiscount}%</span>`;
+      }
+      
+      totalCell.innerHTML = totalHTML;
+    }
+
     function updatePriceAndTotal(quantity) {
       const newUnitPrice = getDiscountedPrice(quantity, msrpPriceCents);
       const newTotal = newUnitPrice * quantity;
       
-      priceCell.textContent = formatPrice(newUnitPrice);
-      totalCell.textContent = formatPrice(newTotal);
+      updatePriceDisplay(quantity);
+      updateTotalDisplay(quantity);
       row.dataset.price = newUnitPrice;
+      
+      // Add visual highlight when price changes
+      row.classList.add('price-updated');
+      setTimeout(() => {
+        row.classList.remove('price-updated');
+      }, 2000);
     }
 
     // Initialize button states on page load (use server-rendered values)
