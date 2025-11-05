@@ -3088,6 +3088,12 @@
               bubbles: true,
             })
           );
+          
+          // Reload the page if we're on the cart page to show updated items
+          if (window.location.pathname === window.theme.routes.cart || 
+              window.location.pathname === `${window.theme.routes.cart}/`) {
+            window.location.reload();
+          }
         })
         .catch((e) => {
           console.error(e);
