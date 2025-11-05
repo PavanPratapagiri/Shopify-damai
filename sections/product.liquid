@@ -252,6 +252,7 @@
       let totalItems = 0;
       let grandTotal = 0;
       
+      // Only count quantities from this product page's inputs
       document.querySelectorAll('[id^="quantity_"]').forEach(input => {
         const qty = parseInt(input.value) || 0;
         const variantId = input.dataset.variantId;
@@ -262,6 +263,7 @@
         grandTotal += qty * price;
       });
       
+      // Update display with only the quantities from this product page
       document.getElementById('total-items').textContent = totalItems;
       document.getElementById('grand-total').textContent = '$' + (grandTotal / 100).toFixed(2);
     }
@@ -283,6 +285,9 @@
 
     document.addEventListener("DOMContentLoaded", function () {
       const form = document.getElementById("variant-matrix-form");
+
+      // Initialize the display on page load
+      updateGrandTotal();
 
       // Add event listeners to all quantity inputs
       document.querySelectorAll('[id^="quantity_"]').forEach(input => {
