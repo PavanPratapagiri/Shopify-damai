@@ -894,17 +894,21 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.disabled = cart.item_count === 0;
     if (count) count.textContent = cart.item_count;
     
-    // Get total quantity across all variants
-    const totalQty = getTotalQuantity();
-    
-    // Calculate actual subtotal and original total from all row totals
+    // Calculate totals by summing up the displayed row totals
     let calculatedSubtotal = 0;
     let originalTotal = 0;
+    
     document.querySelectorAll('tr[data-variant-id]').forEach(row => {
       const qty = parseInt(row.querySelector('.qty').value) || 0;
+      const totalAmountElement = row.querySelector('.total-cell .total-amount');
       const msrp = parseInt(row.dataset.msrpPrice, 10);
-      const discountedPrice = getDiscountedPrice(totalQty, msrp); // Use total quantity
-      calculatedSubtotal += discountedPrice * qty;
+      
+      // Get the displayed total amount (remove currency symbol and parse)
+      if (totalAmountElement && qty > 0) {
+        const displayedTotal = totalAmountElement.textContent.replace(/[^0-9.-]/g, '');
+        calculatedSubtotal += parseFloat(displayedTotal) * 100; // Convert to cents
+      }
+      
       originalTotal += msrp * qty;
     });
     
