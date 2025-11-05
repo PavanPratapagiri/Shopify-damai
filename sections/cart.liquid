@@ -279,291 +279,209 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    {% if wcp_wholesale_customer == true %}
-    // For wholesale customers, handle cart updates with WCP integration
-    setTimeout(function(){
-      var cartButtons = document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
-      
-      // Prevent default form submission
-      var cartForm = document.querySelector('[data-cart-form] form');
-      if (cartForm) {
-        cartForm.addEventListener('submit', function(e) {
-          e.preventDefault();
-        });
-      }
-      
-      function updateCartWithWCP() {
-        // Show loading state
-        var cartLoading = document.querySelector('[data-cart-loading]');
-        if (cartLoading) {
-          cartLoading.classList.add('cart--loading');
-        }
-        
-        // Wait for WCP to calculate prices
-        var checkWCPInterval = setInterval(function(){
-          if(window.wcp_data && window.wcp_data.discounted_hash){
-            clearInterval(checkWCPInterval);
-            
-            // Fetch updated cart HTML
-            fetch(window.location.href)
-              .then(response => response.text())
-              .then(html => {
-                // Parse the HTML
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(html, 'text/html');
-                
-                // Update cart items
-                var newItems = doc.querySelector('[data-line-items]');
-                var currentItems = document.querySelector('[data-line-items]');
-                if (newItems && currentItems) {
-                  currentItems.innerHTML = newItems.innerHTML;
-                }
-                
-                // Update subtotal
-                var newSubtotal = doc.querySelector('[data-cart-subtotal]');
-                var currentSubtotal = document.querySelector('[data-cart-subtotal]');
-                if (newSubtotal && currentSubtotal) {
-                  currentSubtotal.innerHTML = newSubtotal.innerHTML;
-                }
-                
-                // Update cart total
-                var newFinal = doc.querySelector('[data-cart-final]');
-                var currentFinal = document.querySelector('[data-cart-final]');
-                if (newFinal && currentFinal) {
-                  currentFinal.textContent = newFinal.textContent;
-                }
-                
-                // Check if cart is empty
-                var cartItemCount = doc.querySelectorAll('[data-cart-item]').length;
-                if (cartItemCount === 0) {
-                  document.querySelector('[data-cart-empty]').classList.remove('cart--hidden');
-                  document.querySelector('[data-cart-form]').classList.add('cart--hidden');
-                } else {
-                  document.querySelector('[data-cart-empty]').classList.add('cart--hidden');
-                  document.querySelector('[data-cart-form]').classList.remove('cart--hidden');
-                }
-                
-                // Remove loading state
-                if (cartLoading) {
-                  cartLoading.classList.remove('cart--loading');
-                }
-                
-                // Trigger WCP to recalculate
-                if (window.wcpRefreshCartTotal) {
-                  window.wcpRefreshCartTotal();
-                }
-                
-                // Reinitialize event listeners
-                initCartEvents();
-                
-                // Dispatch cart change event
-                fetch('/cart.js')
-                  .then(response => response.json())
-                  .then(cart => {
-                    document.dispatchEvent(new CustomEvent('theme:cart:change', {
-                      detail: { cart: cart },
-                      bubbles: true,
-                    }));
-                  });
-              })
-              .catch(error => {
-                console.error('Error updating cart:', error);
-                if (cartLoading) {
-                  cartLoading.classList.remove('cart--loading');
-                }
-              });
-          }
-        }, 100);
-        
-        // Fallback: if WCP not detected after 4 seconds, just reload the page
-        setTimeout(function(){
-          clearInterval(checkWCPInterval);
-        }, 4000);
-      }
-      
-      function initCartEvents() {
-        var cartButtons = document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
-        cartButtons.forEach(function(button) {
-          var clonedButton = button.cloneNode(true);
-          button.parentNode.replaceChild(clonedButton, button);
-        });
-        
-        cartButtons = document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
-        cartButtons.forEach(function(button) {
-          button.addEventListener('click', function(e){
-            if (button.classList.contains('cart__remove')) {
-              e.preventDefault();
-              var key = button.getAttribute('data-remove-key');
-              updateCartItem(key, 0);
-            }
-          });
-          
-          button.addEventListener('change', function(e){
-            if (button.classList.contains('quantity__input')) {
-              var key = button.getAttribute('data-update-cart');
-              var quantity = parseInt(button.value, 10);
-              updateCartItem(key, quantity);
-            }
-          });
-        });
-      }
-      
-      function updateCartItem(key, quantity) {
-        fetch('/cart/change.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: key,
-            quantity: quantity
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          setTimeout(updateCartWithWCP, 500);
-        })
-        .catch(error => {
-          console.error('Error:', error);
-        });
-      }
-      
-      initCartEvents();
-    }, 2500);
+  document.addEventListener('DOMContentLoaded', function() {
+    // Configuration
+    const isWholesaleCustomer = {% if wcp_wholesale_customer == true %}true{% else %}false{% endif %};
     
-    {% else %}
-    // For regular customers, simpler async update
-    setTimeout(function(){
-      var cartButtons = document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
-      
-      // Prevent default form submission
-      var cartForm = document.querySelector('[data-cart-form] form');
-      if (cartForm) {
-        cartForm.addEventListener('submit', function(e) {
+    // Initialize cart functionality
+    function initCart() {
+      attachQuantityListeners();
+      attachRemoveListeners();
+      preventUpdateButtonSubmission();
+    }
+    
+    // Prevent only the "Update Cart" button from submitting, allow checkout
+    function preventUpdateButtonSubmission() {
+      const updateButton = document.querySelector('[name="update"]');
+      if (updateButton) {
+        updateButton.addEventListener('click', function(e) {
           e.preventDefault();
+          return false;
         });
       }
-      
-      function updateCartDisplay() {
-        var cartLoading = document.querySelector('[data-cart-loading]');
-        if (cartLoading) {
-          cartLoading.classList.add('cart--loading');
-        }
-        
-        fetch('/cart.js')
-          .then(response => response.json())
-          .then(cart => {
-            // Fetch updated HTML
-            fetch(window.location.href)
-              .then(response => response.text())
-              .then(html => {
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(html, 'text/html');
-                
-                // Update cart items
-                var newItems = doc.querySelector('[data-line-items]');
-                var currentItems = document.querySelector('[data-line-items]');
-                if (newItems && currentItems) {
-                  currentItems.innerHTML = newItems.innerHTML;
-                }
-                
-                // Update subtotal
-                var newSubtotal = doc.querySelector('[data-cart-subtotal]');
-                var currentSubtotal = document.querySelector('[data-cart-subtotal]');
-                if (newSubtotal && currentSubtotal) {
-                  currentSubtotal.innerHTML = newSubtotal.innerHTML;
-                }
-                
-                // Update cart total
-                var newFinal = doc.querySelector('[data-cart-final]');
-                var currentFinal = document.querySelector('[data-cart-final]');
-                if (newFinal && currentFinal) {
-                  currentFinal.textContent = newFinal.textContent;
-                }
-                
-                // Check if cart is empty
-                if (cart.item_count === 0) {
-                  document.querySelector('[data-cart-empty]').classList.remove('cart--hidden');
-                  document.querySelector('[data-cart-form]').classList.add('cart--hidden');
-                } else {
-                  document.querySelector('[data-cart-empty]').classList.add('cart--hidden');
-                  document.querySelector('[data-cart-form]').classList.remove('cart--hidden');
-                }
-                
-                if (cartLoading) {
-                  cartLoading.classList.remove('cart--loading');
-                }
-                
-                // Reinitialize event listeners
-                initCartEvents();
-                
-                // Dispatch cart change event
-                document.dispatchEvent(new CustomEvent('theme:cart:change', {
-                  detail: { cart: cart },
-                  bubbles: true,
-                }));
-              });
-          })
-          .catch(error => {
-            console.error('Error updating cart display:', error);
-            if (cartLoading) {
-              cartLoading.classList.remove('cart--loading');
-            }
-          });
-      }
-      
-      function initCartEvents() {
-        var cartButtons = document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
-        cartButtons.forEach(function(button) {
-          var clonedButton = button.cloneNode(true);
-          button.parentNode.replaceChild(clonedButton, button);
-        });
-        
-        cartButtons = document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
-        cartButtons.forEach(function(button) {
-          button.addEventListener('click', function(e){
-            if (button.classList.contains('cart__remove')) {
-              e.preventDefault();
-              var key = button.getAttribute('data-remove-key');
-              updateCartItem(key, 0);
-            }
-          });
+    }
+    
+    // Attach listeners to quantity controls
+    function attachQuantityListeners() {
+      // Plus buttons
+      document.querySelectorAll('.quantity__button--plus').forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          const wrapper = this.closest('[data-quantity-selector]');
+          const input = wrapper.querySelector('.quantity__input');
+          const currentQty = parseInt(input.value) || 0;
+          const newQty = currentQty + 1;
+          input.value = newQty;
           
-          button.addEventListener('change', function(e){
-            if (button.classList.contains('quantity__input')) {
-              var key = button.getAttribute('data-update-cart');
-              var quantity = parseInt(button.value, 10);
-              updateCartItem(key, quantity);
-            }
-          });
+          const key = input.getAttribute('data-update-cart');
+          updateCart(key, newQty);
         });
-      }
+      });
       
-      function updateCartItem(key, quantity) {
-        fetch('/cart/change.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: key,
-            quantity: quantity
-          })
+      // Minus buttons
+      document.querySelectorAll('.quantity__button--minus').forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          const wrapper = this.closest('[data-quantity-selector]');
+          const input = wrapper.querySelector('.quantity__input');
+          const currentQty = parseInt(input.value) || 0;
+          const newQty = Math.max(0, currentQty - 1);
+          input.value = newQty;
+          
+          const key = input.getAttribute('data-update-cart');
+          updateCart(key, newQty);
+        });
+      });
+      
+      // Direct input changes
+      document.querySelectorAll('.quantity__input').forEach(input => {
+        input.addEventListener('change', function(e) {
+          const newQty = parseInt(this.value) || 0;
+          const key = this.getAttribute('data-update-cart');
+          updateCart(key, newQty);
+        });
+      });
+    }
+    
+    // Attach listeners to remove buttons
+    function attachRemoveListeners() {
+      document.querySelectorAll('[data-remove-key]').forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          const key = this.getAttribute('data-remove-key');
+          updateCart(key, 0);
+        });
+      });
+    }
+    
+    // Update cart via AJAX
+    function updateCart(key, quantity) {
+      showLoading();
+      
+      fetch('/cart/change.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: key,
+          quantity: quantity
         })
-        .then(response => response.json())
-        .then(data => {
-          setTimeout(updateCartDisplay, 300);
+      })
+      .then(response => response.json())
+      .then(cart => {
+        // For wholesale customers, wait for WCP to calculate
+        if (isWholesaleCustomer) {
+          setTimeout(() => refreshCartDisplay(cart), 800);
+        } else {
+          refreshCartDisplay(cart);
+        }
+      })
+      .catch(error => {
+        console.error('Cart update error:', error);
+        hideLoading();
+      });
+    }
+    
+    // Refresh cart display
+    function refreshCartDisplay(cart) {
+      fetch(window.location.href)
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          
+          // Update line items
+          const newItems = doc.querySelector('[data-line-items]');
+          const currentItems = document.querySelector('[data-line-items]');
+          if (newItems && currentItems) {
+            currentItems.innerHTML = newItems.innerHTML;
+          }
+          
+          // Update subtotal section
+          const newSubtotal = doc.querySelector('[data-cart-subtotal]');
+          const currentSubtotal = document.querySelector('[data-cart-subtotal]');
+          if (newSubtotal && currentSubtotal) {
+            currentSubtotal.innerHTML = newSubtotal.innerHTML;
+          }
+          
+          // Update cart total
+          const newFinal = doc.querySelector('[data-cart-final]');
+          const currentFinal = document.querySelector('[data-cart-final]');
+          if (newFinal && currentFinal) {
+            currentFinal.innerHTML = newFinal.innerHTML;
+          }
+          
+          // Update shipping message
+          const newMessage = doc.querySelector('[data-cart-message]');
+          const currentMessage = document.querySelector('[data-cart-message]');
+          if (newMessage && currentMessage) {
+            currentMessage.outerHTML = newMessage.outerHTML;
+          }
+          
+          // Update WCP elements if they exist
+          const wcpTotal = doc.querySelector('.wcp-cart-total');
+          const currentWcpTotal = document.querySelector('.wcp-cart-total');
+          if (wcpTotal && currentWcpTotal) {
+            currentWcpTotal.innerHTML = wcpTotal.innerHTML;
+          }
+          
+          const wcpNote = doc.querySelector('.wcp-minimums-note');
+          const currentWcpNote = document.querySelector('.wcp-minimums-note');
+          if (wcpNote && currentWcpNote) {
+            currentWcpNote.innerHTML = wcpNote.innerHTML;
+          }
+          
+          // Handle empty cart
+          if (cart.item_count === 0) {
+            document.querySelector('[data-cart-empty]').classList.remove('cart--hidden');
+            document.querySelector('[data-cart-form]').classList.add('cart--hidden');
+          } else {
+            document.querySelector('[data-cart-empty]').classList.add('cart--hidden');
+            document.querySelector('[data-cart-form]').classList.remove('cart--hidden');
+          }
+          
+          hideLoading();
+          
+          // Re-initialize event listeners
+          initCart();
+          
+          // Trigger WCP refresh if needed
+          if (isWholesaleCustomer && window.wcpRefreshCartTotal) {
+            window.wcpRefreshCartTotal();
+          }
+          
+          // Dispatch custom event for other scripts
+          document.dispatchEvent(new CustomEvent('theme:cart:change', {
+            detail: { cart: cart },
+            bubbles: true
+          }));
         })
         .catch(error => {
-          console.error('Error:', error);
+          console.error('Cart refresh error:', error);
+          hideLoading();
         });
+    }
+    
+    // Show loading state
+    function showLoading() {
+      const cartLoading = document.querySelector('[data-cart-loading]');
+      if (cartLoading) {
+        cartLoading.classList.add('cart--loading');
       }
-      
-      initCartEvents();
-    }, 500);
-    {% endif %}
-  }, false);
+    }
+    
+    // Hide loading state
+    function hideLoading() {
+      const cartLoading = document.querySelector('[data-cart-loading]');
+      if (cartLoading) {
+        cartLoading.classList.remove('cart--loading');
+      }
+    }
+    
+    // Start the cart
+    initCart();
+  });
 </script>
             
 {% schema %}
