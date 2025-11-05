@@ -279,7 +279,8 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  // Make cart initialization global so it can be called from anywhere
+  window.initCartPage = function() {
     // Configuration
     const isWholesaleCustomer = {% if wcp_wholesale_customer == true %}true{% else %}false{% endif %};
     
@@ -294,7 +295,11 @@
     function preventUpdateButtonSubmission() {
       const updateButton = document.querySelector('[name="update"]');
       if (updateButton) {
-        updateButton.addEventListener('click', function(e) {
+        // Remove existing listeners to prevent duplicates
+        const newButton = updateButton.cloneNode(true);
+        updateButton.parentNode.replaceChild(newButton, updateButton);
+        
+        newButton.addEventListener('click', function(e) {
           e.preventDefault();
           return false;
         });
@@ -305,7 +310,11 @@
     function attachQuantityListeners() {
       // Plus buttons
       document.querySelectorAll('.quantity__button--plus').forEach(button => {
-        button.addEventListener('click', function(e) {
+        // Remove existing listener by cloning
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', function(e) {
           e.preventDefault();
           const wrapper = this.closest('[data-quantity-selector]');
           const input = wrapper.querySelector('.quantity__input');
@@ -320,7 +329,11 @@
       
       // Minus buttons
       document.querySelectorAll('.quantity__button--minus').forEach(button => {
-        button.addEventListener('click', function(e) {
+        // Remove existing listener by cloning
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', function(e) {
           e.preventDefault();
           const wrapper = this.closest('[data-quantity-selector]');
           const input = wrapper.querySelector('.quantity__input');
@@ -335,7 +348,11 @@
       
       // Direct input changes
       document.querySelectorAll('.quantity__input').forEach(input => {
-        input.addEventListener('change', function(e) {
+        // Remove existing listener by cloning
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+        
+        newInput.addEventListener('change', function(e) {
           const newQty = parseInt(this.value) || 0;
           const key = this.getAttribute('data-update-cart');
           updateCart(key, newQty);
@@ -346,7 +363,11 @@
     // Attach listeners to remove buttons
     function attachRemoveListeners() {
       document.querySelectorAll('[data-remove-key]').forEach(button => {
-        button.addEventListener('click', function(e) {
+        // Remove existing listener by cloning
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', function(e) {
           e.preventDefault();
           const key = this.getAttribute('data-remove-key');
           updateCart(key, 0);
@@ -434,11 +455,15 @@
           
           // Handle empty cart
           if (cart.item_count === 0) {
-            document.querySelector('[data-cart-empty]').classList.remove('cart--hidden');
-            document.querySelector('[data-cart-form]').classList.add('cart--hidden');
+            const emptyCart = document.querySelector('[data-cart-empty]');
+            const fullCart = document.querySelector('[data-cart-form]');
+            if (emptyCart) emptyCart.classList.remove('cart--hidden');
+            if (fullCart) fullCart.classList.add('cart--hidden');
           } else {
-            document.querySelector('[data-cart-empty]').classList.add('cart--hidden');
-            document.querySelector('[data-cart-form]').classList.remove('cart--hidden');
+            const emptyCart = document.querySelector('[data-cart-empty]');
+            const fullCart = document.querySelector('[data-cart-form]');
+            if (emptyCart) emptyCart.classList.add('cart--hidden');
+            if (fullCart) fullCart.classList.remove('cart--hidden');
           }
           
           hideLoading();
@@ -481,6 +506,39 @@
     
     // Start the cart
     initCart();
+  };
+  
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    window.initCartPage();
+  });
+  
+  // Re-initialize when cart becomes visible (for drawer/modal scenarios)
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        const cartTemplate = document.querySelector('.cart__template');
+        if (cartTemplate && !cartTemplate.classList.contains('cart--hidden')) {
+          // Cart is now visible, re-initialize
+          setTimeout(function() {
+            window.initCartPage();
+          }, 100);
+        }
+      }
+    });
+  });
+  
+  // Observe cart visibility changes
+  const cartTemplate = document.querySelector('.cart__template');
+  if (cartTemplate) {
+    observer.observe(cartTemplate, { attributes: true });
+  }
+  
+  // Also listen for custom cart open events
+  document.addEventListener('theme:cart:open', function() {
+    setTimeout(function() {
+      window.initCartPage();
+    }, 100);
   });
 </script>
             
