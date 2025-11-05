@@ -1183,9 +1183,22 @@ document.addEventListener('DOMContentLoaded', function() {
       const variantId = r.dataset.variantId;
       const item = cart.items.find(i => i.variant_id == variantId);
       const qInput = r.querySelector('.qty');
+      const remBtn = r.querySelector('.remove-variant');
       
       if (item && qInput) {
         qInput.value = item.quantity;
+        // Show delete button if quantity > 0
+        if (remBtn) {
+          remBtn.classList.remove('hidden');
+          remBtn.style.display = 'inline-block';
+        }
+      } else if (qInput) {
+        qInput.value = 0;
+        // Hide delete button if quantity is 0
+        if (remBtn) {
+          remBtn.classList.add('hidden');
+          remBtn.style.display = 'none';
+        }
       }
     });
     
