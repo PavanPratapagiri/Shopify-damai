@@ -981,9 +981,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const discountPercent = getDiscountPercentage(quantity);
       const savings = msrpPriceCents - discountedPrice;
       
-      // Always show MSRP struck through, then discounted price with badge and savings
+      // Show discounted price with discount info - don't show MSRP struck through in the MSRP column
       priceCell.innerHTML = `
-        <div class="msrp">MSRP: ${formatPrice(msrpPriceCents)}</div>
         ${formatPrice(discountedPrice)}
         ${discountPercent > 0 ? `<span class="discount-badge">Save ${discountPercent}%</span>` : ''}
         ${savings > 0 ? `<span class="savings-text">You save ${formatPrice(savings)}</span>` : ''}
