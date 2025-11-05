@@ -591,11 +591,12 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
             Remove all
           </button>
         </div>
-      </div>
-      <div class="action-total">
+        <div class="action-total">
         <strong>{{ cart.item_count }}</strong> 
         <p>Total items</p>
       </div>
+      </div>
+      
       <div class="summary">
         <span class="original-price" style="display: none;"></span>
         <p class="price">{{ cart.total_price | money }}</p>
