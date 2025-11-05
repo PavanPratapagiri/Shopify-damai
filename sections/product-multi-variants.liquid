@@ -294,74 +294,40 @@
   cursor: not-allowed;
 }
 .summary {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  min-width: 250px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #000;
 }
-
-.summary .price-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 20px;
+.summary strong {
+  font-size: 1.1rem;
 }
-
-.summary .price-label {
+.summary .original-price {
+  display: block;
+  margin-top: 0.25rem;
   font-size: 14px;
-  color: #666;
+  color: #dc3545;
+  text-decoration: line-through;
   font-weight: 500;
 }
-
-.summary .price-value {
-  font-size: 18px;
+.summary .price {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 16px;
   color: #000;
   font-weight: 600;
 }
-
-.summary .original-price-row {
-  display: none;
-}
-
-.summary .original-price-row.show {
-  display: flex;
-}
-
-.summary .original-price-row .price-value {
-  text-decoration: line-through;
-  color: #999;
-  font-size: 16px;
-}
-
-.summary .savings-row {
-  display: none;
-}
-
-.summary .savings-row.show {
-  display: flex;
-}
-
-.summary .savings-row .price-value {
-  color: #28a745;
-  font-size: 16px;
-}
-
-.summary .divider {
-  width: 100%;
-  height: 1px;
-  background: #e1e1e1;
-  margin: 4px 0;
-}
-
-.summary .note {
-  font-size: 12px;
-  color: #999;
-  text-align: right;
+.summary .total-savings {
+  display: block;
   margin-top: 4px;
+  font-size: 14px;
+  color: #28a745;
+  font-weight: 600;
 }
-
+.summary .subtotal{
+  color: #000000BF;
+  font-size: 16px;
+  font-weight: 400;
+}
 /* Loading spinner */
 
 .loading__spinner {
