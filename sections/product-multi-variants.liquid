@@ -1,6 +1,7 @@
 <style>
   .product-section-variants{
     margin-bottom: 50px;
+    transition: padding 0.3s ease;
   }
 
   /* — Variant table — */
@@ -8,6 +9,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed; /* Ensure consistent column widths */
+  transition: all 0.3s ease;
 }
 .variant-table th,
 .variant-table td {
@@ -17,13 +19,16 @@
   color: #000;
   font-weight: 600;
   border-bottom: none;
+  transition: padding 0.3s ease, font-size 0.3s ease;
 }
 .variant-table tr{
   border-bottom: 1px solid #e1e1e1;
   transition: background-color 0.3s ease;
 }
 
-/* Remove the animation styles */
+.variant-table tr:hover {
+  background-color: #f9f9f9;
+}
 
 .variant-table td.price,
 .variant-table td.total{
@@ -35,12 +40,14 @@
   font-size: 11px;
   color: #000000BF;
   padding-bottom: 16px;
+  transition: font-size 0.3s ease, padding 0.3s ease;
 }
 
 /* SKU Column - Left aligned */
 .variant-table th:first-child {
   text-align: left;
   width: 20%;
+  transition: width 0.3s ease;
 }
 
 .variant-table td.sku {
@@ -51,39 +58,47 @@
 .variant-table th.quantity-heading{
   text-align: center;
   width: 20%;
+  transition: width 0.3s ease;
 }
 
 /* Stock Column - Center aligned */
 .variant-table th.stock-heading{
   text-align: center;
   width: 20%;
+  transition: width 0.3s ease, opacity 0.3s ease;
 }
 
 /* MSRP Column - Right aligned */
 .variant-table th.price-heading{
   text-align: right;
   width: 20%;
+  transition: width 0.3s ease, opacity 0.3s ease;
 }
 
 /* Total Column - Right aligned */
 .variant-table th.total-heading{
   text-align: right;
   width: 20%;
+  transition: width 0.3s ease;
 }
 
   .variant-table td.sku span{
     font-weight: 600;
     font-size: 14px;
+    transition: font-size 0.3s ease;
   }
 
   .variant-table td.sku small{
     font-size: 11px;
     color: #000000BF;
     font-weight: 600;
+    transition: font-size 0.3s ease;
   }
 
   .variant-table td.sku .price{
     display:none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
 
   .variant-table .price-cell {
@@ -97,6 +112,7 @@
     margin-bottom: 0px;
     display: block;
     font-weight: 600;
+    transition: font-size 0.3s ease;
   }
   
   .variant-table .price-cell .current-price {
@@ -105,6 +121,7 @@
     display: block;
     text-align: right;
     font-size: 16px;
+    transition: font-size 0.3s ease;
   }
 
   .variant-table .price-cell .discount-badge {
@@ -134,6 +151,7 @@
     position: relative;
     text-align: end;
     min-width: 150px; /* Reserve space for total column */
+    transition: min-width 0.3s ease, padding 0.3s ease;
   }
 
   .variant-table .total-cell .total-amount {
@@ -141,6 +159,7 @@
     font-weight: 700;
     color: #000;
     display: block;
+    transition: font-size 0.3s ease;
   }
 
   .variant-table .total-cell .next-tier-hint {
@@ -151,9 +170,10 @@
     min-height: 14px; /* Always reserve space for hint text */
     display: block; /* Always display, even when empty */
     visibility: visible;
+    transition: font-size 0.3s ease, min-height 0.3s ease;
   }
 
-  .variant-table .total-cell .next-tier-hint:empty {
+  .variant-table .next-tier-hint:empty {
     visibility: hidden; /* Hide when empty but keep space */
   }
 
@@ -170,6 +190,7 @@
     max-width: 140px; /* Prevent expansion */
     height: 40px;
     flex-shrink: 0; /* Prevent shrinking */
+    transition: width 0.3s ease, max-width 0.3s ease, height 0.3s ease;
   }
 .variant-table .quantity-cell {
   display: flex;
@@ -183,6 +204,7 @@
   text-align: center; /* Center alignment */
   padding-left: 0; /* Remove left padding */
   padding-right: 0; /* Remove right padding */
+  transition: width 0.3s ease, min-width 0.3s ease, padding 0.3s ease, gap 0.3s ease;
 }
 
 .variant-table .quantity-cell .quantity-wrapper {
@@ -193,6 +215,7 @@
   justify-content: center; /* Center items */
   width: auto; /* Change from 100% to auto */
   margin: 0 auto; /* Center the wrapper */
+  transition: gap 0.3s ease;
 }
 
 .variant-table .stock-cell {
@@ -200,8 +223,7 @@
   font-size: 16px;
   color: #000;
   vertical-align: middle;
-}
-  color: #d9534f;
+  transition: font-size 0.3s ease, opacity 0.3s ease;
 }
 
 .variant-table .stock-cell.out-of-stock {
@@ -223,6 +245,7 @@
   border-radius: 4px;
   font-size: 1.2rem;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 .qty-btn:disabled {
   opacity: 0.5;
@@ -247,7 +270,7 @@
     justify-content: center;
     color: #000;
     padding: 0;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, width 0.3s ease, height 0.3s ease, font-size 0.3s ease;
 }
 
   .MA-quantity__button:hover:not(:disabled) {
@@ -274,6 +297,7 @@
     margin: 0px;
     padding: 10px 6px;
     min-height: 40px;
+    transition: width 0.3s ease, font-size 0.3s ease, padding 0.3s ease, min-height 0.3s ease;
 }
 
   .product-section-variants .MA-quantity__input:focus {
@@ -294,11 +318,12 @@
   justify-content: center;
   min-width: 32px;
   min-height: 32px;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  transition: background-color 0.2s ease, opacity 0.2s ease, min-width 0.3s ease, min-height 0.3s ease, padding 0.3s ease;
 }
 .remove-variant svg{
   width: 16px;
   height: 16px;
+  transition: width 0.3s ease, height 0.3s ease;
 }
 .remove-variant svg path{
   fill: #fff;
@@ -324,6 +349,7 @@
   align-items: start;
   margin-block: 16px;
   gap: 30px;
+  transition: grid-template-columns 0.3s ease, gap 0.3s ease, margin 0.3s ease;
 }
 
 .action-btns{
@@ -332,6 +358,7 @@
   gap: 20px;
   grid-column: 1;
   justify-self: start;
+  transition: gap 0.3s ease, flex-direction 0.3s ease;
 }
 
 .action-total{
@@ -341,15 +368,16 @@
   display: flex;
   padding-left: 65px; /* Reduced from 85px to 65px (moved 20px left) */
   flex-direction: column;
-  
   align-items: center;
   gap: 4px;
   grid-column: 2;
   justify-self: center;
+  transition: padding 0.3s ease, font-size 0.3s ease, flex-direction 0.3s ease, gap 0.3s ease;
 }
 .action-total strong{
   font-weight: 600;
   font-size: 20px;
+  transition: font-size 0.3s ease;
 }
 .action-total p{
   margin: 0;
@@ -362,6 +390,7 @@
   text-align: right;
   font-size: 0.9rem;
   color: #000;
+  transition: text-align 0.3s ease, justify-self 0.3s ease;
 }
 
 .action-btns-spin{
@@ -371,10 +400,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: min-width 0.3s ease, min-height 0.3s ease;
 }
 
 .summary strong {
   font-size: 1.1rem;
+  transition: font-size 0.3s ease;
 }
 .summary .original-price {
   display: block;
@@ -383,6 +414,7 @@
   color: #dc3545;
   text-decoration: line-through;
   font-weight: 500;
+  transition: font-size 0.3s ease;
 }
 .summary .price {
   display: block;
@@ -390,6 +422,7 @@
   font-size: 16px;
   color: #000;
   font-weight: 600;
+  transition: font-size 0.3s ease;
 }
 .summary .total-savings {
   display: block;
@@ -397,11 +430,13 @@
   font-size: 14px;
   color: #28a745;
   font-weight: 600;
+  transition: font-size 0.3s ease;
 }
 .summary .subtotal{
   color: #000000BF;
   font-size: 16px;
   font-weight: 400;
+  transition: font-size 0.3s ease;
 }
 /* Loading spinner */
 
@@ -448,7 +483,139 @@
   }
 }
 
+  /* Tablet view (768px - 1024px) */
+  @media screen and (min-width: 769px) and (max-width: 1024px) {
+    .variant-table th,
+    .variant-table td {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .variant-table th {
+      font-size: 10px;
+    }
+
+    .variant-table th:first-child {
+      width: 18%;
+    }
+
+    .variant-table th.quantity-heading {
+      width: 25%;
+    }
+
+    .variant-table th.stock-heading {
+      width: 18%;
+    }
+
+    .variant-table th.price-heading {
+      width: 18%;
+    }
+
+    .variant-table th.total-heading {
+      width: 21%;
+    }
+
+    .variant-table .quantity-cell {
+      width: 220px;
+      min-width: 220px;
+      gap: 8px;
+    }
+
+    .variant-table .quantity-cell .quantity-wrapper {
+      gap: 12px;
+    }
+
+    ma-quantity-input {
+      width: 130px;
+      max-width: 130px;
+      height: 38px;
+    }
+
+    .MA-quantity__button {
+      width: 38px;
+      height: 38px;
+      font-size: 19px;
+    }
+
+    .product-section-variants .MA-quantity__input {
+      width: 54px;
+      font-size: 15px;
+      min-height: 38px;
+    }
+
+    .variant-table td.sku span {
+      font-size: 13px;
+    }
+
+    .variant-table td.sku small {
+      font-size: 10px;
+    }
+
+    .variant-table .stock-cell {
+      font-size: 14px;
+    }
+
+    .variant-table .price-cell .msrp,
+    .variant-table .price-cell .current-price {
+      font-size: 14px;
+    }
+
+    .variant-table .total-cell {
+      min-width: 130px;
+    }
+
+    .variant-table .total-cell .total-amount {
+      font-size: 15px;
+    }
+
+    .variant-table .total-cell .next-tier-hint {
+      font-size: 9px;
+      min-height: 13px;
+    }
+
+    .remove-variant {
+      min-width: 30px;
+      min-height: 30px;
+      padding: 5px 7px;
+    }
+
+    .remove-variant svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .actions {
+      gap: 25px;
+    }
+
+    .action-total {
+      padding-left: 50px;
+      font-size: 15px;
+    }
+
+    .action-total strong {
+      font-size: 19px;
+    }
+
+    .action-btns {
+      gap: 16px;
+    }
+
+    .summary .price {
+      font-size: 17px;
+    }
+
+    .summary p {
+      font-size: 13px;
+    }
+  }
+
+  /* Mobile view (max-width: 768px) */
   @media screen and (max-width: 768px){
+    .product-section-variants {
+      padding: 0 10px;
+    }
+
     .actions{
       grid-template-columns: 1fr;
       grid-template-rows: auto auto auto;
@@ -487,13 +654,16 @@
     .variant-table th.price-heading,
     .variant-table td.price{
       display: none;
+      opacity: 0;
     }
     .variant-table th.stock-heading,
     .variant-table td.stock-cell{
       display: none;
+      opacity: 0;
     }
     .variant-table td.sku .price{
       display: block;
+      opacity: 1;
       margin-top: 6px;
       font-size: 12px;
     }
@@ -520,6 +690,7 @@
     }
     .variant-table .quantity-cell .stock-info-mobile{
       display: block;
+      opacity: 1;
       font-size: 11px;
       color: #666;
       margin-top: 5px;
@@ -589,6 +760,24 @@
 
   .variant-table .quantity-cell .stock-info-mobile{
     display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Add visual feedback for touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    .MA-quantity__button:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .remove-variant:active:not(:disabled) {
+      transform: scale(0.95);
+    }
   }
 </style>
 
