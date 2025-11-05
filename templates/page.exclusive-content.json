@@ -27,6 +27,16 @@
         "padding_bottom": 36
       }
     },
+    "section_html_fPJLHL": {
+      "type": "section-html",
+      "name": "Custom HTML",
+      "settings": {
+        "html": "<div style='text-align: center; padding: 90px 0;'><h2 class='kicker-flourished'>Discover the Heart of Damai Designs</h2><p>Explore our Look Book to see how we bring artistry, innovation, and craftsmanship together. Learn about our value proposition—why retailers choose Damai Designs for authentic, handcrafted sterling silver jewelry that inspires customers and drives sales.</p></div>",
+        "width": "wrapper",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    },
     "section_gallery_tXGjCK": {
       "type": "section-gallery",
       "blocks": {
@@ -116,13 +126,14 @@
         "grid_medium": 1,
         "grid_mobile": 1.2,
         "width": "wrapper",
-        "padding_top": 6,
+        "padding_top": 0,
         "padding_bottom": 36
       }
     }
   },
   "order": [
     "main",
+    "section_html_fPJLHL",
     "section_gallery_tXGjCK"
   ]
 }
