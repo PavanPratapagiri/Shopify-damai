@@ -917,6 +917,27 @@ document.addEventListener('DOMContentLoaded', function() {
     return moneyFmt.format(cents / 100);
   }
   
+  // Update header cart count and price
+  function updateHeaderCart(cart) {
+    // Update cart count in header
+    const cartCountElements = document.querySelectorAll('[data-header-cart-count]');
+    cartCountElements.forEach(el => {
+      el.textContent = `(${cart.item_count})`;
+    });
+    
+    // Update cart price in header
+    const cartPriceElements = document.querySelectorAll('[data-header-cart-price]');
+    cartPriceElements.forEach(el => {
+      el.textContent = formatPrice(cart.total_price);
+    });
+    
+    // Update cart full status
+    const cartFullElements = document.querySelectorAll('[data-header-cart-full]');
+    cartFullElements.forEach(el => {
+      el.setAttribute('data-header-cart-full', cart.item_count > 0);
+    });
+  }
+  
   // Calculate total quantity across all variants
   function getTotalQuantity() {
     let total = 0;
@@ -1217,6 +1238,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAllPricesAndTotals();
         
         refreshSummary(cart);
+        
+        // Update header cart count and price
+        updateHeaderCart(cart);
         
         // Dispatch cart update complete event - critical for wholesale customer reload
         setTimeout(() => {
