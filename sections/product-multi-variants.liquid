@@ -303,11 +303,26 @@
 .summary strong {
   font-size: 1.1rem;
 }
+.summary .original-price {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 14px;
+  color: #dc3545;
+  text-decoration: line-through;
+  font-weight: 500;
+}
 .summary .price {
   display: block;
   margin-top: 0.25rem;
   font-size: 16px;
   color: #000;
+  font-weight: 600;
+}
+.summary .total-savings {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: #28a745;
   font-weight: 600;
 }
 .summary .subtotal{
@@ -571,7 +586,9 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
         <p>Total items</p>
       </div>
       <div class="summary">
+        <span class="original-price" style="display: none;"></span>
         <p class="price">{{ cart.total_price | money }}</p>
+        <p class="total-savings" style="display: none;"></p>
         <p class="subtotal">Product subtotal</p>
         <p>Discounts and Shipping calculated at checkout</p>
       </div>
@@ -846,21 +863,47 @@ document.addEventListener('DOMContentLoaded', function() {
   // — helper to refresh the summary at bottom —
   function refreshSummary(cart) {
     const count = document.querySelector('.action-total strong');
+    const originalPrice = document.querySelector('.summary .original-price');
     const subtotal = document.querySelector('.summary .price');
+    const totalSavings = document.querySelector('.summary .total-savings');
     
     btn.disabled = cart.item_count === 0;
     if (count) count.textContent = cart.item_count;
     
-    // Calculate actual subtotal from all row totals
+    // Calculate actual subtotal and original total from all row totals
     let calculatedSubtotal = 0;
+    let originalTotal = 0;
     document.querySelectorAll('tr[data-variant-id]').forEach(row => {
       const qty = parseInt(row.querySelector('.qty').value) || 0;
       const msrp = parseInt(row.dataset.msrpPrice, 10);
       const discountedPrice = getDiscountedPrice(qty, msrp);
       calculatedSubtotal += discountedPrice * qty;
+      originalTotal += msrp * qty;
     });
     
+    const savings = originalTotal - calculatedSubtotal;
+    
+    // Show/hide original price based on whether there are items
+    if (originalPrice) {
+      if (cart.item_count > 0 && savings > 0) {
+        originalPrice.style.display = 'block';
+        originalPrice.textContent = formatPrice(originalTotal);
+      } else {
+        originalPrice.style.display = 'none';
+      }
+    }
+    
     if (subtotal) subtotal.textContent = formatPrice(calculatedSubtotal);
+    
+    // Show/hide savings based on whether there's a discount
+    if (totalSavings) {
+      if (savings > 0) {
+        totalSavings.style.display = 'block';
+        totalSavings.textContent = `You save ${formatPrice(savings)}`;
+      } else {
+        totalSavings.style.display = 'none';
+      }
+    }
   }
 
   // — wire up each variant row —
