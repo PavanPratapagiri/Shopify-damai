@@ -47,6 +47,13 @@
         "image_qtWJ8n": {
           "type": "image",
           "settings": {
+            "image": "shopify://shop_images/Third-Page.png",
+            "link": ""
+          }
+        },
+        "image_fcMrW4": {
+          "type": "image",
+          "settings": {
             "link": ""
           }
         },
@@ -91,6 +98,7 @@
         "image_9fffkT",
         "image_wmz9Fi",
         "image_qtWJ8n",
+        "image_fcMrW4",
         "image_VNBpHr",
         "image_Fm6k7y",
         "image_LTTfac",
