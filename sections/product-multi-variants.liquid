@@ -37,27 +37,31 @@
   padding-bottom: 16px;
 }
 
-/* Column-specific alignment */
+/* Column-specific alignment - Equal widths */
 .variant-table th:first-child,
 .variant-table td.sku {
   text-align: left;
-  width: 25%;
+  width: 20%; /* Equal size */
 }
 
 .variant-table th.quantity-heading{
   text-align: center;
-  width: 30%;
+  width: 20%; /* Equal size */
 }
 
 .variant-table th.stock-heading{
   text-align: center;
-  width: 15%;
+  width: 20%; /* Equal size */
 }
 
-.variant-table th.price-heading,
+.variant-table th.price-heading{
+  text-align: right;
+  width: 20%; /* Equal size */
+}
+
 .variant-table th.total-heading{
   text-align: right;
-  width: 15%;
+  width: 20%; /* Equal size */
 }
 
   .variant-table td.sku span{
