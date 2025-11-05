@@ -11,6 +11,7 @@
   "sections": {
     "main": {
       "type": "page",
+      "disabled": true,
       "settings": {
         "kicker": "",
         "kicker_size": 3,
@@ -21,13 +22,100 @@
         "align_text": "text-left",
         "text_color": "text--neutral",
         "bg": "palette--light bg--accent",
-        "width": "wrapper",
+        "width": "wrapper--full",
         "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "section_gallery_tXGjCK": {
+      "type": "section-gallery",
+      "blocks": {
+        "image_9fffkT": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/First-Page.png",
+            "link": ""
+          }
+        },
+        "image_wmz9Fi": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/Second-Page.png",
+            "link": ""
+          }
+        },
+        "image_qtWJ8n": {
+          "type": "image",
+          "settings": {
+            "link": ""
+          }
+        },
+        "image_VNBpHr": {
+          "type": "image",
+          "settings": {
+            "link": ""
+          }
+        },
+        "image_Fm6k7y": {
+          "type": "image",
+          "settings": {
+            "link": ""
+          }
+        },
+        "image_LTTfac": {
+          "type": "image",
+          "settings": {
+            "link": ""
+          }
+        },
+        "image_Ld3YHV": {
+          "type": "image",
+          "settings": {
+            "link": ""
+          }
+        },
+        "image_LNhXKp": {
+          "type": "image",
+          "settings": {
+            "link": ""
+          }
+        },
+        "image_zkPUen": {
+          "type": "image",
+          "settings": {
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "image_9fffkT",
+        "image_wmz9Fi",
+        "image_qtWJ8n",
+        "image_VNBpHr",
+        "image_Fm6k7y",
+        "image_LTTfac",
+        "image_Ld3YHV",
+        "image_LNhXKp",
+        "image_zkPUen"
+      ],
+      "name": "Gallery",
+      "settings": {
+        "scale_image": false,
+        "wh_ratio": 1.8,
+        "bg": "palette--light bg--accent",
+        "add_gutters": true,
+        "progress_bar": "both",
+        "grid_large": 1,
+        "grid_medium": 2,
+        "grid_mobile": 1.2,
+        "width": "wrapper",
+        "padding_top": 18,
         "padding_bottom": 36
       }
     }
   },
   "order": [
-    "main"
+    "main",
+    "section_gallery_tXGjCK"
   ]
 }
