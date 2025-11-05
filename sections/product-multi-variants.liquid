@@ -237,6 +237,7 @@
   background-color: #787c83;
   border-radius: 2px;
   padding: 0px 5px 2px;
+  flex-shrink: 0;
 }
 .remove-variant svg{
   width: 16px;
@@ -246,11 +247,11 @@
   fill: #fff;
 }
 .remove-variant:hover {
-  color: #e00;
+  background-color: #e00;
 }
 
 .remove-variant.hidden {
-  display: none;
+  display: none !important;
 }
 
 .loading__spinner.hidden {
