@@ -107,12 +107,14 @@
   .variant-table .total-cell {
     position: relative;
     text-align: end;
+    min-width: 150px; /* Reserve space for total column */
   }
 
   .variant-table .total-cell .total-amount {
     font-size: 16px;
     font-weight: 700;
     color: #000;
+    display: block;
   }
 
   .variant-table .total-cell .next-tier-hint {
@@ -120,7 +122,13 @@
     color: #667eea;
     margin-top: 2px;
     font-weight: 600;
-    display: none;
+    min-height: 14px; /* Always reserve space for hint text */
+    display: block; /* Always display, even when empty */
+    visibility: visible;
+  }
+
+  .variant-table .total-cell .next-tier-hint:empty {
+    visibility: hidden; /* Hide when empty but keep space */
   }
 
 /* — Quantity controls — */
@@ -577,6 +585,7 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
             </td>
             <td class="total-cell">
               <span class="total-amount">{{ discounted_total | money }}</span>
+              <span class="next-tier-hint"></span>
             </td>
           </tr>
         {% endfor %}
@@ -995,14 +1004,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const msrpPriceCents = parseInt(row.dataset.msrpPrice, 10);
       const priceCell = row.querySelector('.price-cell .current-price');
       const totalCell = row.querySelector('.total-cell');
+      const totalAmountEl = row.querySelector('.total-cell .total-amount');
+      const hintEl = row.querySelector('.total-cell .next-tier-hint');
       
       if (qty === 0) {
         // Show only MSRP when quantity is 0
         if (priceCell) {
           priceCell.innerHTML = formatPrice(msrpPriceCents);
         }
-        if (totalCell) {
-          totalCell.innerHTML = '<span class="total-amount">' + formatPrice(0) + '</span>';
+        if (totalAmountEl) {
+          totalAmountEl.textContent = formatPrice(0);
+        }
+        if (hintEl) {
+          hintEl.textContent = ''; // Clear hint text
         }
       } else {
         const discountedPrice = getDiscountedPrice(totalQty, msrpPriceCents);
@@ -1019,14 +1033,19 @@ document.addEventListener('DOMContentLoaded', function() {
           `;
         }
         
-        // Update total display with next tier hint
-        if (totalCell) {
+        // Update total amount
+        if (totalAmountEl) {
+          totalAmountEl.textContent = formatPrice(total);
+        }
+        
+        // Update hint text
+        if (hintEl) {
           const nextTier = getNextTierInfo(totalQty);
-          let totalHTML = `<span class="total-amount">${formatPrice(total)}</span>`;
           if (nextTier && totalQty > 0) {
-            totalHTML += `<span class="next-tier-hint" style="display: block;">Buy ${nextTier.itemsNeeded} more to save ${nextTier.nextTierDiscount}%</span>`;
+            hintEl.textContent = `Buy ${nextTier.itemsNeeded} more to save ${nextTier.nextTierDiscount}%`;
+          } else {
+            hintEl.textContent = ''; // Clear hint text
           }
-          totalCell.innerHTML = totalHTML;
         }
         
         // Update data attribute
