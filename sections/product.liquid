@@ -177,69 +177,97 @@
         <div class="product__inner is-sticky">
           {% if product.variants.size > 1 %}
   <div class="variant-matrix mt-6">
-    <h3 class="text-base font-semibold mb-4">Order Multiple Sizes</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <h3 class="text-base font-semibold" style="margin: 0;">Order Multiple Sizes</h3>
+      <button type="button" id="clear-all-btn" class="btn--outline" style="padding: 8px 16px; font-size: 14px; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 4px;">
+        Clear All
+      </button>
+    </div>
     <form id="variant-matrix-form">
-      <table class="table-auto w-full text-sm border-t border-b">
-        <thead>
-          <tr class="text-left">
-            <th class="py-2">SKU</th>
-            <th class="py-2">Size</th>
-            <th class="py-2">MSRP</th>
-            <th class="py-2">Stock Availability</th>
-            <th class="py-2">Quantity</th>
-            <th class="py-2">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for variant in product.variants %}
-            <tr class="border-t">
-              <td class="py-2">{{ variant.sku }}</td>
-              <td class="py-2">{{ variant.title }}</td>
-              <td class="py-2">{{ variant.price | money }}</td>
-              <td class="py-2">
-                {% if variant.available %}
-                  <span class="text-green-600">1 in stock</span>
-                {% else %}
-                  <span class="text-red-500">Out of Stock</span>
-                {% endif %}
-              </td>
-              <td class="py-2">
-                {% if variant.available %}
-                  <div class="quantity__wrapper" style="display: inline-flex; align-items: center;">
-                    <button class="quantity__button quantity__button--minus" type="button" onclick="decreaseQuantity('{{ variant.id }}')">&minus;</button>
-                    <input
-                      type="number"
-                      name="quantity_{{ variant.id }}"
-                      id="quantity_{{ variant.id }}"
-                      min="0"
-                      value="0"
-                      class="quantity__input variant-matrix-input border w-16 px-2 py-1 rounded"
-                      data-variant-id="{{ variant.id }}"
-                      style="margin: 0 4px; text-align: center;">
-                    <button class="quantity__button quantity__button--plus" type="button" onclick="increaseQuantity('{{ variant.id }}')">&plus;</button>
-                  </div>
-                {% else %}
-                  <span>-</span>
-                {% endif %}
-              </td>
-              <td class="py-2">
-                <span id="total-{{ variant.id }}" data-variant-price="{{ variant.price }}" style="font-weight: bold;">$0.00</span>
-              </td>
+      <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table class="table-auto w-full text-sm border-t border-b" style="min-width: 600px;">
+          <thead>
+            <tr class="text-left">
+              <th class="py-2" style="padding: 8px 4px;">SKU</th>
+              <th class="py-2" style="padding: 8px 4px;">Size</th>
+              <th class="py-2" style="padding: 8px 4px;">MSRP</th>
+              <th class="py-2" style="padding: 8px 4px;">Stock</th>
+              <th class="py-2" style="padding: 8px 4px;">Quantity</th>
+              <th class="py-2" style="padding: 8px 4px;">Total</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <div class="mt-4 flex justify-between items-center">
-        <div class="text-lg font-bold">
+          </thead>
+          <tbody>
+            {% for variant in product.variants %}
+              <tr class="border-t">
+                <td class="py-2" style="padding: 8px 4px; font-size: 12px;">{{ variant.sku }}</td>
+                <td class="py-2" style="padding: 8px 4px;">{{ variant.title }}</td>
+                <td class="py-2" style="padding: 8px 4px;">{{ variant.price | money }}</td>
+                <td class="py-2" style="padding: 8px 4px;">
+                  {% if variant.available %}
+                    <span class="text-green-600" style="color: #059669; font-size: 12px;">{{ variant.inventory_quantity | default: 1 }} in stock</span>
+                  {% else %}
+                    <span class="text-red-500" style="color: #dc2626; font-size: 12px;">Out of Stock</span>
+                  {% endif %}
+                </td>
+                <td class="py-2" style="padding: 8px 4px;">
+                  {% if variant.available %}
+                    <div class="quantity__wrapper" style="display: inline-flex; align-items: center;">
+                      <button class="quantity__button quantity__button--minus" type="button" onclick="decreaseQuantity('{{ variant.id }}')" style="min-width: 32px; height: 32px;">&minus;</button>
+                      <input
+                        type="number"
+                        name="quantity_{{ variant.id }}"
+                        id="quantity_{{ variant.id }}"
+                        min="0"
+                        value="0"
+                        class="quantity__input variant-matrix-input border"
+                        data-variant-id="{{ variant.id }}"
+                        style="margin: 0 4px; text-align: center; width: 50px; height: 32px; padding: 4px;">
+                      <button class="quantity__button quantity__button--plus" type="button" onclick="increaseQuantity('{{ variant.id }}')" style="min-width: 32px; height: 32px;">&plus;</button>
+                    </div>
+                  {% else %}
+                    <span>-</span>
+                  {% endif %}
+                </td>
+                <td class="py-2" style="padding: 8px 4px;">
+                  <span id="total-{{ variant.id }}" data-variant-price="{{ variant.price }}" style="font-weight: bold;">$0.00</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4" style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div class="text-lg font-bold" style="font-size: 16px; font-weight: 600;">
           Total Items: <span id="total-items">0</span> | 
           Grand Total: <span id="grand-total">$0.00</span>
         </div>
-        <button type="submit" class="bg-black text-white px-6 py-3 rounded hover:bg-gray-800 font-semibold">
+        <button type="submit" class="bg-black text-white px-6 py-3 rounded hover:bg-gray-800 font-semibold" style="background: black; color: white; padding: 12px 24px; border-radius: 4px; font-weight: 600; cursor: pointer; border: none; min-width: 180px;">
           Add Selected to Cart
         </button>
       </div>
     </form>
   </div>
+
+  <style>
+    @media (max-width: 768px) {
+      .variant-matrix table {
+        font-size: 11px;
+      }
+      .variant-matrix th,
+      .variant-matrix td {
+        padding: 6px 2px !important;
+      }
+      .variant-matrix .quantity__wrapper input {
+        width: 40px !important;
+        font-size: 12px;
+      }
+      .variant-matrix .quantity__button {
+        min-width: 28px !important;
+        height: 28px !important;
+        font-size: 16px;
+      }
+    }
+  </style>
 
   <script>
     function updateQuantityDisplay(variantId) {
@@ -257,7 +285,6 @@
       let totalItems = 0;
       let grandTotal = 0;
       
-      // Only count quantities from the variant matrix form using the specific class
       const inputs = document.querySelectorAll('.variant-matrix-input');
       
       inputs.forEach(input => {
@@ -272,7 +299,6 @@
         }
       });
       
-      // Update display
       const totalItemsEl = document.getElementById('total-items');
       const grandTotalEl = document.getElementById('grand-total');
       
@@ -295,14 +321,26 @@
       }
     }
 
+    function clearAllQuantities() {
+      const inputs = document.querySelectorAll('.variant-matrix-input');
+      inputs.forEach(input => {
+        input.value = 0;
+        updateQuantityDisplay(input.dataset.variantId);
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
       const form = document.getElementById("variant-matrix-form");
+      const clearBtn = document.getElementById("clear-all-btn");
+      
       if (!form) return;
 
-      // Initialize the display on page load
       updateGrandTotal();
 
-      // Add event listeners to quantity inputs in the variant matrix form only
+      if (clearBtn) {
+        clearBtn.addEventListener('click', clearAllQuantities);
+      }
+
       const matrixInputs = document.querySelectorAll('.variant-matrix-input');
       matrixInputs.forEach(input => {
         input.addEventListener('input', function() {
