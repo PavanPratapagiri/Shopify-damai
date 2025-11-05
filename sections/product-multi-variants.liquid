@@ -256,6 +256,14 @@
   color: #e00;
 }
 
+.remove-variant.hidden {
+  display: none;
+}
+
+.loading__spinner.hidden {
+  display: none;
+}
+
 /* — Actions & summary — */
 .actions {
   display: flex;
@@ -466,6 +474,7 @@
             data-price="{{ actual_unit_price }}"
             data-msrp-price="{{ msrp_price }}"
             data-base-price="{{ variant.price }}"
+            data-inventory="{{ variant.inventory_quantity }}"
           >
             <input type="hidden"
               data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
@@ -504,7 +513,7 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
             </td>
             <td class="quantity-cell">
               <ma-quantity-input>
-                <button type="button" name="minus" class="MA-quantity__button">−</button>
+                <button type="button" name="minus" class="MA-quantity__button" {% if variant_qty == 0 %}disabled{% endif %}>−</button>
                 <input
                   type="number"
                   min="0"
@@ -512,8 +521,9 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                   step="1"
                   value="{{ variant_qty }}"
                   class="MA-quantity__input qty"
+                  data-variant-id="{{ variant.id }}"
                 />
-                <button type="button" name="plus" class="MA-quantity__button">+</button>
+                <button type="button" name="plus" class="MA-quantity__button" {% if variant.inventory_quantity <= 0 %}disabled{% endif %}>+</button>
               </ma-quantity-input>
               <div class="stock-info-mobile">In stock: {{ variant.inventory_quantity }}</div>
               <button class="remove-variant {% if variant_qty == 0 %}hidden{% endif %}">
@@ -530,35 +540,16 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                 {{ variant.inventory_quantity }} in stock
               {% endif %}
             </td>
-            <td class="price-cell" data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
-data-wpd-cart-drawer-variant-id="{{ variant.id }}"                                   
-data-wpd-cart-drawer-variant-price="{{ variant.price }}"                                  
-data-wpd-cart-drawer-variant-compare-at-price="{{ variant.compare_at_price }}"                                  
-data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds = product.collections | map:'id' %}{{ wpdProductCollectionIds | join:',' }}"                                  
-data-wpd-cart-drawer-product-id="{{ product.id }}"                                   
-data-wpd-cart-drawer-item="{{ variant }}"                          
-data-wpd-cart-drawer-quantity="{{ variant.quantity }}">
+            <td class="price-cell">
               {% if variant.compare_at_price > variant.price %}
                 <div class="msrp">MSRP: {{ variant.compare_at_price | money }}</div>
               {% endif %}
               <div class="current-price">
                 {{ variant.price | money }}
-                <span class="discount-badge">Save 39%</span>
-                <span class="savings-text">You save $10.00</span>
               </div>
             </td>
-            <td class="total-cell" 
-              data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
-data-wpd-cart-drawer-variant-id="{{ variant.id }}"                                   
-data-wpd-cart-drawer-variant-price="{{ variant.price }}"                                  
-data-wpd-cart-drawer-variant-compare-at-price="{{ variant.compare_at_price }}"                                  
-data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds = product.collections | map:'id' %}{{ wpdProductCollectionIds | join:',' }}"                                  
-data-wpd-cart-drawer-product-id="{{ product.id }}"                                  
-data-wpd-cart-drawer-line-price                                  
-data-wpd-cart-drawer-item="{{ variant_key }}"                              
-data-wpd-cart-drawer-quantity="{{ variant_qty }}">
+            <td class="total-cell">
               <span class="total-amount">{{ discounted_total | money }}</span>
-              <span class="next-tier-hint">Buy 2 more to save 5%</span>
             </td>
           </tr>
         {% endfor %}
@@ -663,9 +654,9 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                   const remBtn = row.querySelector('.remove-variant');
                   if (remBtn) {
                     if (item.quantity === 0) {
-                      remBtn.classList.add('hidden');
+                      remBtn.style.display = 'none';
                     } else {
-                      remBtn.classList.remove('hidden');
+                      remBtn.style.display = 'inline-block';
                     }
                   }
                 } else {
@@ -676,7 +667,7 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                   
                   if (qtyInput) qtyInput.value = 0;
                   if (totalCell) totalCell.textContent = '$0.00';
-                  if (remBtn) remBtn.classList.add('hidden');
+                  if (remBtn) remBtn.style.display = 'none';
                 }
               });
               
@@ -995,7 +986,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (priceCell) {
           priceCell.innerHTML = `
             ${formatPrice(discountedPrice)}
-            ${discountPercent > 0 ? `<span class="discount-badge">Save ${discountPercent}%</span>` : ''}
+            ${discountPercent > 0 ? `<span class="discount-badge" style="display:inline-block;">Save ${discountPercent}%</span>` : ''}
             ${savings > 0 ? `<span class="savings-text">You save ${formatPrice(savings)}</span>` : ''}
           `;
         }
@@ -1038,19 +1029,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const incBtn = row.querySelector(".MA-quantity__button[name='plus']");
     const remBtn = row.querySelector('.remove-variant');
     const quantityElement = row.querySelector('ma-quantity-input');
+    const maxInventory = parseInt(row.dataset.inventory, 10);
 
     // Initialize button states based on current value
     function updateButtonStates() {
       const qty = parseInt(qtyInput.value) || 0;
-      const maxQty = parseInt(qtyInput.max, 10);
       
-      decBtn.disabled = qty <= 0;
-      incBtn.disabled = qty >= maxQty;
+      if (decBtn) decBtn.disabled = qty <= 0;
+      if (incBtn) incBtn.disabled = qty >= maxInventory;
       
       if (qty === 0) {
-        remBtn.classList.add('hidden');
+        remBtn.style.display = 'none';
       } else {
-        remBtn.classList.remove('hidden');
+        remBtn.style.display = 'inline-block';
       }
     }
 
@@ -1063,7 +1054,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return updateQueue.get(vid);
       }
       
-      // Update UI immediately for responsiveness
+      // Validate quantity against inventory
+      if (newQty > maxInventory) {
+        alert(`Only ${maxInventory} items available in stock`);
+        newQty = maxInventory;
+        qtyInput.value = newQty;
+      }
+      
       qtyInput.value = newQty;
       updateButtonStates();
       updateAllPricesAndTotals(); // Update all rows based on new total
@@ -1072,8 +1069,8 @@ document.addEventListener('DOMContentLoaded', function() {
         quantityElement.isUpdating = true;
       }
       
-      loadingSvg.classList.remove('hidden');
-      btn.classList.add('hidden');
+      loadingSvg.style.display = 'flex';
+      btn.style.display = 'none';
       
       const updatePromise = (async () => {
         try {
@@ -1108,8 +1105,8 @@ document.addEventListener('DOMContentLoaded', function() {
           updateAllPricesAndTotals();
         } finally {
           updateQueue.delete(vid);
-          loadingSvg.classList.add('hidden');
-          btn.classList.remove('hidden');
+          loadingSvg.style.display = 'none';
+          btn.style.display = 'inline-block';
           if (quantityElement) {
             setTimeout(() => {
               quantityElement.isUpdating = false;
@@ -1211,8 +1208,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // — "Remove all" button —
   document.querySelector('.remove-all').addEventListener('click', function() {
-    loadingSvg.classList.remove('hidden');
-    btn.classList.add('hidden');
+    if (!confirm('Are you sure you want to remove all items from cart?')) {
+      return;
+    }
+    
+    loadingSvg.style.display = 'flex';
+    btn.style.display = 'none';
     fetch('/cart/clear.js', { method: 'POST' })
       .then(res => res.json())
       .then(cart => {
@@ -1237,10 +1238,10 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           
           decBtn.disabled = true;
-          remBtn.classList.add('hidden');
+          remBtn.style.display = 'none';
         });
-        loadingSvg.classList.add('hidden');
-        btn.classList.remove('hidden');
+        loadingSvg.style.display = 'none';
+        btn.style.display = 'inline-block';
         refreshSummary(cart);
         
         // Dispatch cart update complete event
@@ -1248,8 +1249,8 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .catch(error => {
         console.error('Failed to clear cart:', error);
-        loadingSvg.classList.add('hidden');
-        btn.classList.remove('hidden');
+        loadingSvg.style.display = 'none';
+        btn.style.display = 'inline-block';
       });
   });
 });
