@@ -851,8 +851,16 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.disabled = cart.item_count === 0;
     if (count) count.textContent = cart.item_count;
     
-    // Use cart's actual total price which includes all discounts
-    if (subtotal) subtotal.textContent = formatPrice(cart.total_price);
+    // Calculate actual subtotal from all row totals
+    let calculatedSubtotal = 0;
+    document.querySelectorAll('tr[data-variant-id]').forEach(row => {
+      const qty = parseInt(row.querySelector('.qty').value) || 0;
+      const msrp = parseInt(row.dataset.msrpPrice, 10);
+      const discountedPrice = getDiscountedPrice(qty, msrp);
+      calculatedSubtotal += discountedPrice * qty;
+    });
+    
+    if (subtotal) subtotal.textContent = formatPrice(calculatedSubtotal);
   }
 
   // — wire up each variant row —
@@ -921,9 +929,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updatePriceDisplay(quantity) {
       if (quantity === 0) {
-        // Reset to base display when quantity is 0
-        const basePrice = formatPrice(msrpPriceCents);
-        priceCell.innerHTML = basePrice;
+        // Show only MSRP when quantity is 0
+        priceCell.innerHTML = formatPrice(msrpPriceCents);
         return;
       }
 
@@ -931,8 +938,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const discountPercent = getDiscountPercentage(quantity);
       const savings = msrpPriceCents - discountedPrice;
       
-      // Update price cell with discount badge and savings
+      // Always show MSRP struck through, then discounted price with badge and savings
       priceCell.innerHTML = `
+        <div class="msrp">MSRP: ${formatPrice(msrpPriceCents)}</div>
         ${formatPrice(discountedPrice)}
         ${discountPercent > 0 ? `<span class="discount-badge">Save ${discountPercent}%</span>` : ''}
         ${savings > 0 ? `<span class="savings-text">You save ${formatPrice(savings)}</span>` : ''}
