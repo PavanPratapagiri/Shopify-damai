@@ -22,15 +22,7 @@
   transition: background-color 0.3s ease;
 }
 
-.variant-table tr.price-updated {
-  background-color: #fff3cd;
-  animation: highlightFade 2s ease-out forwards;
-}
-
-@keyframes highlightFade {
-  0% { background-color: #fff3cd; }
-  100% { background-color: transparent; }
-}
+/* Remove the animation styles */
 
 .variant-table td.price,
 .variant-table td.total{
@@ -1005,12 +997,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update data attribute
         row.dataset.price = discountedPrice;
       }
-      
-      // Add visual highlight
-      row.classList.add('price-updated');
-      setTimeout(() => {
-        row.classList.remove('price-updated');
-      }, 2000);
     });
   }
 
