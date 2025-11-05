@@ -140,8 +140,10 @@
     border-radius: 4px;
     overflow: hidden;
     background: #fff;
-    min-width: 140px;
+    width: 140px; /* Fixed width instead of min-width */
+    max-width: 140px; /* Prevent expansion */
     height: 40px;
+    flex-shrink: 0; /* Prevent shrinking */
   }
 .variant-table .quantity-cell {
   display: flex;
@@ -149,8 +151,8 @@
   gap: 15px;
   padding-block: 17px; 
   justify-content: center;
-  width: 220px; /* Fixed width to prevent shifting */
-  min-width: 220px; /* Ensure minimum width */
+  width: 250px; /* Fixed width to prevent shifting */
+  min-width: 250px; /* Ensure minimum width */
 }
 
 .variant-table .quantity-cell .quantity-wrapper {
@@ -158,6 +160,8 @@
   align-items: center;
   gap: 15px;
   flex-shrink: 0; /* Prevent shrinking */
+  width: 100%; /* Take full width of cell */
+  justify-content: center; /* Center items */
 }
 
 .variant-table .stock-cell {
