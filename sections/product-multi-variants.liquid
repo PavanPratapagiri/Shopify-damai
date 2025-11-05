@@ -1030,10 +1030,14 @@ document.addEventListener('DOMContentLoaded', function() {
       if (decBtn) decBtn.disabled = qty <= 0;
       if (incBtn) incBtn.disabled = qty >= maxInventory;
       
-      if (qty === 0) {
-        remBtn.style.display = 'none';
-      } else {
-        remBtn.style.display = 'inline-block';
+      if (remBtn) {
+        if (qty === 0) {
+          remBtn.classList.add('hidden');
+          remBtn.style.display = 'none';
+        } else {
+          remBtn.classList.remove('hidden');
+          remBtn.style.display = 'inline-flex';
+        }
       }
     }
 
