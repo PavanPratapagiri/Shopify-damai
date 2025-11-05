@@ -347,7 +347,9 @@
       <a class="header__mobile__button"
        data-drawer-toggle="drawer-cart"
         href="{{ routes.cart_url }}">
-        {%- include 'icon' with 'cart' -%}
+        <div class="icon-cart">
+          {%- render 'icon-cart' -%}
+        </div>
         <span class="header__cart__count-badge{% if cart.item_count == 0 %} hidden{% endif %}" data-cart-count-badge>{{ cart.item_count }}</span>
         <span class="visually-hidden">{{ 'layout.cart.title' | t }}</span>
         {{ cart_status }}
@@ -400,7 +402,9 @@
         class="navlink navlink--cart"
         data-drawer-toggle="drawer-cart">
         {% if section.settings.use_icons %}
-          {%- include 'icon' with 'cart' -%}
+          <div class="icon-cart">
+            {%- render 'icon-cart' -%}
+          </div>
           <span class="header__cart__count-badge{% if cart.item_count == 0 %} hidden{% endif %}" data-cart-count-badge>{{ cart.item_count }}</span>
           <span class="visually-hidden">{{ 'layout.cart.title' | t }}</span>
           {{ cart_status }}
