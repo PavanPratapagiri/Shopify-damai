@@ -141,12 +141,15 @@
   gap: 15px;
   padding-block: 17px; 
   justify-content: center;
+  width: 220px; /* Fixed width to prevent shifting */
+  min-width: 220px; /* Ensure minimum width */
 }
 
 .variant-table .quantity-cell .quantity-wrapper {
   display: flex;
   align-items: center;
   gap: 15px;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .variant-table .stock-cell {
