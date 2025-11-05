@@ -936,6 +936,17 @@ document.addEventListener('DOMContentLoaded', function() {
     cartFullElements.forEach(el => {
       el.setAttribute('data-header-cart-full', cart.item_count > 0);
     });
+    
+    // Update visible cart count badges
+    const cartBadgeElements = document.querySelectorAll('[data-cart-count-badge]');
+    cartBadgeElements.forEach(badge => {
+      badge.textContent = cart.item_count;
+      if (cart.item_count === 0) {
+        badge.classList.add('hidden');
+      } else {
+        badge.classList.remove('hidden');
+      }
+    });
   }
   
   // Calculate total quantity across all variants
