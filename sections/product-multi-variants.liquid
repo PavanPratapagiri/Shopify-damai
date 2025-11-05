@@ -1170,12 +1170,24 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(cart => {
         document.querySelectorAll('tr[data-variant-id]').forEach(row => {
           const qtyInput = row.querySelector('.qty');
-          const totalCell = row.querySelector('.total');
+          const totalCell = row.querySelector('.total-cell');
+          const priceCell = row.querySelector('.price-cell .current-price');
           const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
           const remBtn = row.querySelector('.remove-variant');
           
           qtyInput.value = 0;
-          totalCell.textContent = formatPrice(0);
+          
+          // Reset total display
+          if (totalCell) {
+            totalCell.innerHTML = '<span class="total-amount">' + formatPrice(0) + '</span>';
+          }
+          
+          // Reset price display
+          if (priceCell) {
+            const msrp = parseInt(row.dataset.msrpPrice, 10);
+            priceCell.innerHTML = formatPrice(msrp);
+          }
+          
           decBtn.disabled = true;
           remBtn.classList.add('hidden');
         });
