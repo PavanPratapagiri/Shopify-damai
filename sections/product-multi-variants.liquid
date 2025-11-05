@@ -7,11 +7,10 @@
 .variant-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* Ensure consistent column widths */
 }
 .variant-table th,
 .variant-table td {
-  padding: 12px 16px;
+  padding: 12px;
   vertical-align: middle;
   font-size: 14px;
   color: #000;
@@ -34,34 +33,16 @@
   text-transform: uppercase;
   font-size: 11px;
   color: #000000BF;
-  padding-bottom: 16px;
 }
-
-/* Column-specific alignment - Equal widths */
-.variant-table th:first-child,
-.variant-table td.sku {
-  text-align: left;
-  width: 20%; /* Equal size */
-}
-
 .variant-table th.quantity-heading{
   text-align: center;
-  width: 20%; /* Equal size */
 }
-
 .variant-table th.stock-heading{
   text-align: center;
-  width: 20%; /* Equal size */
 }
-
-.variant-table th.price-heading{
-  text-align: right;
-  width: 20%; /* Equal size */
-}
-
+.variant-table th.price-heading,
 .variant-table th.total-heading{
-  text-align: right;
-  width: 20%; /* Equal size */
+  text-align: end;
 }
 
   .variant-table td.sku span{
@@ -80,8 +61,7 @@
   }
 
   .variant-table .price-cell {
-    text-align: right;
-    padding-right: 16px;
+    text-align: end;
   }
   
   .variant-table .price-cell .msrp {
@@ -126,8 +106,7 @@
 
   .variant-table .total-cell {
     position: relative;
-    text-align: right;
-    padding-right: 16px;
+    text-align: end;
     min-width: 150px; /* Reserve space for total column */
   }
 
@@ -169,11 +148,15 @@
 .variant-table .quantity-cell {
   display: flex;
   align-items: center;
-  flex-direction: row; /* Change to row to keep items horizontal */
-  gap: 15px;
-  padding: 17px 16px;
+  flex-direction: column;
+  gap: 10px;
+  padding-block: 17px; 
   justify-content: center;
+  width: 250px; /* Fixed width to prevent shifting */
+  min-width: 250px; /* Ensure minimum width */
   text-align: center; /* Center alignment */
+  padding-left: 0; /* Remove left padding */
+  padding-right: 0; /* Remove right padding */
 }
 
 .variant-table .quantity-cell .quantity-wrapper {
@@ -182,10 +165,8 @@
   gap: 15px;
   flex-shrink: 0; /* Prevent shrinking */
   justify-content: center; /* Center items */
-}
-
-.variant-table .quantity-cell .stock-info-mobile {
-  display: none; /* Hide mobile stock info on desktop */
+  width: auto; /* Change from 100% to auto */
+  margin: 0 auto; /* Center the wrapper */
 }
 
 .variant-table .stock-cell {
@@ -193,10 +174,7 @@
   font-size: 16px;
   color: #000;
   vertical-align: middle;
-  padding: 12px 16px;
 }
-
-.variant-table .stock-cell.low-stock {
   color: #d9534f;
 }
 
@@ -457,7 +435,6 @@
       grid-row: 1;
       flex-direction: row;
       gap: 10px;
-      padding-left: 0;
     }
     .summary{
       grid-column: 1;
@@ -488,11 +465,15 @@
       flex-direction: column;
     }
     .variant-table .quantity-cell .stock-info-mobile{
-      display: block !important;
+      display: block;
       font-size: 11px;
       color: #666;
       margin-top: 5px;
     }
+  }
+
+  .variant-table .quantity-cell .stock-info-mobile{
+    display: none;
   }
 </style>
 
