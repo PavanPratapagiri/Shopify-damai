@@ -860,6 +860,15 @@ document.addEventListener('DOMContentLoaded', function() {
     return moneyFmt.format(cents / 100);
   }
   
+  // Calculate total quantity across all variants
+  function getTotalQuantity() {
+    let total = 0;
+    document.querySelectorAll('tr[data-variant-id] .qty').forEach(input => {
+      total += parseInt(input.value) || 0;
+    });
+    return total;
+  }
+  
   // — helper to change a line item —
   async function updateCart(quantity, lineIndex) {
     return await fetch('/cart/change.js', {
@@ -887,13 +896,16 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.disabled = cart.item_count === 0;
     if (count) count.textContent = cart.item_count;
     
+    // Get total quantity across all variants
+    const totalQty = getTotalQuantity();
+    
     // Calculate actual subtotal and original total from all row totals
     let calculatedSubtotal = 0;
     let originalTotal = 0;
     document.querySelectorAll('tr[data-variant-id]').forEach(row => {
       const qty = parseInt(row.querySelector('.qty').value) || 0;
       const msrp = parseInt(row.dataset.msrpPrice, 10);
-      const discountedPrice = getDiscountedPrice(qty, msrp);
+      const discountedPrice = getDiscountedPrice(totalQty, msrp); // Use total quantity
       calculatedSubtotal += discountedPrice * qty;
       originalTotal += msrp * qty;
     });
@@ -923,26 +935,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function getDiscountedPrice(quantity, msrp) {
-    if (quantity === 0) return msrp;
-    const tier = discountTiers.find(t => quantity >= t.min && quantity <= t.max);
+  function getDiscountedPrice(totalQuantity, msrp) {
+    if (totalQuantity === 0) return msrp;
+    const tier = discountTiers.find(t => totalQuantity >= t.min && totalQuantity <= t.max);
     if (tier) {
       return Math.round(msrp * (1 - tier.discount));
     }
     return msrp;
   }
 
-  function getDiscountPercentage(quantity) {
-    const tier = discountTiers.find(t => quantity >= t.min && quantity <= t.max);
+  function getDiscountPercentage(totalQuantity) {
+    const tier = discountTiers.find(t => totalQuantity >= t.min && totalQuantity <= t.max);
     return tier ? Math.round(tier.discount * 100) : 0;
   }
 
-  function getNextTierInfo(quantity) {
-    if (quantity === 0) return null;
-    const nextTier = discountTiers.find(t => quantity < t.min);
+  function getNextTierInfo(totalQuantity) {
+    if (totalQuantity === 0) return null;
+    const nextTier = discountTiers.find(t => totalQuantity < t.min);
     if (nextTier) {
-      const currentTier = discountTiers.find(t => quantity >= t.min && quantity <= t.max);
-      const itemsNeeded = nextTier.min - quantity;
+      const currentTier = discountTiers.find(t => totalQuantity >= t.min && totalQuantity <= t.max);
+      const itemsNeeded = nextTier.min - totalQuantity;
       const additionalDiscount = Math.round((nextTier.discount - (currentTier?.discount || 0)) * 100);
       return {
         itemsNeeded,
@@ -951,6 +963,61 @@ document.addEventListener('DOMContentLoaded', function() {
       };
     }
     return null;
+  }
+
+  // Update all rows when any quantity changes
+  function updateAllPricesAndTotals() {
+    const totalQty = getTotalQuantity();
+    
+    document.querySelectorAll('tr[data-variant-id]').forEach(row => {
+      const qty = parseInt(row.querySelector('.qty').value) || 0;
+      const msrpPriceCents = parseInt(row.dataset.msrpPrice, 10);
+      const priceCell = row.querySelector('.price-cell .current-price');
+      const totalCell = row.querySelector('.total-cell');
+      
+      if (qty === 0) {
+        // Show only MSRP when quantity is 0
+        if (priceCell) {
+          priceCell.innerHTML = formatPrice(msrpPriceCents);
+        }
+        if (totalCell) {
+          totalCell.innerHTML = '<span class="total-amount">' + formatPrice(0) + '</span>';
+        }
+      } else {
+        const discountedPrice = getDiscountedPrice(totalQty, msrpPriceCents);
+        const discountPercent = getDiscountPercentage(totalQty);
+        const savings = msrpPriceCents - discountedPrice;
+        const total = discountedPrice * qty;
+        
+        // Update price display
+        if (priceCell) {
+          priceCell.innerHTML = `
+            ${formatPrice(discountedPrice)}
+            ${discountPercent > 0 ? `<span class="discount-badge">Save ${discountPercent}%</span>` : ''}
+            ${savings > 0 ? `<span class="savings-text">You save ${formatPrice(savings)}</span>` : ''}
+          `;
+        }
+        
+        // Update total display with next tier hint
+        if (totalCell) {
+          const nextTier = getNextTierInfo(totalQty);
+          let totalHTML = `<span class="total-amount">${formatPrice(total)}</span>`;
+          if (nextTier && totalQty > 0) {
+            totalHTML += `<span class="next-tier-hint" style="display: block;">Buy ${nextTier.itemsNeeded} more to save ${nextTier.nextTierDiscount}%</span>`;
+          }
+          totalCell.innerHTML = totalHTML;
+        }
+        
+        // Update data attribute
+        row.dataset.price = discountedPrice;
+      }
+      
+      // Add visual highlight
+      row.classList.add('price-updated');
+      setTimeout(() => {
+        row.classList.remove('price-updated');
+      }, 2000);
+    });
   }
 
   // — wire up each variant row —
@@ -985,60 +1052,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    function updatePriceDisplay(quantity) {
-      if (quantity === 0) {
-        // Show only MSRP when quantity is 0
-        priceCell.innerHTML = formatPrice(msrpPriceCents);
-        return;
-      }
-
-      const discountedPrice = getDiscountedPrice(quantity, msrpPriceCents);
-      const discountPercent = getDiscountPercentage(quantity);
-      const savings = msrpPriceCents - discountedPrice;
-      
-      // Show discounted price with discount info
-      priceCell.innerHTML = `
-        ${formatPrice(discountedPrice)}
-        ${discountPercent > 0 ? `<span class="discount-badge">Save ${discountPercent}%</span>` : ''}
-        ${savings > 0 ? `<span class="savings-text">You save ${formatPrice(savings)}</span>` : ''}
-      `;
-    }
-
-    function updateTotalDisplay(quantity) {
-      const discountedPrice = getDiscountedPrice(quantity, msrpPriceCents);
-      const total = discountedPrice * quantity;
-      const nextTier = getNextTierInfo(quantity);
-      
-      let totalHTML = `<span class="total-amount">${formatPrice(total)}</span>`;
-      
-      if (nextTier && quantity > 0) {
-        totalHTML += `<span class="next-tier-hint" style="display: block;">Buy ${nextTier.itemsNeeded} more to save ${nextTier.nextTierDiscount}%</span>`;
-      }
-      
-      totalCell.innerHTML = totalHTML;
-    }
-
-    function updatePriceAndTotal(quantity) {
-      const newUnitPrice = getDiscountedPrice(quantity, msrpPriceCents);
-      
-      updatePriceDisplay(quantity);
-      updateTotalDisplay(quantity);
-      row.dataset.price = newUnitPrice;
-      
-      // Add visual highlight when price changes
-      row.classList.add('price-updated');
-      setTimeout(() => {
-        row.classList.remove('price-updated');
-      }, 2000);
-    }
-
     // Initialize button states on page load
     updateButtonStates();
-    
-    // Initialize price and total displays for current quantity
-    const initialQty = parseInt(qtyInput.value) || 0;
-    updatePriceDisplay(initialQty);
-    updateTotalDisplay(initialQty);
 
     async function handleCartUpdate(newQty) {
       // Prevent multiple simultaneous updates for same variant
@@ -1047,8 +1062,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       // Update UI immediately for responsiveness
-      updatePriceAndTotal(newQty);
+      qtyInput.value = newQty;
       updateButtonStates();
+      updateAllPricesAndTotals(); // Update all rows based on new total
 
       if (quantityElement) {
         quantityElement.isUpdating = true;
@@ -1086,8 +1102,8 @@ document.addEventListener('DOMContentLoaded', function() {
           const cart = await fetch('/cart.js').then(r => r.json());
           const item = cart.items.find(i => i.variant_id == vid);
           qtyInput.value = item ? item.quantity : 0;
-          updatePriceAndTotal(qtyInput.value);
           updateButtonStates();
+          updateAllPricesAndTotals();
         } finally {
           updateQueue.delete(vid);
           loadingSvg.classList.add('hidden');
@@ -1114,20 +1130,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const item = cart.items.find(i => i.variant_id == vid);
         const qty = item ? item.quantity : 0;
         
-        // Update data-price with actual discounted unit price
-        const discountedPrice = getDiscountedPrice(qty, msrpPriceCents);
-        priceCents = discountedPrice;
-        row.dataset.price = priceCents;
-        
         qtyInput.value = qty;
-        
-        // Update price display
-        updatePriceDisplay(qty);
-        
-        // Update total display
-        updateTotalDisplay(qty);
-        
         updateButtonStates();
+        
+        // Update all prices based on total quantity
+        updateAllPricesAndTotals();
         
         refreshSummary(cart);
         
@@ -1142,18 +1149,21 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(async function() {
           // Fetch updated cart with wholesale prices applied
           const updatedCart = await fetch('/cart.js').then(r => r.json());
-          const updatedItem = updatedCart.items.find(i => i.variant_id == vid);
           
-          // Update display with wholesale prices
-          if (updatedItem) {
-            const discountedPrice = getDiscountedPrice(updatedItem.quantity, msrpPriceCents);
-            priceCents = discountedPrice;
-            row.dataset.price = priceCents;
+          // Update all rows with wholesale pricing
+          document.querySelectorAll('tr[data-variant-id]').forEach(r => {
+            const variantId = r.dataset.variantId;
+            const updatedItem = updatedCart.items.find(i => i.variant_id == variantId);
+            const qInput = r.querySelector('.qty');
             
-            qtyInput.value = updatedItem.quantity;
-            updatePriceDisplay(updatedItem.quantity);
-            updateTotalDisplay(updatedItem.quantity);
-          }
+            if (updatedItem && qInput) {
+              qInput.value = updatedItem.quantity;
+            } else if (qInput) {
+              qInput.value = 0;
+            }
+          });
+          
+          updateAllPricesAndTotals();
           refreshSummary(updatedCart);
         }, 1500); // Wait for WCP calculations to complete
         {% endif %}
@@ -1179,36 +1189,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Fetch initial cart state for summary
+  // Fetch initial cart state and initialize display
   fetch('/cart.js').then(r => r.json()).then(cart => {
-    // Update each row with actual cart prices
+    // Update each row with actual cart quantities
     document.querySelectorAll('tr[data-variant-id]').forEach(r => {
       const variantId = r.dataset.variantId;
       const item = cart.items.find(i => i.variant_id == variantId);
       const qInput = r.querySelector('.qty');
-      const pCell = r.querySelector('.price-cell .current-price');
       
-      if (item) {
-        const itemQty = item.quantity;
-        const msrp = parseInt(r.dataset.msrpPrice, 10);
-        const discountedPrice = getDiscountedPrice(itemQty, msrp);
-        const discountPercent = getDiscountPercentage(itemQty);
-        const savings = msrp - discountedPrice;
-
-        // Update data-price with actual discounted unit price from cart
-        r.dataset.price = discountedPrice;
-        
-        // Update the displayed price with discount info
-        if (pCell && itemQty > 0) {
-          pCell.innerHTML = `
-            ${formatPrice(discountedPrice)}
-            ${discountPercent > 0 ? `<span class="discount-badge">Save ${discountPercent}%</span>` : ''}
-            ${savings > 0 ? `<span class="savings-text">You save ${formatPrice(savings)}</span>` : ''}
-          `;
-        }
+      if (item && qInput) {
+        qInput.value = item.quantity;
       }
     });
     
+    // Update all prices and totals based on total quantity
+    updateAllPricesAndTotals();
     refreshSummary(cart);
   });
 
