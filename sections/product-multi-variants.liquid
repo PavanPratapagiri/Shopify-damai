@@ -132,7 +132,6 @@
     border-radius: 4px;
     overflow: hidden;
     background: #fff;
-    min-width: 140px;
   }
 .variant-table .quantity-cell {
   display: flex;
@@ -140,19 +139,12 @@
   gap: 15px;
   padding-block: 17px; 
   justify-content: center;
-  width: 100%;
-}
-
-.variant-table td.quantity-cell {
-  min-width: 200px;
-  width: 200px;
 }
 
 .variant-table .stock-cell {
   text-align: center;
   font-size: 16px;
   color: #000;
-  min-width: 150px;
 }
 
 .variant-table .stock-cell.low-stock {
@@ -272,15 +264,29 @@
   margin-block: 16px;
   gap: 30px;
 }
+
+.action-btns{
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .action-total{
   font-size: 16px;
-  text-align: center;
-  min-width: 200px;
-  width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
 .action-total strong{
   font-weight: 600;
 }
+
+.action-total p {
+  margin: 0;
+}
+
 .btn {
   display: inline-block;
   padding: 0.6rem 1rem;
@@ -359,12 +365,6 @@
   stroke: #000000BF;
   animation: spinner-dash 1.4s ease-in-out infinite;
 }
-
-  .action-btns{
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
 
   .action-btns-spin{
     position: relative;
@@ -571,10 +571,10 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
             Remove all
           </button>
         </div>
-      </div>
-      <div class="action-total">
-        <strong>{{ cart.item_count }}</strong> 
-        <p>Total items</p>
+        <div class="action-total">
+          <strong>{{ cart.item_count }}</strong> 
+          <p>Total items</p>
+        </div>
       </div>
       <div class="summary">
         <span class="original-price" style="display: none;"></span>
