@@ -1134,7 +1134,16 @@ document.addEventListener('DOMContentLoaded', function() {
       
       qtyInput.value = newQty;
       updateButtonStates();
-      updateAllPricesAndTotals(); // Update all rows based on new total
+      
+      // Update all rows and refresh summary immediately for instant UI feedback
+      updateAllPricesAndTotals();
+      
+      // Create a temporary cart object for immediate summary update
+      const tempCart = {
+        item_count: getTotalQuantity(),
+        total_price: 0
+      };
+      refreshSummary(tempCart);
 
       if (quantityElement) {
         quantityElement.isUpdating = true;
@@ -1174,6 +1183,7 @@ document.addEventListener('DOMContentLoaded', function() {
           qtyInput.value = item ? item.quantity : 0;
           updateButtonStates();
           updateAllPricesAndTotals();
+          refreshSummary(cart);
         } finally {
           updateQueue.delete(vid);
           loadingSvg.style.display = 'none';
