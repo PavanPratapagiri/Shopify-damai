@@ -298,7 +298,6 @@
     {{ logos }}
     <div class="header__mobile__right">
       <a class="header__mobile__button"
-       data-drawer-toggle="drawer-cart"
         href="{{ routes.cart_url }}">
         <div class="icon-cart">
           {%- render 'icon-cart' -%}
@@ -352,8 +351,7 @@
 
     <div class="header__desktop__button {% if request.path contains routes.cart_url %} main-menu--active{% endif %}" {{ text_hover }}>
       <a href="{{ routes.cart_url }}"
-        class="navlink navlink--cart"
-        data-drawer-toggle="drawer-cart">
+        class="navlink navlink--cart">
         {% if section.settings.use_icons %}
           <div class="icon-cart">
             {%- render 'icon-cart' -%}
