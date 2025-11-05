@@ -185,6 +185,7 @@
             <th class="py-2">SKU</th>
             <th class="py-2">Size</th>
             <th class="py-2">MSRP</th>
+            <th class="py-2">Stock Availability</th>
             <th class="py-2">Quantity</th>
             <th class="py-2">Total</th>
           </tr>
@@ -194,7 +195,14 @@
             <tr class="border-t">
               <td class="py-2">{{ variant.sku }}</td>
               <td class="py-2">{{ variant.title }}</td>
-              <td class="py-2"><strong>MSRP:</strong> {{ variant.price | money }}</td>
+              <td class="py-2">{{ variant.price | money }}</td>
+              <td class="py-2">
+                {% if variant.available %}
+                  <span class="text-green-600">1 in stock</span>
+                {% else %}
+                  <span class="text-red-500">Out of Stock</span>
+                {% endif %}
+              </td>
               <td class="py-2">
                 {% if variant.available %}
                   <div class="quantity__wrapper" style="display: inline-flex; align-items: center;">
@@ -205,14 +213,13 @@
                       id="quantity_{{ variant.id }}"
                       min="0"
                       value="0"
-                      class="quantity__input border w-16 px-2 py-1 rounded"
+                      class="quantity__input variant-matrix-input border w-16 px-2 py-1 rounded"
                       data-variant-id="{{ variant.id }}"
                       style="margin: 0 4px; text-align: center;">
                     <button class="quantity__button quantity__button--plus" type="button" onclick="increaseQuantity('{{ variant.id }}')">&plus;</button>
-                    <span class="quantity-display ml-2" id="qty-display-{{ variant.id }}" style="font-weight: bold;">Qty: 0</span>
                   </div>
                 {% else %}
-                  <span class="text-red-500">Out of Stock</span>
+                  <span>-</span>
                 {% endif %}
               </td>
               <td class="py-2">
@@ -237,12 +244,10 @@
   <script>
     function updateQuantityDisplay(variantId) {
       const input = document.getElementById('quantity_' + variantId);
-      const display = document.getElementById('qty-display-' + variantId);
       const totalSpan = document.getElementById('total-' + variantId);
       const qty = parseInt(input.value) || 0;
       const price = parseFloat(totalSpan.dataset.variantPrice);
       
-      display.textContent = 'Qty: ' + qty;
       totalSpan.textContent = '$' + (qty * price / 100).toFixed(2);
       
       updateGrandTotal();
@@ -252,23 +257,27 @@
       let totalItems = 0;
       let grandTotal = 0;
       
-      // Only count quantities from the variant matrix form
-      const form = document.getElementById('variant-matrix-form');
-      if (!form) return;
+      // Only count quantities from the variant matrix form using the specific class
+      const inputs = document.querySelectorAll('.variant-matrix-input');
       
-      form.querySelectorAll('[id^="quantity_"]').forEach(input => {
+      inputs.forEach(input => {
         const qty = parseInt(input.value) || 0;
         const variantId = input.dataset.variantId;
         const totalSpan = document.getElementById('total-' + variantId);
-        const price = parseFloat(totalSpan.dataset.variantPrice);
         
-        totalItems += qty;
-        grandTotal += qty * price;
+        if (totalSpan) {
+          const price = parseFloat(totalSpan.dataset.variantPrice);
+          totalItems += qty;
+          grandTotal += qty * price;
+        }
       });
       
       // Update display
-      document.getElementById('total-items').textContent = totalItems;
-      document.getElementById('grand-total').textContent = '$' + (grandTotal / 100).toFixed(2);
+      const totalItemsEl = document.getElementById('total-items');
+      const grandTotalEl = document.getElementById('grand-total');
+      
+      if (totalItemsEl) totalItemsEl.textContent = totalItems;
+      if (grandTotalEl) grandTotalEl.textContent = '$' + (grandTotal / 100).toFixed(2);
     }
 
     function increaseQuantity(variantId) {
@@ -294,7 +303,8 @@
       updateGrandTotal();
 
       // Add event listeners to quantity inputs in the variant matrix form only
-      form.querySelectorAll('[id^="quantity_"]').forEach(input => {
+      const matrixInputs = document.querySelectorAll('.variant-matrix-input');
+      matrixInputs.forEach(input => {
         input.addEventListener('input', function() {
           updateQuantityDisplay(this.dataset.variantId);
         });
@@ -302,7 +312,7 @@
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
-        const inputs = form.querySelectorAll('[id^="quantity_"]');
+        const inputs = document.querySelectorAll('.variant-matrix-input');
         const addPromises = [];
 
         inputs.forEach(input => {
