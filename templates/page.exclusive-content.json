@@ -54,18 +54,21 @@
         "image_fcMrW4": {
           "type": "image",
           "settings": {
+            "image": "shopify://shop_images/4th.png",
             "link": ""
           }
         },
         "image_VNBpHr": {
           "type": "image",
           "settings": {
+            "image": "shopify://shop_images/5th.png",
             "link": ""
           }
         },
         "image_Fm6k7y": {
           "type": "image",
           "settings": {
+            "image": "shopify://shop_images/6th.png",
             "link": ""
           }
         },
@@ -114,7 +117,7 @@
         "add_gutters": true,
         "progress_bar": "both",
         "grid_large": 1,
-        "grid_medium": 2,
+        "grid_medium": 1,
         "grid_mobile": 1.2,
         "width": "wrapper",
         "padding_top": 18,
