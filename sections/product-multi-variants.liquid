@@ -1334,56 +1334,76 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // — "Remove all" button —
-  document.querySelector('.remove-all').addEventListener('click', function() {
+  document.querySelector('.remove-all').addEventListener('click', async function() {
     if (!confirm('Are you sure you want to remove all items from cart?')) {
       return;
     }
     
     loadingSvg.style.display = 'flex';
     btn.style.display = 'none';
-    fetch('/cart/clear.js', { method: 'POST' })
-      .then(res => res.json())
-      .then(cart => {
-        document.querySelectorAll('tr[data-variant-id]').forEach(row => {
-          const qtyInput = row.querySelector('.qty');
-          const totalCell = row.querySelector('.total-cell');
-          const totalAmountEl = row.querySelector('.total-cell .total-amount');
-          const hintEl = row.querySelector('.total-cell .next-tier-hint');
-          const priceCell = row.querySelector('.price-cell .current-price');
-          const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
-          const remBtn = row.querySelector('.remove-variant');
-          
-          qtyInput.value = 0;
-          
-          // Reset total display
-          if (totalAmountEl) {
-            totalAmountEl.textContent = formatPrice(0);
-          }
-          if (hintEl) {
-            hintEl.textContent = '';
-          }
-          
-          // Reset price display
-          if (priceCell) {
-            const msrp = parseInt(row.dataset.msrpPrice, 10);
-            priceCell.innerHTML = formatPrice(msrp);
-          }
-          
-          decBtn.disabled = true;
-          remBtn.disabled = true; // Disable instead of hiding
-        });
-        loadingSvg.style.display = 'none';
-        btn.style.display = 'inline-block';
-        refreshSummary(cart);
+    btn.disabled = true;
+    
+    try {
+      // Clear the cart
+      const response = await fetch('/cart/clear.js', { method: 'POST' });
+      const cart = await response.json();
+      
+      // Reset all quantity inputs to 0
+      document.querySelectorAll('tr[data-variant-id]').forEach(row => {
+        const qtyInput = row.querySelector('.qty');
+        const totalAmountEl = row.querySelector('.total-cell .total-amount');
+        const hintEl = row.querySelector('.total-cell .next-tier-hint');
+        const priceCell = row.querySelector('.price-cell .current-price');
+        const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
+        const incBtn = row.querySelector(".MA-quantity__button[name='plus']");
+        const remBtn = row.querySelector('.remove-variant');
+        const msrp = parseInt(row.dataset.msrpPrice, 10);
         
-        // Dispatch cart update complete event
-        document.dispatchEvent(new Event('cartUpdateComplete'));
-      })
-      .catch(error => {
-        console.error('Failed to clear cart:', error);
-        loadingSvg.style.display = 'none';
-        btn.style.display = 'inline-block';
+        // Reset quantity to 0
+        if (qtyInput) qtyInput.value = 0;
+        
+        // Reset total display
+        if (totalAmountEl) totalAmountEl.textContent = formatPrice(0);
+        if (hintEl) hintEl.textContent = '';
+        
+        // Reset price display to MSRP
+        if (priceCell) priceCell.innerHTML = formatPrice(msrp);
+        
+        // Update button states
+        if (decBtn) decBtn.disabled = true;
+        if (incBtn) incBtn.disabled = false; // Re-enable add button
+        if (remBtn) remBtn.disabled = true;
       });
+      
+      // Update all prices and totals
+      updateAllPricesAndTotals();
+      
+      // Refresh summary display
+      refreshSummary(cart);
+      
+      // Update header cart count and price
+      updateHeaderCart(cart);
+      
+      // Dispatch cart change event for other components
+      document.dispatchEvent(new CustomEvent('theme:cart:change', {
+        detail: { cart: cart },
+        bubbles: true
+      }));
+      
+      // Dispatch cart update complete event
+      document.dispatchEvent(new Event('cartUpdateComplete'));
+      
+      // Show success message (optional)
+      console.log('Cart cleared successfully');
+      
+    } catch (error) {
+      console.error('Failed to clear cart:', error);
+      alert('Failed to clear cart. Please try again.');
+    } finally {
+      loadingSvg.style.display = 'none';
+      btn.style.display = 'inline-block';
+      btn.disabled = false;
+    }
   });
 });
 </script>
