@@ -267,10 +267,7 @@
         
         if (totalSpan) {
           const price = parseFloat(totalSpan.dataset.variantPrice);
-          // Count number of variants with quantity > 0, not total quantity
-          if (qty > 0) {
-            totalItems += 1;
-          }
+          totalItems += qty;
           grandTotal += qty * price;
         }
       });
