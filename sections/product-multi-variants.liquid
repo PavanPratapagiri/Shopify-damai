@@ -461,6 +461,8 @@
       grid-row: 1;
       flex-direction: row;
       gap: 10px;
+      padding-left: 0;
+      justify-content: center;
     }
     .summary{
       grid-column: 1;
@@ -472,6 +474,15 @@
       grid-column: 1;
       grid-row: 3;
       justify-self: center;
+      flex-direction: column;
+      width: 100%;
+      padding: 0 20px;
+      gap: 12px;
+    }
+    .action-btns a,
+    .action-btns .action-btns-spin,
+    .action-btns .action-btns-spin button {
+      width: 100%;
     }
     .variant-table th.price-heading,
     .variant-table td.price{
@@ -486,15 +497,93 @@
       margin-top: 6px;
       font-size: 12px;
     }
+    .variant-table th:first-child {
+      width: 40%;
+    }
+    .variant-table th.quantity-heading {
+      width: 35%;
+    }
+    .variant-table th.total-heading {
+      width: 25%;
+    }
     .variant-table .quantity-cell{
-      padding-block: 26px;
+      padding-block: 20px;
       flex-direction: column;
+      width: auto;
+      min-width: auto;
+      gap: 8px;
+    }
+    .variant-table .quantity-cell .quantity-wrapper {
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
     }
     .variant-table .quantity-cell .stock-info-mobile{
       display: block;
       font-size: 11px;
       color: #666;
       margin-top: 5px;
+      text-align: center;
+    }
+    ma-quantity-input {
+      width: 120px;
+      max-width: 120px;
+      height: 36px;
+    }
+    .MA-quantity__button {
+      width: 34px;
+      height: 36px;
+      font-size: 18px;
+    }
+    .product-section-variants .MA-quantity__input {
+      width: 52px;
+      font-size: 14px;
+      padding: 8px 4px;
+      min-height: 36px;
+    }
+    .remove-variant {
+      padding: 5px 6px;
+      min-width: 28px;
+      min-height: 28px;
+    }
+    .remove-variant svg {
+      width: 14px;
+      height: 14px;
+    }
+    .variant-table td.sku span {
+      font-size: 13px;
+    }
+    .variant-table td.sku small {
+      font-size: 10px;
+    }
+    .variant-table .total-cell {
+      min-width: auto;
+      text-align: right;
+      padding-right: 10px;
+    }
+    .variant-table .total-cell .total-amount {
+      font-size: 14px;
+    }
+    .variant-table .total-cell .next-tier-hint {
+      font-size: 9px;
+      min-height: 12px;
+    }
+    .variant-table th,
+    .variant-table td {
+      padding: 10px 8px;
+      font-size: 13px;
+    }
+    .action-total strong {
+      font-size: 18px;
+    }
+    .action-total p {
+      font-size: 14px;
+    }
+    .summary .price {
+      font-size: 18px;
+    }
+    .summary p {
+      font-size: 13px;
     }
   }
 
