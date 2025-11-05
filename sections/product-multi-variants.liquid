@@ -265,9 +265,7 @@
   justify-content: center;
   min-width: 32px;
   min-height: 32px;
-  visibility: visible;
-  opacity: 1;
-  transition: opacity 0.2s ease;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 .remove-variant svg{
   width: 16px;
@@ -276,14 +274,14 @@
 .remove-variant svg path{
   fill: #fff;
 }
-.remove-variant:hover {
+.remove-variant:hover:not(:disabled) {
   background-color: #e00;
 }
 
-.remove-variant.hidden {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
+.remove-variant:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  background-color: #999;
 }
 
 .loading__spinner.hidden {
@@ -563,7 +561,7 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                   />
                   <button type="button" name="plus" class="MA-quantity__button" {% if variant.inventory_quantity <= 0 %}disabled{% endif %}>+</button>
                 </ma-quantity-input>
-                <button class="remove-variant {% if variant_qty == 0 %}hidden{% endif %}">
+                <button class="remove-variant" {% if variant_qty == 0 %}disabled{% endif %}>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true" focusable="false" class="icon icon-remove">
                     <path d="M14 3h-3.53a3.07 3.07 0 00-.6-1.65C9.44.82 8.8.5 8 .5s-1.44.32-1.87.85A3.06 3.06 0 005.53 3H2a.5.5 0 000 1h1.25v10c0 .28.22.5.5.5h8.5a.5.5 0 00.5-.5V4H14a.5.5 0 000-1zM6.91 1.98c.23-.29.58-.48 1.09-.48s.85.19 1.09.48c.2.24.3.6.36 1.02h-2.9c.05-.42.17-.78.36-1.02zm4.84 11.52h-7.5V4h7.5v9.5z" fill="currentColor"></path>
                     <path d="M6.55 5.25a.5.5 0 00-.5.5v6a.5.5 0 001 0v-6a.5.5 0 00-.5-.5zM9.45 5.25a.5.5 0 00-.5.5v6a.5.5 0 001 0v-6a.5.5 0 00-.5-.5z" fill="currentColor"></path>
@@ -1083,14 +1081,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (decBtn) decBtn.disabled = qty <= 0;
       if (incBtn) incBtn.disabled = qty >= maxInventory;
       
+      // Disable remove button when quantity is 0, otherwise enable it
       if (remBtn) {
-        if (qty === 0) {
-          remBtn.classList.add('hidden');
-          remBtn.style.display = 'none';
-        } else {
-          remBtn.classList.remove('hidden');
-          remBtn.style.display = 'inline-flex';
-        }
+        remBtn.disabled = qty === 0;
       }
     }
 
@@ -1248,17 +1241,15 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (item && qInput) {
         qInput.value = item.quantity;
-        // Show delete button if quantity > 0
+        // Enable delete button if quantity > 0
         if (remBtn) {
-          remBtn.classList.remove('hidden');
-          remBtn.style.display = 'inline-block';
+          remBtn.disabled = false;
         }
       } else if (qInput) {
         qInput.value = 0;
-        // Hide delete button if quantity is 0
+        // Disable delete button if quantity is 0
         if (remBtn) {
-          remBtn.classList.add('hidden');
-          remBtn.style.display = 'none';
+          remBtn.disabled = true;
         }
       }
     });
@@ -1282,6 +1273,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('tr[data-variant-id]').forEach(row => {
           const qtyInput = row.querySelector('.qty');
           const totalCell = row.querySelector('.total-cell');
+          const totalAmountEl = row.querySelector('.total-cell .total-amount');
+          const hintEl = row.querySelector('.total-cell .next-tier-hint');
           const priceCell = row.querySelector('.price-cell .current-price');
           const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
           const remBtn = row.querySelector('.remove-variant');
@@ -1289,8 +1282,11 @@ document.addEventListener('DOMContentLoaded', function() {
           qtyInput.value = 0;
           
           // Reset total display
-          if (totalCell) {
-            totalCell.innerHTML = '<span class="total-amount">' + formatPrice(0) + '</span>';
+          if (totalAmountEl) {
+            totalAmountEl.textContent = formatPrice(0);
+          }
+          if (hintEl) {
+            hintEl.textContent = '';
           }
           
           // Reset price display
@@ -1300,7 +1296,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           
           decBtn.disabled = true;
-          remBtn.style.display = 'none';
+          remBtn.disabled = true; // Disable instead of hiding
         });
         loadingSvg.style.display = 'none';
         btn.style.display = 'inline-block';
