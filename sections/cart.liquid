@@ -433,6 +433,28 @@
     init() {
       this.attachEventListeners();
       this.preventDefaultUpdate();
+      // Calculate and display prices on initial load
+      this.initializePrices();
+    }
+    
+    // Initialize prices on page load
+    async initializePrices() {
+      try {
+        // Fetch current cart data
+        const response = await fetch('/cart.js', {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        if (response.ok) {
+          const cart = await response.json();
+          // Apply volume discount pricing to all items
+          this.updateItemPrices(cart);
+        }
+      } catch (error) {
+        console.error('Error initializing prices:', error);
+      }
     }
     
     // Attach all event listeners
@@ -653,6 +675,7 @@
       });
       
       const totalQty = PricingUtils.getTotalQuantity(cart);
+      let calculatedTotal = 0;
       
       cart.items.forEach(item => {
         // Get MSRP (compare_at_price or original price)
@@ -667,6 +690,9 @@
         // Calculate line total: quantity × unit price
         const lineTotal = PricingUtils.calculateLineTotal(item.quantity, finalUnitPrice);
         
+        // Add to running total
+        calculatedTotal += lineTotal;
+        
         // Update unit price display
         const priceElement = document.querySelector(`[data-item-price="${item.key}"]`);
         if (priceElement) {
@@ -677,12 +703,18 @@
         const comparePriceElement = document.querySelector(`[data-compare-price="${item.key}"]`);
         if (comparePriceElement && msrpPrice > finalUnitPrice) {
           comparePriceElement.textContent = formatter.format(msrpPrice / 100);
+          comparePriceElement.style.display = '';
+        } else if (comparePriceElement) {
+          comparePriceElement.style.display = 'none';
         }
         
         // Update original price if discounted
         const originalPriceElement = document.querySelector(`[data-original-price="${item.key}"]`);
         if (originalPriceElement && item.original_price > finalUnitPrice) {
           originalPriceElement.textContent = formatter.format(item.original_price / 100);
+          originalPriceElement.style.display = '';
+        } else if (originalPriceElement) {
+          originalPriceElement.style.display = 'none';
         }
         
         // Update line total (quantity × unit price)
@@ -708,16 +740,15 @@
           wpdLineElement.setAttribute('data-wpd-cart-drawer-quantity', item.quantity);
           wpdLineElement.setAttribute('data-wpd-cart-drawer-variant-price', finalUnitPrice);
         }
+        
+        // Update all price data attributes
+        const allPriceElements = document.querySelectorAll(`[data-wpd-cart-drawer-variant-price][data-wpd-cart-drawer-item="${item.key}"]`);
+        allPriceElements.forEach(el => {
+          el.setAttribute('data-wpd-cart-drawer-variant-price', finalUnitPrice);
+        });
       });
       
-      // Calculate and update cart subtotal (sum of all line totals)
-      const calculatedTotal = cart.items.reduce((sum, item) => {
-        const msrpPrice = item.variant.compare_at_price || item.original_price;
-        const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
-        const finalUnitPrice = Math.min(volumeDiscountedPrice, item.final_price);
-        return sum + PricingUtils.calculateLineTotal(item.quantity, finalUnitPrice);
-      }, 0);
-      
+      // Update cart subtotal (sum of all line totals)
       const subtotalElement = document.querySelector('[data-cart-final]');
       if (subtotalElement) {
         subtotalElement.textContent = formatter.format(calculatedTotal / 100);
@@ -728,6 +759,27 @@
       if (originalTotal) {
         originalTotal.textContent = formatter.format(calculatedTotal / 100);
       }
+      
+      // Log pricing details for debugging
+      console.log('Cart Pricing Summary:', {
+        totalQuantity: totalQty,
+        itemCount: cart.items.length,
+        calculatedTotal: formatter.format(calculatedTotal / 100),
+        items: cart.items.map(item => {
+          const msrpPrice = item.variant.compare_at_price || item.original_price;
+          const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
+          const finalUnitPrice = Math.min(volumeDiscountedPrice, item.final_price);
+          const lineTotal = PricingUtils.calculateLineTotal(item.quantity, finalUnitPrice);
+          return {
+            title: item.product_title,
+            quantity: item.quantity,
+            msrp: formatter.format(msrpPrice / 100),
+            volumePrice: formatter.format(volumeDiscountedPrice / 100),
+            finalPrice: formatter.format(finalUnitPrice / 100),
+            lineTotal: formatter.format(lineTotal / 100)
+          };
+        })
+      });
     }
     
     // Update a specific section
