@@ -629,29 +629,47 @@
     // Update individual item prices to match cart data
     updateItemPrices(cart) {
       cart.items.forEach(item => {
-        // Update unit price
-        const priceElement = document.querySelector(`[data-cart-item-price="${item.key}"]`);
-        if (priceElement) {
-          const priceSpan = priceElement.querySelector('[data-wpd-cart-item]');
-          if (priceSpan) {
-            const formatter = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: cart.currency
-            });
-            priceSpan.textContent = formatter.format(item.final_price / 100);
+        const formatter = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: cart.currency || 'USD'
+        });
+        
+        // Update unit price - find all price elements for this item
+        const priceContainer = document.querySelector(`[data-cart-item-price="${item.key}"]`);
+        if (priceContainer) {
+          // Update the main price display (mark or span element)
+          const priceElement = priceContainer.querySelector(`[data-wpd-cart-item="${item.key}"]`);
+          if (priceElement) {
+            priceElement.textContent = formatter.format(item.final_price / 100);
+          }
+          
+          // Update compare-at price if item is on sale
+          if (item.original_price > item.final_price) {
+            const delElement = priceContainer.querySelector('del');
+            if (delElement) {
+              delElement.textContent = formatter.format(item.original_price / 100);
+            }
           }
         }
         
         // Update line total
         const totalElement = document.querySelector(`[data-wpd-cart-item="${item.key}"][data-wpd-cart-line-price]`);
         if (totalElement) {
-          const formatter = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: cart.currency
-          });
           totalElement.textContent = formatter.format(item.final_line_price / 100);
         }
+        
+        // Update quantity input to match cart
+        const qtyInput = document.querySelector(`input[data-update-cart="${item.key}"]`);
+        if (qtyInput && parseInt(qtyInput.value) !== item.quantity) {
+          qtyInput.value = item.quantity;
+        }
       });
+      
+      // Update cart subtotal
+      const subtotalElement = document.querySelector('[data-cart-final]');
+      if (subtotalElement) {
+        subtotalElement.textContent = formatter.format(cart.total_price / 100);
+      }
     }
     
     // Update a specific section
