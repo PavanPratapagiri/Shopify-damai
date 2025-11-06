@@ -88,6 +88,30 @@
   .cart__template {
     min-height: 400px;
   }
+  
+  /* Smooth quantity input transitions */
+  .quantity__input {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+  
+  .quantity__input.updating {
+    background-color: #f9f9f9;
+    border-color: #ccc;
+  }
+  
+  .quantity__button {
+    transition: opacity 0.15s ease, transform 0.1s ease;
+    user-select: none;
+  }
+  
+  .quantity__button:active {
+    transform: scale(0.95);
+  }
+  
+  .quantity__button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 </style>
 
 <div class="cart__template {{ no_ajax_class }} {{ hide_quantity }} {{ section.settings.bg }}"
@@ -426,7 +450,8 @@
       this.cartLoading = document.querySelector('[data-cart-loading]');
       this.cartEmpty = document.querySelector('[data-cart-empty]');
       this.cartForm = document.querySelector('[data-cart-form]');
-      this.debounceTimer = null;
+      this.debounceTimers = new Map(); // Track debounce timers per item
+      this.pendingUpdates = new Map(); // Track pending quantity updates
     }
     
     // Initialize cart
@@ -490,13 +515,31 @@
       }
     }
     
-    // Handle change events
+    // Handle change events with debounce
     handleChange(e) {
       const qtyInput = e.target.closest('.quantity__input');
       if (qtyInput) {
         const key = qtyInput.getAttribute('data-update-cart');
         const newQty = parseInt(qtyInput.value) || 0;
-        this.updateCart(key, newQty);
+        
+        qtyInput.classList.add('updating');
+        
+        // Clear existing debounce timer for this item
+        if (this.debounceTimers.has(key)) {
+          clearTimeout(this.debounceTimers.get(key));
+        }
+        
+        // Store the pending update
+        this.pendingUpdates.set(key, newQty);
+        
+        // Debounce the cart update
+        const timer = setTimeout(() => {
+          this.updateCartDebounced(key, newQty);
+          this.debounceTimers.delete(key);
+          qtyInput.classList.remove('updating');
+        }, CONFIG.debounceDelay);
+        
+        this.debounceTimers.set(key, timer);
       }
     }
     
@@ -511,17 +554,50 @@
       }
     }
     
-    // Adjust quantity by delta
+    // Adjust quantity by delta with optimistic UI update
     adjustQuantity(button, delta) {
       const wrapper = button.closest('[data-quantity-selector]');
       const input = wrapper.querySelector('.quantity__input');
+      const key = input.getAttribute('data-update-cart');
       const currentQty = parseInt(input.value) || 0;
       const newQty = Math.max(0, currentQty + delta);
       
+      // Instantly update the UI (optimistic update)
       input.value = newQty;
+      input.classList.add('updating');
       
-      const key = input.getAttribute('data-update-cart');
-      this.updateCart(key, newQty);
+      // Disable buttons temporarily to prevent rapid clicking
+      const plusBtn = wrapper.querySelector('.quantity__button--plus');
+      const minusBtn = wrapper.querySelector('.quantity__button--minus');
+      plusBtn.disabled = true;
+      minusBtn.disabled = true;
+      
+      // Store the pending update
+      this.pendingUpdates.set(key, newQty);
+      
+      // Clear existing debounce timer for this item
+      if (this.debounceTimers.has(key)) {
+        clearTimeout(this.debounceTimers.get(key));
+      }
+      
+      // Debounce the actual cart update
+      const timer = setTimeout(() => {
+        this.updateCartDebounced(key, newQty);
+        this.debounceTimers.delete(key);
+        
+        // Re-enable buttons
+        plusBtn.disabled = false;
+        minusBtn.disabled = false;
+        input.classList.remove('updating');
+      }, CONFIG.debounceDelay);
+      
+      this.debounceTimers.set(key, timer);
+    }
+    
+    // Debounced cart update
+    async updateCartDebounced(key, quantity) {
+      this.pendingUpdates.delete(key);
+      await this.updateCart(key, quantity);
     }
     
     // Remove item with animation
