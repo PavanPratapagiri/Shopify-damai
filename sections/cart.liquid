@@ -640,28 +640,34 @@
           currency: cart.currency || 'USD'
         });
         
-        // Update unit price - find all price elements for this item
-        const priceContainer = document.querySelector(`[data-cart-item-price="${item.key}"]`);
-        if (priceContainer) {
-          // Update the main price display (mark or span element)
-          const priceElement = priceContainer.querySelector(`[data-wpd-cart-item="${item.key}"]`);
-          if (priceElement) {
-            priceElement.textContent = formatter.format(item.final_price / 100);
-          }
-          
-          // Update compare-at price if item is on sale
-          if (item.original_price > item.final_price) {
-            const delElement = priceContainer.querySelector('del');
-            if (delElement) {
-              delElement.textContent = formatter.format(item.original_price / 100);
-            }
-          }
+        // Update unit price - find the price element by data-item-price
+        const priceElement = document.querySelector(`[data-item-price="${item.key}"]`);
+        if (priceElement) {
+          priceElement.textContent = formatter.format(item.final_price / 100);
         }
         
-        // Update line total
-        const totalElement = document.querySelector(`[data-wpd-cart-item="${item.key}"][data-wpd-cart-line-price]`);
-        if (totalElement) {
-          totalElement.textContent = formatter.format(item.final_line_price / 100);
+        // Update compare-at price if exists
+        const comparePriceElement = document.querySelector(`[data-compare-price="${item.key}"]`);
+        if (comparePriceElement && item.variant.compare_at_price > item.final_price) {
+          comparePriceElement.textContent = formatter.format(item.variant.compare_at_price / 100);
+        }
+        
+        // Update original price if discounted
+        const originalPriceElement = document.querySelector(`[data-original-price="${item.key}"]`);
+        if (originalPriceElement && item.original_price > item.final_price) {
+          originalPriceElement.textContent = formatter.format(item.original_price / 100);
+        }
+        
+        // Update line total - find by data-line-total
+        const lineTotalElement = document.querySelector(`[data-line-total="${item.key}"]`);
+        if (lineTotalElement) {
+          lineTotalElement.textContent = formatter.format(item.final_line_price / 100);
+        }
+        
+        // Also update WPD data attributes for wholesale pricing compatibility
+        const wpdElement = document.querySelector(`[data-wpd-cart-item="${item.key}"][data-wpd-cart-line-price]`);
+        if (wpdElement) {
+          wpdElement.textContent = formatter.format(item.final_line_price / 100);
         }
         
         // Update quantity input to match cart
