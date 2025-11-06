@@ -772,10 +772,11 @@
         const msrpPrice = item.variant.compare_at_price || item.original_price;
         
         // Calculate volume-discounted unit price based on total cart quantity
+        // This matches the product multi-variants logic exactly
         const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
         
-        // Use the lower of: volume discount price or Shopify's final_price (from other discounts)
-        const finalUnitPrice = Math.min(volumeDiscountedPrice, item.final_price);
+        // Use volume discounted price directly (matching product multi-variants)
+        const finalUnitPrice = volumeDiscountedPrice;
         
         // Calculate line total: quantity × unit price
         const lineTotal = PricingUtils.calculateLineTotal(item.quantity, finalUnitPrice);
@@ -858,14 +859,12 @@
         items: cart.items.map(item => {
           const msrpPrice = item.variant.compare_at_price || item.original_price;
           const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
-          const finalUnitPrice = Math.min(volumeDiscountedPrice, item.final_price);
-          const lineTotal = PricingUtils.calculateLineTotal(item.quantity, finalUnitPrice);
+          const lineTotal = PricingUtils.calculateLineTotal(item.quantity, volumeDiscountedPrice);
           return {
             title: item.product_title,
             quantity: item.quantity,
             msrp: formatter.format(msrpPrice / 100),
             volumePrice: formatter.format(volumeDiscountedPrice / 100),
-            finalPrice: formatter.format(finalUnitPrice / 100),
             lineTotal: formatter.format(lineTotal / 100)
           };
         })
