@@ -381,6 +381,18 @@
 (function() {
   'use strict';
   
+  // Prevent legacy theme.js quantity handlers from running on cart page
+  // by removing the attributes they look for BEFORE they initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function disableLegacyHandlers() {
+      const cartQuantityButtons = document.querySelectorAll('[data-cart-loading] [data-increase-quantity], [data-cart-loading] [data-decrease-quantity]');
+      cartQuantityButtons.forEach(btn => {
+        btn.removeAttribute('data-increase-quantity');
+        btn.removeAttribute('data-decrease-quantity');
+      });
+    });
+  }
+  
   // Volume Discount Tiers Configuration - matches product multi-variants
   const DISCOUNT_TIERS = [
     { min: 1, max: 4, discount: 0.39, price: 212.22 },
