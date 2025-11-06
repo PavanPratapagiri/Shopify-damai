@@ -88,6 +88,43 @@
   .cart__template {
     min-height: 400px;
   }
+  
+  /* Volume Discount Display Styles */
+  .volume-discount-info {
+    background: #f0f8ff;
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    text-align: center;
+  }
+  
+  .volume-discount-info.next-tier {
+    background: #fff8e1;
+    border-color: #FF9800;
+  }
+  
+  .discount-badge {
+    display: inline-block;
+    background: #4CAF50;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 8px 20px;
+    border-radius: 50px;
+    margin-bottom: 8px;
+  }
+  
+  .next-tier .discount-badge {
+    background: #FF9800;
+  }
+  
+  .discount-message {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 8px;
+  }
 </style>
 
 <div class="cart__template {{ no_ajax_class }} {{ hide_quantity }} {{ section.settings.bg }}"
