@@ -765,6 +765,8 @@
       });
       
       const totalQty = PricingUtils.getTotalQuantity(cart);
+      const discountTier = PricingUtils.getDiscountTier(totalQty);
+      const discountPercent = discountTier ? Math.round(discountTier.discount * 100) : 0;
       let calculatedTotal = 0;
       
       cart.items.forEach(item => {
@@ -788,6 +790,16 @@
         const priceElement = document.querySelector(`[data-item-price="${item.key}"]`);
         if (priceElement) {
           priceElement.textContent = formatter.format(finalUnitPrice / 100);
+        }
+        
+        // Show volume discount price below the original price if discounted
+        const volumeDiscountElement = document.querySelector(`[data-volume-discounted-price="${item.key}"]`);
+        if (volumeDiscountElement && msrpPrice > finalUnitPrice && totalQty > 0) {
+          const savings = msrpPrice - finalUnitPrice;
+          volumeDiscountElement.innerHTML = `<span style="font-size: 12px; color: #28a745; font-weight: 600;">After ${discountPercent}% discount: ${formatter.format(finalUnitPrice / 100)}</span>`;
+          volumeDiscountElement.style.display = 'block';
+        } else if (volumeDiscountElement) {
+          volumeDiscountElement.style.display = 'none';
         }
         
         // Update compare-at price if exists

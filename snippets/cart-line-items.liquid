@@ -169,6 +169,14 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
               </span>
             {%- endif -%}
           </p>
+          
+          {%- comment -%} Volume discount price (calculated by JavaScript) {%- endcomment -%}
+          <p class="line__price line__price--discounted" data-volume-discounted-price="{{ line_item.key }}" style="display: none; margin-top: 4px;">
+            <span style="font-size: 12px; color: #28a745; font-weight: 600;">
+              {%- comment -%} Will be populated by JavaScript with volume discount price {%- endcomment -%}
+            </span>
+          </p>
+          
           {%- comment -%} ...existing unit price code... {%- endcomment -%}
           {% if line_item.unit_price %}
             {% capture unit_price_separator %}
