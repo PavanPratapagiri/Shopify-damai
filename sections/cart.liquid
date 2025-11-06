@@ -653,7 +653,7 @@
       // Update cart price
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: '{{ cart.currency.iso_code }}'
+        currency: cart.currency || 'USD'
       });
       
       document.querySelectorAll('[data-header-cart-price]').forEach(el => {
