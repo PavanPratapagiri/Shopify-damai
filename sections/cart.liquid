@@ -21,31 +21,36 @@
 -%}
 
 <style>
-  /* Loading state styles */
-  .cart--loading {
+  /* Loading state styles - Per item loading */
+  .cart__items__row {
     position: relative;
-    pointer-events: none;
-    opacity: 0.6;
+    transition: opacity 0.2s ease;
   }
   
-  .cart--loading::after {
+  .cart__items__row.updating {
+    opacity: 0.7;
+  }
+  
+  .cart__items__row.updating::before {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 40px;
-    height: 40px;
-    margin: -20px 0 0 -20px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #333;
-    border-radius: 50%;
-    animation: cart-spin 1s linear infinite;
-    z-index: 9999;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4CAF50, transparent);
+    animation: loading-bar 1s ease-in-out infinite;
+    z-index: 10;
   }
   
-  @keyframes cart-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  @keyframes loading-bar {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  /* Global cart loading - minimal */
+  .cart--loading {
+    pointer-events: none;
   }
   
   /* Error message styles */
@@ -84,9 +89,10 @@
     transform: translateX(-20px);
   }
   
-  /* Prevent layout shift */
-  .cart__template {
-    min-height: 400px;
+  /* Disable quantity buttons during update */
+  .quantity__wrapper.disabled {
+    pointer-events: none;
+    opacity: 0.6;
   }
   
   /* Volume Discount Display Styles */
@@ -124,6 +130,15 @@
     font-weight: 600;
     color: #333;
     margin-top: 8px;
+  }
+  
+  /* Smooth number transitions */
+  [data-cart-final], [data-line-total], [data-item-price] {
+    transition: color 0.3s ease;
+  }
+  
+  .price-updating {
+    color: #4CAF50;
   }
 </style>
 
@@ -397,16 +412,21 @@
   // Configuration
   const CONFIG = {
     isWholesaleCustomer: {% if wcp_wholesale_customer == true %}true{% else %}false{% endif %},
-    wcpDelay: 500, // Reduced from 800ms
-    debounceDelay: 300,
-    maxRetries: 3
+    wcpDelay: 200, // Reduced significantly
+    debounceDelay: 500, // Debounce for smoother updates
+    optimisticUI: true, // Enable instant UI feedback
+    maxRetries: 3,
+    batchUpdates: true // Batch multiple updates together
   };
   
   // State management
   const state = {
     isUpdating: false,
-    updateQueue: [],
-    retryCount: 0
+    updateQueue: new Map(), // Use Map to merge duplicate updates
+    pendingUpdates: new Map(),
+    debounceTimers: new Map(),
+    retryCount: 0,
+    lastCart: null
   };
   
   // Cart Manager Class
@@ -416,18 +436,27 @@
       this.cartLoading = document.querySelector('[data-cart-loading]');
       this.cartEmpty = document.querySelector('[data-cart-empty]');
       this.cartForm = document.querySelector('[data-cart-form]');
-      this.debounceTimer = null;
     }
     
     // Initialize cart
     init() {
       this.attachEventListeners();
       this.preventDefaultUpdate();
+      this.cacheCurrentCart();
     }
     
-    // Attach all event listeners
+    // Cache current cart state
+    cacheCurrentCart() {
+      fetch('/cart.js')
+        .then(r => r.json())
+        .then(cart => {
+          state.lastCart = cart;
+        })
+        .catch(console.error);
+    }
+    
+    // Attach all event listeners with delegation
     attachEventListeners() {
-      // Use event delegation for better performance
       document.addEventListener('click', this.handleClick.bind(this));
       document.addEventListener('change', this.handleChange.bind(this));
       document.addEventListener('input', this.handleInput.bind(this));
@@ -440,10 +469,7 @@
       const removeBtn = e.target.closest('[data-remove-key]');
       const checkoutBtn = e.target.closest('.checkout__button');
       
-      // Don't interfere with checkout button
-      if (checkoutBtn) {
-        return;
-      }
+      if (checkoutBtn) return;
       
       if (plusBtn) {
         e.preventDefault();
@@ -464,56 +490,177 @@
       if (qtyInput) {
         const key = qtyInput.getAttribute('data-update-cart');
         const newQty = parseInt(qtyInput.value) || 0;
-        this.updateCart(key, newQty);
+        this.scheduleUpdate(key, newQty);
       }
     }
     
-    // Handle input events with debounce
+    // Handle input events
     handleInput(e) {
       const qtyInput = e.target.closest('.quantity__input');
       if (qtyInput) {
-        // Validate input immediately
         let value = parseInt(qtyInput.value) || 0;
-        if (value < 0) value = 0;
-        qtyInput.value = value;
+        if (value < 0) {
+          value = 0;
+          qtyInput.value = value;
+        }
       }
     }
     
-    // Adjust quantity by delta
+    // Adjust quantity with optimistic update
     adjustQuantity(button, delta) {
       const wrapper = button.closest('[data-quantity-selector]');
       const input = wrapper.querySelector('.quantity__input');
       const currentQty = parseInt(input.value) || 0;
       const newQty = Math.max(0, currentQty + delta);
       
+      // Optimistic UI update
       input.value = newQty;
       
       const key = input.getAttribute('data-update-cart');
-      this.updateCart(key, newQty);
+      
+      // Show immediate visual feedback
+      if (CONFIG.optimisticUI) {
+        this.optimisticUpdate(key, newQty, currentQty);
+      }
+      
+      // Schedule the actual update with debouncing
+      this.scheduleUpdate(key, newQty);
+    }
+    
+    // Optimistic UI update - instant visual feedback
+    optimisticUpdate(key, newQty, oldQty) {
+      const row = this.getItemRow(key);
+      if (!row) return;
+      
+      // Calculate expected totals locally
+      if (state.lastCart && state.lastCart.items) {
+        const item = state.lastCart.items.find(i => i.key === key);
+        if (item) {
+          const newLineTotal = item.final_price * newQty;
+          const oldLineTotal = item.final_price * oldQty;
+          const totalDiff = newLineTotal - oldLineTotal;
+          
+          // Update line total immediately
+          const lineTotalEl = row.querySelector('[data-line-total]');
+          if (lineTotalEl) {
+            lineTotalEl.classList.add('price-updating');
+            lineTotalEl.textContent = this.formatMoney(newLineTotal);
+            setTimeout(() => lineTotalEl.classList.remove('price-updating'), 300);
+          }
+          
+          // Update cart total immediately
+          const cartFinalEl = document.querySelector('[data-cart-final]');
+          if (cartFinalEl && state.lastCart.total_price !== undefined) {
+            const newTotal = state.lastCart.total_price + totalDiff;
+            cartFinalEl.classList.add('price-updating');
+            cartFinalEl.textContent = this.formatMoney(newTotal);
+            setTimeout(() => cartFinalEl.classList.remove('price-updating'), 300);
+          }
+        }
+      }
+      
+      // Mark row as updating
+      row.classList.add('updating');
+    }
+    
+    // Schedule update with debouncing
+    scheduleUpdate(key, quantity) {
+      // Clear existing timer for this key
+      if (state.debounceTimers.has(key)) {
+        clearTimeout(state.debounceTimers.get(key));
+      }
+      
+      // Store the latest quantity for this key
+      state.pendingUpdates.set(key, quantity);
+      
+      // Set new debounce timer
+      const timer = setTimeout(() => {
+        this.processPendingUpdates();
+      }, CONFIG.debounceDelay);
+      
+      state.debounceTimers.set(key, timer);
+    }
+    
+    // Process all pending updates in batch
+    async processPendingUpdates() {
+      if (state.pendingUpdates.size === 0) return;
+      if (state.isUpdating) {
+        // Wait and retry
+        setTimeout(() => this.processPendingUpdates(), 100);
+        return;
+      }
+      
+      const updates = new Map(state.pendingUpdates);
+      state.pendingUpdates.clear();
+      state.debounceTimers.clear();
+      
+      // Process updates
+      if (CONFIG.batchUpdates && updates.size > 1) {
+        await this.batchUpdate(updates);
+      } else {
+        // Single update
+        const [key, quantity] = updates.entries().next().value;
+        await this.updateCart(key, quantity);
+      }
+    }
+    
+    // Batch multiple updates into one request
+    async batchUpdate(updates) {
+      state.isUpdating = true;
+      this.hideError();
+      
+      try {
+        const updateObj = {};
+        updates.forEach((quantity, key) => {
+          updateObj[key] = quantity;
+        });
+        
+        const response = await fetch('/cart/update.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ updates: updateObj })
+        });
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const cart = await response.json();
+        state.lastCart = cart;
+        
+        // Minimal refresh
+        await this.smartRefresh(cart, Array.from(updates.keys()));
+        
+        this.dispatchCartEvent('success', cart);
+        
+      } catch (error) {
+        console.error('Batch update error:', error);
+        this.showError('Unable to update cart. Please try again.');
+        this.revertOptimisticUpdates(updates);
+      } finally {
+        state.isUpdating = false;
+      }
     }
     
     // Remove item with animation
     removeItem(key) {
-      const row = document.querySelector(`[data-cart-item] input[data-update-cart="${key}"]`)?.closest('[data-cart-item]');
+      const row = this.getItemRow(key);
       if (row) {
         row.classList.add('removing');
-        setTimeout(() => this.updateCart(key, 0), 300);
+        setTimeout(() => this.scheduleUpdate(key, 0), 300);
       } else {
-        this.updateCart(key, 0);
+        this.scheduleUpdate(key, 0);
       }
     }
     
     // Update cart via AJAX
     async updateCart(key, quantity) {
-      if (state.isUpdating) {
-        // Queue the update
-        state.updateQueue.push({ key, quantity });
-        return;
-      }
-      
       state.isUpdating = true;
-      this.showLoading();
       this.hideError();
+      
+      const row = this.getItemRow(key);
+      if (row) row.classList.add('updating');
       
       try {
         const response = await fetch('/cart/change.js', {
@@ -525,173 +672,179 @@
           body: JSON.stringify({ id: key, quantity: quantity })
         });
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const cart = await response.json();
-        
-        // Wait for WCP if needed
-        if (CONFIG.isWholesaleCustomer) {
-          await this.waitForWCP();
-        }
-        
-        await this.refreshCart(cart);
+        state.lastCart = cart;
         state.retryCount = 0;
         
-        // Dispatch success event
+        // Smart refresh - only update what changed
+        await this.smartRefresh(cart, [key]);
+        
         this.dispatchCartEvent('success', cart);
         
       } catch (error) {
         console.error('Cart update error:', error);
         this.showError('Unable to update cart. Please try again.');
         
-        // Retry logic
         if (state.retryCount < CONFIG.maxRetries) {
           state.retryCount++;
-          setTimeout(() => this.updateCart(key, quantity), 1000 * state.retryCount);
+          setTimeout(() => this.updateCart(key, quantity), 1000);
+        } else {
+          this.revertOptimisticUpdates(new Map([[key, quantity]]));
         }
         
       } finally {
+        if (row) row.classList.remove('updating');
         state.isUpdating = false;
-        this.hideLoading();
-        
-        // Process queued updates
-        if (state.updateQueue.length > 0) {
-          const next = state.updateQueue.shift();
-          setTimeout(() => this.updateCart(next.key, next.quantity), 100);
-        }
       }
     }
     
-    // Wait for WCP to load
+    // Smart refresh - only update changed elements
+    async smartRefresh(cart, changedKeys) {
+      // Handle empty cart
+      if (cart.item_count === 0) {
+        this.toggleEmptyCart(true);
+        return;
+      }
+      
+      // Update only changed items
+      changedKeys.forEach(key => {
+        const item = cart.items.find(i => i.key === key);
+        const row = this.getItemRow(key);
+        
+        if (!item && row) {
+          // Item was removed
+          row.remove();
+        } else if (item && row) {
+          // Update item
+          this.updateItemInDOM(item, row);
+        }
+      });
+      
+      // Update cart totals
+      this.updateCartTotals(cart);
+      
+      // Update header cart
+      this.updateHeaderCart(cart);
+      
+      // Update WCP if needed (with minimal delay)
+      if (CONFIG.isWholesaleCustomer) {
+        await this.updateWCP(cart);
+      }
+    }
+    
+    // Update individual item in DOM
+    updateItemInDOM(item, row) {
+      const formatter = this.getMoneyFormatter(item.currency);
+      
+      // Update quantity input
+      const qtyInput = row.querySelector('[data-update-cart]');
+      if (qtyInput && parseInt(qtyInput.value) !== item.quantity) {
+        qtyInput.value = item.quantity;
+      }
+      
+      // Update line total
+      const lineTotalEl = row.querySelector('[data-line-total]');
+      if (lineTotalEl) {
+        lineTotalEl.textContent = formatter.format(item.final_line_price / 100);
+      }
+      
+      // Update item price if needed
+      const itemPriceEl = row.querySelector('[data-item-price]');
+      if (itemPriceEl) {
+        itemPriceEl.textContent = formatter.format(item.final_price / 100);
+      }
+    }
+    
+    // Update cart totals only
+    updateCartTotals(cart) {
+      const formatter = this.getMoneyFormatter(cart.currency);
+      
+      // Update subtotal
+      const subtotalEl = document.querySelector('[data-cart-final]');
+      if (subtotalEl) {
+        subtotalEl.textContent = formatter.format(cart.total_price / 100);
+      }
+      
+      // Update free shipping message
+      this.updateFreeShippingMessage(cart);
+    }
+    
+    // Update free shipping message
+    updateFreeShippingMessage(cart) {
+      const messageEl = document.querySelector('[data-cart-message]');
+      if (!messageEl) return;
+      
+      const limit = parseInt(messageEl.getAttribute('data-limit')) || 0;
+      const subtotal = cart.total_price / 100;
+      
+      if (subtotal >= limit) {
+        messageEl.classList.add('is-success');
+      } else {
+        messageEl.classList.remove('is-success');
+      }
+      
+      // Update progress circle
+      const progressEl = messageEl.querySelector('[data-cart-progress]');
+      if (progressEl) {
+        let percent = Math.min(100, (subtotal / limit) * 100);
+        const circumference = 87.96459430051421;
+        const offset = circumference - (percent / 100 * circumference / 2);
+        progressEl.style.strokeDashoffset = offset;
+      }
+      
+      // Update amount left
+      const leftEl = messageEl.querySelector('[data-left-to-spend]');
+      if (leftEl && subtotal < limit) {
+        const formatter = this.getMoneyFormatter(cart.currency);
+        leftEl.textContent = formatter.format((limit - subtotal));
+      }
+    }
+    
+    // Update WCP wholesale pricing
+    async updateWCP(cart) {
+      if (!window.wcp_data) {
+        await this.waitForWCP();
+      }
+      
+      if (window.wcpRefreshCartTotal) {
+        window.wcpRefreshCartTotal();
+      }
+      
+      // Give WCP minimal time to update
+      await new Promise(resolve => setTimeout(resolve, CONFIG.wcpDelay));
+    }
+    
+    // Wait for WCP with timeout
     waitForWCP() {
       return new Promise((resolve) => {
         if (window.wcp_data) {
-          setTimeout(resolve, CONFIG.wcpDelay);
+          resolve();
         } else {
+          let elapsed = 0;
+          const interval = 50;
           const checkInterval = setInterval(() => {
-            if (window.wcp_data) {
+            elapsed += interval;
+            if (window.wcp_data || elapsed > 3000) {
               clearInterval(checkInterval);
-              setTimeout(resolve, CONFIG.wcpDelay);
+              resolve();
             }
-          }, 100);
-          
-          // Timeout after 5 seconds
-          setTimeout(() => {
-            clearInterval(checkInterval);
-            resolve();
-          }, 5000);
+          }, interval);
         }
       });
     }
     
-    // Refresh cart display efficiently
-    async refreshCart(cart) {
-      try {
-        // Fetch only the cart section HTML
-        const response = await fetch(window.location.href + '?section_id=cart', {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // Update specific sections
-        this.updateSection('[data-line-items]', doc);
-        this.updateSection('[data-cart-subtotal]', doc);
-        this.updateSection('[data-cart-final]', doc);
-        this.updateSection('[data-cart-message]', doc);
-        
-        // Update WCP elements if they exist
-        this.updateSection('.wcp-cart-total', doc);
-        this.updateSection('.wcp-minimums-note', doc);
-        this.updateSection('.wcp-extra-note', doc);
-        
-        // Update individual item prices from cart data
-        this.updateItemPrices(cart);
-        
-        // Handle empty cart
-        this.toggleEmptyCart(cart.item_count === 0);
-        
-        // Update header cart
-        this.updateHeaderCart(cart);
-        
-        // Re-trigger WCP if needed
-        if (CONFIG.isWholesaleCustomer && window.wcpRefreshCartTotal) {
-          window.wcpRefreshCartTotal();
-        }
-        
-      } catch (error) {
-        console.error('Cart refresh error:', error);
-        // Fallback to full page reload
-        window.location.reload();
-      }
+    // Get item row element
+    getItemRow(key) {
+      const input = document.querySelector(`input[data-update-cart="${key}"]`);
+      return input?.closest('[data-cart-item]');
     }
     
-    // Update individual item prices to match cart data
-    updateItemPrices(cart) {
-      cart.items.forEach(item => {
-        const formatter = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: cart.currency || 'USD'
-        });
-        
-        // Update unit price - find the price element by data-item-price
-        const priceElement = document.querySelector(`[data-item-price="${item.key}"]`);
-        if (priceElement) {
-          priceElement.textContent = formatter.format(item.final_price / 100);
-        }
-        
-        // Update compare-at price if exists
-        const comparePriceElement = document.querySelector(`[data-compare-price="${item.key}"]`);
-        if (comparePriceElement && item.variant.compare_at_price > item.final_price) {
-          comparePriceElement.textContent = formatter.format(item.variant.compare_at_price / 100);
-        }
-        
-        // Update original price if discounted
-        const originalPriceElement = document.querySelector(`[data-original-price="${item.key}"]`);
-        if (originalPriceElement && item.original_price > item.final_price) {
-          originalPriceElement.textContent = formatter.format(item.original_price / 100);
-        }
-        
-        // Update line total - find by data-line-total
-        const lineTotalElement = document.querySelector(`[data-line-total="${item.key}"]`);
-        if (lineTotalElement) {
-          lineTotalElement.textContent = formatter.format(item.final_line_price / 100);
-        }
-        
-        // Also update WPD data attributes for wholesale pricing compatibility
-        const wpdElement = document.querySelector(`[data-wpd-cart-item="${item.key}"][data-wpd-cart-line-price]`);
-        if (wpdElement) {
-          wpdElement.textContent = formatter.format(item.final_line_price / 100);
-        }
-        
-        // Update quantity input to match cart
-        const qtyInput = document.querySelector(`input[data-update-cart="${item.key}"]`);
-        if (qtyInput && parseInt(qtyInput.value) !== item.quantity) {
-          qtyInput.value = item.quantity;
-        }
-      });
-      
-      // Update cart subtotal
-      const subtotalElement = document.querySelector('[data-cart-final]');
-      if (subtotalElement) {
-        subtotalElement.textContent = formatter.format(cart.total_price / 100);
-      }
-    }
-    
-    // Update a specific section
-    updateSection(selector, doc) {
-      const newElement = doc.querySelector(selector);
-      const currentElement = document.querySelector(selector);
-      
-      if (newElement && currentElement) {
-        currentElement.innerHTML = newElement.innerHTML;
-      }
+    // Revert optimistic updates on error
+    revertOptimisticUpdates(updates) {
+      // Reload to get correct state
+      window.location.reload();
     }
     
     // Toggle empty cart state
@@ -705,37 +858,30 @@
       }
     }
     
-    // Update header cart count
+    // Update header cart
     updateHeaderCart(cart) {
-      // Update cart count
       document.querySelectorAll('[data-header-cart-count], [data-cart-count-badge]').forEach(el => {
         el.textContent = cart.item_count;
-        if (cart.item_count === 0) {
-          el.classList.add('hidden');
-        } else {
-          el.classList.remove('hidden');
-        }
+        el.classList.toggle('hidden', cart.item_count === 0);
       });
       
-      // Update cart price
-      const formatter = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: cart.currency || 'USD'
-      });
-      
+      const formatter = this.getMoneyFormatter(cart.currency);
       document.querySelectorAll('[data-header-cart-price]').forEach(el => {
         el.textContent = formatter.format(cart.total_price / 100);
       });
     }
     
-    // Show loading state
-    showLoading() {
-      this.cartLoading?.classList.add('cart--loading');
+    // Get money formatter
+    getMoneyFormatter(currency = 'USD') {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency
+      });
     }
     
-    // Hide loading state
-    hideLoading() {
-      this.cartLoading?.classList.remove('cart--loading');
+    // Format money helper
+    formatMoney(cents, currency = 'USD') {
+      return this.getMoneyFormatter(currency).format(cents / 100);
     }
     
     // Show error message
@@ -743,8 +889,6 @@
       if (this.errorContainer) {
         this.errorContainer.textContent = message;
         this.errorContainer.classList.add('active');
-        
-        // Auto-hide after 5 seconds
         setTimeout(() => this.hideError(), 5000);
       }
     }
@@ -754,7 +898,7 @@
       this.errorContainer?.classList.remove('active');
     }
     
-    // Prevent default form submission for update button
+    // Prevent default form submission
     preventDefaultUpdate() {
       const updateButton = document.querySelector('[name="update"]');
       if (updateButton) {
@@ -763,18 +907,6 @@
           return false;
         });
       }
-      
-      // Ensure checkout button submits the form
-      const checkoutButtons = document.querySelectorAll('.checkout__button');
-      checkoutButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-          // Don't prevent default - let it submit the form
-          if (!button.disabled) {
-            // Allow normal form submission
-            return true;
-          }
-        });
-      });
     }
     
     // Dispatch custom cart event
@@ -796,17 +928,14 @@
     cartManager.init();
   }
   
-  // Make globally accessible
   window.initCartPage = initCartPage;
   
-  // Auto-initialize
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initCartPage);
   } else {
     initCartPage();
   }
   
-  // Re-initialize on visibility change
   document.addEventListener('theme:cart:open', () => {
     setTimeout(initCartPage, 100);
   });
