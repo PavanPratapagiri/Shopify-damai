@@ -20,16 +20,91 @@
   endif
 -%}
 
+<style>
+  /* Loading state styles */
+  .cart--loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  
+  .cart--loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #333;
+    border-radius: 50%;
+    animation: cart-spin 1s linear infinite;
+    z-index: 9999;
+  }
+  
+  @keyframes cart-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Error message styles */
+  .cart__error {
+    background: #fee;
+    color: #c33;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  
+  .cart__error.active {
+    display: block;
+    animation: slideIn 0.3s ease;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Smooth transitions */
+  .cart__items__row {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  .cart__items__row.removing {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  
+  /* Prevent layout shift */
+  .cart__template {
+    min-height: 400px;
+  }
+</style>
+
 <div class="cart__template {{ no_ajax_class }} {{ hide_quantity }} {{ section.settings.bg }}"
   data-cart-message-container
   data-section-id="{{ section.id }}"
   data-section-type="cart"
   data-ajax-disable="{{ ajax_disable }}"
   style="--PT: {{ section.settings.padding_top }}px; --PB: {{ section.settings.padding_bottom }}px;">
+  
+  <!-- Error message container -->
+  <div class="cart__error" data-cart-error></div>
+  
   {% comment %} Cart is empty {% endcomment %}
   <div class="cart__empty__page {{ empty_init }}" data-cart-empty>
     {% render 'cart-empty' %}
   </div>
+  
   {% comment %} Cart is full {% endcomment %}
   <div class="{{ section.settings.width }} section-padding {{ full_init }}" data-cart-form data-cart-loading>
     <form action="{{ routes.cart_url }}" method="post" novalidate class="cart">
@@ -235,7 +310,7 @@
                 	    document.getElementsByClassName("WPDcheckoutBTN")[0].removeAttribute("disabled");
                         clearInterval(hidecheckoutBTN);
             	}
-                },2500)
+                },100) // Reduced from 2500ms to 100ms check interval
                 
               });  
             </script>   
@@ -279,271 +354,359 @@
 </div>
 
 <script>
-  // Make cart initialization global so it can be called from anywhere
-  window.initCartPage = function() {
-    // Configuration
-    const isWholesaleCustomer = {% if wcp_wholesale_customer == true %}true{% else %}false{% endif %};
-    
-    // Initialize cart functionality
-    function initCart() {
-      attachQuantityListeners();
-      attachRemoveListeners();
-      preventUpdateButtonSubmission();
+(function() {
+  'use strict';
+  
+  // Configuration
+  const CONFIG = {
+    isWholesaleCustomer: {% if wcp_wholesale_customer == true %}true{% else %}false{% endif %},
+    wcpDelay: 500, // Reduced from 800ms
+    debounceDelay: 300,
+    maxRetries: 3
+  };
+  
+  // State management
+  const state = {
+    isUpdating: false,
+    updateQueue: [],
+    retryCount: 0
+  };
+  
+  // Cart Manager Class
+  class CartManager {
+    constructor() {
+      this.errorContainer = document.querySelector('[data-cart-error]');
+      this.cartLoading = document.querySelector('[data-cart-loading]');
+      this.cartEmpty = document.querySelector('[data-cart-empty]');
+      this.cartForm = document.querySelector('[data-cart-form]');
+      this.debounceTimer = null;
     }
     
-    // Prevent only the "Update Cart" button from submitting, allow checkout
-    function preventUpdateButtonSubmission() {
+    // Initialize cart
+    init() {
+      this.attachEventListeners();
+      this.preventDefaultUpdate();
+    }
+    
+    // Attach all event listeners
+    attachEventListeners() {
+      // Use event delegation for better performance
+      document.addEventListener('click', this.handleClick.bind(this));
+      document.addEventListener('change', this.handleChange.bind(this));
+      document.addEventListener('input', this.handleInput.bind(this));
+    }
+    
+    // Handle all click events
+    handleClick(e) {
+      const plusBtn = e.target.closest('.quantity__button--plus');
+      const minusBtn = e.target.closest('.quantity__button--minus');
+      const removeBtn = e.target.closest('[data-remove-key]');
+      
+      if (plusBtn) {
+        e.preventDefault();
+        this.adjustQuantity(plusBtn, 1);
+      } else if (minusBtn) {
+        e.preventDefault();
+        this.adjustQuantity(minusBtn, -1);
+      } else if (removeBtn) {
+        e.preventDefault();
+        const key = removeBtn.getAttribute('data-remove-key');
+        this.removeItem(key);
+      }
+    }
+    
+    // Handle change events
+    handleChange(e) {
+      const qtyInput = e.target.closest('.quantity__input');
+      if (qtyInput) {
+        const key = qtyInput.getAttribute('data-update-cart');
+        const newQty = parseInt(qtyInput.value) || 0;
+        this.updateCart(key, newQty);
+      }
+    }
+    
+    // Handle input events with debounce
+    handleInput(e) {
+      const qtyInput = e.target.closest('.quantity__input');
+      if (qtyInput) {
+        // Validate input immediately
+        let value = parseInt(qtyInput.value) || 0;
+        if (value < 0) value = 0;
+        qtyInput.value = value;
+      }
+    }
+    
+    // Adjust quantity by delta
+    adjustQuantity(button, delta) {
+      const wrapper = button.closest('[data-quantity-selector]');
+      const input = wrapper.querySelector('.quantity__input');
+      const currentQty = parseInt(input.value) || 0;
+      const newQty = Math.max(0, currentQty + delta);
+      
+      input.value = newQty;
+      
+      const key = input.getAttribute('data-update-cart');
+      this.updateCart(key, newQty);
+    }
+    
+    // Remove item with animation
+    removeItem(key) {
+      const row = document.querySelector(`[data-cart-item] input[data-update-cart="${key}"]`)?.closest('[data-cart-item]');
+      if (row) {
+        row.classList.add('removing');
+        setTimeout(() => this.updateCart(key, 0), 300);
+      } else {
+        this.updateCart(key, 0);
+      }
+    }
+    
+    // Update cart via AJAX
+    async updateCart(key, quantity) {
+      if (state.isUpdating) {
+        // Queue the update
+        state.updateQueue.push({ key, quantity });
+        return;
+      }
+      
+      state.isUpdating = true;
+      this.showLoading();
+      this.hideError();
+      
+      try {
+        const response = await fetch('/cart/change.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ id: key, quantity: quantity })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const cart = await response.json();
+        
+        // Wait for WCP if needed
+        if (CONFIG.isWholesaleCustomer) {
+          await this.waitForWCP();
+        }
+        
+        await this.refreshCart(cart);
+        state.retryCount = 0;
+        
+        // Dispatch success event
+        this.dispatchCartEvent('success', cart);
+        
+      } catch (error) {
+        console.error('Cart update error:', error);
+        this.showError('Unable to update cart. Please try again.');
+        
+        // Retry logic
+        if (state.retryCount < CONFIG.maxRetries) {
+          state.retryCount++;
+          setTimeout(() => this.updateCart(key, quantity), 1000 * state.retryCount);
+        }
+        
+      } finally {
+        state.isUpdating = false;
+        this.hideLoading();
+        
+        // Process queued updates
+        if (state.updateQueue.length > 0) {
+          const next = state.updateQueue.shift();
+          setTimeout(() => this.updateCart(next.key, next.quantity), 100);
+        }
+      }
+    }
+    
+    // Wait for WCP to load
+    waitForWCP() {
+      return new Promise((resolve) => {
+        if (window.wcp_data) {
+          setTimeout(resolve, CONFIG.wcpDelay);
+        } else {
+          const checkInterval = setInterval(() => {
+            if (window.wcp_data) {
+              clearInterval(checkInterval);
+              setTimeout(resolve, CONFIG.wcpDelay);
+            }
+          }, 100);
+          
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve();
+          }, 5000);
+        }
+      });
+    }
+    
+    // Refresh cart display efficiently
+    async refreshCart(cart) {
+      try {
+        // Fetch only the cart section HTML
+        const response = await fetch(window.location.href + '?section_id=cart', {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Update specific sections
+        this.updateSection('[data-line-items]', doc);
+        this.updateSection('[data-cart-subtotal]', doc);
+        this.updateSection('[data-cart-final]', doc);
+        this.updateSection('[data-cart-message]', doc);
+        
+        // Update WCP elements if they exist
+        this.updateSection('.wcp-cart-total', doc);
+        this.updateSection('.wcp-minimums-note', doc);
+        this.updateSection('.wcp-extra-note', doc);
+        
+        // Handle empty cart
+        this.toggleEmptyCart(cart.item_count === 0);
+        
+        // Update header cart
+        this.updateHeaderCart(cart);
+        
+        // Re-trigger WCP if needed
+        if (CONFIG.isWholesaleCustomer && window.wcpRefreshCartTotal) {
+          window.wcpRefreshCartTotal();
+        }
+        
+      } catch (error) {
+        console.error('Cart refresh error:', error);
+        // Fallback to full page reload
+        window.location.reload();
+      }
+    }
+    
+    // Update a specific section
+    updateSection(selector, doc) {
+      const newElement = doc.querySelector(selector);
+      const currentElement = document.querySelector(selector);
+      
+      if (newElement && currentElement) {
+        currentElement.innerHTML = newElement.innerHTML;
+      }
+    }
+    
+    // Toggle empty cart state
+    toggleEmptyCart(isEmpty) {
+      if (isEmpty) {
+        this.cartEmpty?.classList.remove('cart--hidden');
+        this.cartForm?.closest('[data-cart-loading]')?.classList.add('cart--hidden');
+      } else {
+        this.cartEmpty?.classList.add('cart--hidden');
+        this.cartForm?.closest('[data-cart-loading]')?.classList.remove('cart--hidden');
+      }
+    }
+    
+    // Update header cart count
+    updateHeaderCart(cart) {
+      // Update cart count
+      document.querySelectorAll('[data-header-cart-count], [data-cart-count-badge]').forEach(el => {
+        el.textContent = cart.item_count;
+        if (cart.item_count === 0) {
+          el.classList.add('hidden');
+        } else {
+          el.classList.remove('hidden');
+        }
+      });
+      
+      // Update cart price
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: '{{ cart.currency.iso_code }}'
+      });
+      
+      document.querySelectorAll('[data-header-cart-price]').forEach(el => {
+        el.textContent = formatter.format(cart.total_price / 100);
+      });
+    }
+    
+    // Show loading state
+    showLoading() {
+      this.cartLoading?.classList.add('cart--loading');
+    }
+    
+    // Hide loading state
+    hideLoading() {
+      this.cartLoading?.classList.remove('cart--loading');
+    }
+    
+    // Show error message
+    showError(message) {
+      if (this.errorContainer) {
+        this.errorContainer.textContent = message;
+        this.errorContainer.classList.add('active');
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => this.hideError(), 5000);
+      }
+    }
+    
+    // Hide error message
+    hideError() {
+      this.errorContainer?.classList.remove('active');
+    }
+    
+    // Prevent default form submission for update button
+    preventDefaultUpdate() {
       const updateButton = document.querySelector('[name="update"]');
       if (updateButton) {
-        // Remove existing listeners to prevent duplicates
-        const newButton = updateButton.cloneNode(true);
-        updateButton.parentNode.replaceChild(newButton, updateButton);
-        
-        newButton.addEventListener('click', function(e) {
+        updateButton.addEventListener('click', (e) => {
           e.preventDefault();
           return false;
         });
       }
     }
     
-    // Attach listeners to quantity controls
-    function attachQuantityListeners() {
-      // Plus buttons
-      document.querySelectorAll('.quantity__button--plus').forEach(button => {
-        // Remove existing listener by cloning
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-        
-        newButton.addEventListener('click', function(e) {
-          e.preventDefault();
-          const wrapper = this.closest('[data-quantity-selector]');
-          const input = wrapper.querySelector('.quantity__input');
-          const currentQty = parseInt(input.value) || 0;
-          const newQty = currentQty + 1;
-          input.value = newQty;
-          
-          const key = input.getAttribute('data-update-cart');
-          updateCart(key, newQty);
-        });
-      });
-      
-      // Minus buttons
-      document.querySelectorAll('.quantity__button--minus').forEach(button => {
-        // Remove existing listener by cloning
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-        
-        newButton.addEventListener('click', function(e) {
-          e.preventDefault();
-          const wrapper = this.closest('[data-quantity-selector]');
-          const input = wrapper.querySelector('.quantity__input');
-          const currentQty = parseInt(input.value) || 0;
-          const newQty = Math.max(0, currentQty - 1);
-          input.value = newQty;
-          
-          const key = input.getAttribute('data-update-cart');
-          updateCart(key, newQty);
-        });
-      });
-      
-      // Direct input changes
-      document.querySelectorAll('.quantity__input').forEach(input => {
-        // Remove existing listener by cloning
-        const newInput = input.cloneNode(true);
-        input.parentNode.replaceChild(newInput, input);
-        
-        newInput.addEventListener('change', function(e) {
-          const newQty = parseInt(this.value) || 0;
-          const key = this.getAttribute('data-update-cart');
-          updateCart(key, newQty);
-        });
-      });
+    // Dispatch custom cart event
+    dispatchCartEvent(type, cart) {
+      document.dispatchEvent(new CustomEvent('theme:cart:change', {
+        detail: { type, cart },
+        bubbles: true
+      }));
     }
-    
-    // Attach listeners to remove buttons
-    function attachRemoveListeners() {
-      document.querySelectorAll('[data-remove-key]').forEach(button => {
-        // Remove existing listener by cloning
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-        
-        newButton.addEventListener('click', function(e) {
-          e.preventDefault();
-          const key = this.getAttribute('data-remove-key');
-          updateCart(key, 0);
-        });
-      });
-    }
-    
-    // Update cart via AJAX
-    function updateCart(key, quantity) {
-      showLoading();
-      
-      fetch('/cart/change.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: key,
-          quantity: quantity
-        })
-      })
-      .then(response => response.json())
-      .then(cart => {
-        // For wholesale customers, wait for WCP to calculate
-        if (isWholesaleCustomer) {
-          setTimeout(() => refreshCartDisplay(cart), 800);
-        } else {
-          refreshCartDisplay(cart);
-        }
-      })
-      .catch(error => {
-        console.error('Cart update error:', error);
-        hideLoading();
-      });
-    }
-    
-    // Refresh cart display
-    function refreshCartDisplay(cart) {
-      fetch(window.location.href)
-        .then(response => response.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          
-          // Update line items
-          const newItems = doc.querySelector('[data-line-items]');
-          const currentItems = document.querySelector('[data-line-items]');
-          if (newItems && currentItems) {
-            currentItems.innerHTML = newItems.innerHTML;
-          }
-          
-          // Update subtotal section
-          const newSubtotal = doc.querySelector('[data-cart-subtotal]');
-          const currentSubtotal = document.querySelector('[data-cart-subtotal]');
-          if (newSubtotal && currentSubtotal) {
-            currentSubtotal.innerHTML = newSubtotal.innerHTML;
-          }
-          
-          // Update cart total
-          const newFinal = doc.querySelector('[data-cart-final]');
-          const currentFinal = document.querySelector('[data-cart-final]');
-          if (newFinal && currentFinal) {
-            currentFinal.innerHTML = newFinal.innerHTML;
-          }
-          
-          // Update shipping message
-          const newMessage = doc.querySelector('[data-cart-message]');
-          const currentMessage = document.querySelector('[data-cart-message]');
-          if (newMessage && currentMessage) {
-            currentMessage.outerHTML = newMessage.outerHTML;
-          }
-          
-          // Update WCP elements if they exist
-          const wcpTotal = doc.querySelector('.wcp-cart-total');
-          const currentWcpTotal = document.querySelector('.wcp-cart-total');
-          if (wcpTotal && currentWcpTotal) {
-            currentWcpTotal.innerHTML = wcpTotal.innerHTML;
-          }
-          
-          const wcpNote = doc.querySelector('.wcp-minimums-note');
-          const currentWcpNote = document.querySelector('.wcp-minimums-note');
-          if (wcpNote && currentWcpNote) {
-            currentWcpNote.innerHTML = wcpNote.innerHTML;
-          }
-          
-          // Handle empty cart
-          if (cart.item_count === 0) {
-            const emptyCart = document.querySelector('[data-cart-empty]');
-            const fullCart = document.querySelector('[data-cart-form]');
-            if (emptyCart) emptyCart.classList.remove('cart--hidden');
-            if (fullCart) fullCart.classList.add('cart--hidden');
-          } else {
-            const emptyCart = document.querySelector('[data-cart-empty]');
-            const fullCart = document.querySelector('[data-cart-form]');
-            if (emptyCart) emptyCart.classList.add('cart--hidden');
-            if (fullCart) fullCart.classList.remove('cart--hidden');
-          }
-          
-          hideLoading();
-          
-          // Re-initialize event listeners
-          initCart();
-          
-          // Trigger WCP refresh if needed
-          if (isWholesaleCustomer && window.wcpRefreshCartTotal) {
-            window.wcpRefreshCartTotal();
-          }
-          
-          // Dispatch custom event for other scripts
-          document.dispatchEvent(new CustomEvent('theme:cart:change', {
-            detail: { cart: cart },
-            bubbles: true
-          }));
-        })
-        .catch(error => {
-          console.error('Cart refresh error:', error);
-          hideLoading();
-        });
-    }
-    
-    // Show loading state
-    function showLoading() {
-      const cartLoading = document.querySelector('[data-cart-loading]');
-      if (cartLoading) {
-        cartLoading.classList.add('cart--loading');
-      }
-    }
-    
-    // Hide loading state
-    function hideLoading() {
-      const cartLoading = document.querySelector('[data-cart-loading]');
-      if (cartLoading) {
-        cartLoading.classList.remove('cart--loading');
-      }
-    }
-    
-    // Start the cart
-    initCart();
-  };
-  
-  // Initialize on page load
-  document.addEventListener('DOMContentLoaded', function() {
-    window.initCartPage();
-  });
-  
-  // Re-initialize when cart becomes visible (for drawer/modal scenarios)
-  const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(mutation) {
-      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-        const cartTemplate = document.querySelector('.cart__template');
-        if (cartTemplate && !cartTemplate.classList.contains('cart--hidden')) {
-          // Cart is now visible, re-initialize
-          setTimeout(function() {
-            window.initCartPage();
-          }, 100);
-        }
-      }
-    });
-  });
-  
-  // Observe cart visibility changes
-  const cartTemplate = document.querySelector('.cart__template');
-  if (cartTemplate) {
-    observer.observe(cartTemplate, { attributes: true });
   }
   
-  // Also listen for custom cart open events
-  document.addEventListener('theme:cart:open', function() {
-    setTimeout(function() {
-      window.initCartPage();
-    }, 100);
+  // Initialize on DOM ready
+  let cartManager;
+  
+  function initCartPage() {
+    if (!cartManager) {
+      cartManager = new CartManager();
+    }
+    cartManager.init();
+  }
+  
+  // Make globally accessible
+  window.initCartPage = initCartPage;
+  
+  // Auto-initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCartPage);
+  } else {
+    initCartPage();
+  }
+  
+  // Re-initialize on visibility change
+  document.addEventListener('theme:cart:open', () => {
+    setTimeout(initCartPage, 100);
   });
+  
+})();
 </script>
             
 {% schema %}
 {
+  "name": "Cart",
   "settings": [
     {
       "type": "select",
