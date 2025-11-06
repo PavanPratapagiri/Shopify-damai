@@ -438,6 +438,12 @@
       const plusBtn = e.target.closest('.quantity__button--plus');
       const minusBtn = e.target.closest('.quantity__button--minus');
       const removeBtn = e.target.closest('[data-remove-key]');
+      const checkoutBtn = e.target.closest('.checkout__button');
+      
+      // Don't interfere with checkout button
+      if (checkoutBtn) {
+        return;
+      }
       
       if (plusBtn) {
         e.preventDefault();
@@ -751,6 +757,18 @@
           return false;
         });
       }
+      
+      // Ensure checkout button submits the form
+      const checkoutButtons = document.querySelectorAll('.checkout__button');
+      checkoutButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          // Don't prevent default - let it submit the form
+          if (!button.disabled) {
+            // Allow normal form submission
+            return true;
+          }
+        });
+      });
     }
     
     // Dispatch custom cart event
