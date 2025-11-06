@@ -568,6 +568,9 @@
         this.updateSection('.wcp-minimums-note', doc);
         this.updateSection('.wcp-extra-note', doc);
         
+        // Update individual item prices from cart data
+        this.updateItemPrices(cart);
+        
         // Handle empty cart
         this.toggleEmptyCart(cart.item_count === 0);
         
@@ -584,6 +587,34 @@
         // Fallback to full page reload
         window.location.reload();
       }
+    }
+    
+    // Update individual item prices to match cart data
+    updateItemPrices(cart) {
+      cart.items.forEach(item => {
+        // Update unit price
+        const priceElement = document.querySelector(`[data-cart-item-price="${item.key}"]`);
+        if (priceElement) {
+          const priceSpan = priceElement.querySelector('[data-wpd-cart-item]');
+          if (priceSpan) {
+            const formatter = new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: cart.currency
+            });
+            priceSpan.textContent = formatter.format(item.final_price / 100);
+          }
+        }
+        
+        // Update line total
+        const totalElement = document.querySelector(`[data-wpd-cart-item="${item.key}"][data-wpd-cart-line-price]`);
+        if (totalElement) {
+          const formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: cart.currency
+          });
+          totalElement.textContent = formatter.format(item.final_line_price / 100);
+        }
+      });
     }
     
     // Update a specific section
