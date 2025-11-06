@@ -88,43 +88,6 @@
   .cart__template {
     min-height: 400px;
   }
-  
-  /* Volume Discount Display Styles */
-  .volume-discount-info {
-    background: #f0f8ff;
-    border: 2px solid #4CAF50;
-    border-radius: 8px;
-    padding: 16px;
-    margin: 16px 0;
-    text-align: center;
-  }
-  
-  .volume-discount-info.next-tier {
-    background: #fff8e1;
-    border-color: #FF9800;
-  }
-  
-  .discount-badge {
-    display: inline-block;
-    background: #4CAF50;
-    color: white;
-    font-size: 24px;
-    font-weight: bold;
-    padding: 8px 20px;
-    border-radius: 50px;
-    margin-bottom: 8px;
-  }
-  
-  .next-tier .discount-badge {
-    background: #FF9800;
-  }
-  
-  .discount-message {
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-    margin-top: 8px;
-  }
 </style>
 
 <div class="cart__template {{ no_ajax_class }} {{ hide_quantity }} {{ section.settings.bg }}"
@@ -470,54 +433,6 @@
     init() {
       this.attachEventListeners();
       this.preventDefaultUpdate();
-      this.displayVolumeDiscountInfo();
-    }
-    
-    // Display volume discount information banner
-    displayVolumeDiscountInfo() {
-      fetch('/cart.js')
-        .then(r => r.json())
-        .then(cart => {
-          const totalQty = PricingUtils.getTotalQuantity(cart);
-          const currentTier = PricingUtils.getDiscountTier(totalQty);
-          const nextTier = PricingUtils.getNextTierInfo(totalQty);
-          
-          // Find or create discount info container
-          let discountInfo = document.querySelector('.volume-discount-info');
-          const cartFooter = document.querySelector('.cart__footer__total');
-          
-          if (totalQty > 0 && cartFooter) {
-            if (!discountInfo) {
-              discountInfo = document.createElement('div');
-              discountInfo.className = 'volume-discount-info';
-              cartFooter.insertBefore(discountInfo, cartFooter.firstChild);
-            }
-            
-            if (currentTier) {
-              const currentDiscount = Math.round(currentTier.discount * 100);
-              if (nextTier) {
-                discountInfo.className = 'volume-discount-info next-tier';
-                discountInfo.innerHTML = `
-                  <div class="discount-badge">${currentDiscount}% OFF</div>
-                  <div class="discount-message">
-                    Add ${nextTier.itemsNeeded} more item${nextTier.itemsNeeded > 1 ? 's' : ''} to unlock ${nextTier.nextTierDiscount}% discount!
-                    <br><small>Price will drop to $${nextTier.nextTierPrice.toFixed(2)} per item</small>
-                  </div>
-                `;
-              } else {
-                discountInfo.className = 'volume-discount-info';
-                discountInfo.innerHTML = `
-                  <div class="discount-badge">${currentDiscount}% OFF</div>
-                  <div class="discount-message">
-                    Maximum discount unlocked! 🎉
-                  </div>
-                `;
-              }
-            }
-          } else if (discountInfo) {
-            discountInfo.remove();
-          }
-        });
     }
     
     // Attach all event listeners
@@ -632,7 +547,6 @@
         }
         
         await this.refreshCart(cart);
-        this.displayVolumeDiscountInfo();
         state.retryCount = 0;
         
         // Dispatch success event for product multi-variants page
