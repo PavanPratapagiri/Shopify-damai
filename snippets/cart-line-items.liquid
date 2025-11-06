@@ -107,7 +107,7 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
             {%- endif -%}
 
             {%- if sale -%}
-              <del class="data-wpd-hide" data-compare-price="{{ line_item.key }}">
+              <del class="data-wpd-hide" data-compare-price="{{ line_item.key }}" style="display: block; opacity: 0.6;">
                 {%- if sale_plan_allocation -%}
                   {% if settings.currency_code_enable %}
                     {{ line_item.selling_plan_allocation.compare_at_price | money_with_currency }}
@@ -125,7 +125,7 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
             {%- endif -%}
 
             {%- if discounted -%}
-              <del class="data-wpd-hide" data-original-price="{{ line_item.key }}">
+              <del class="data-wpd-hide" data-original-price="{{ line_item.key }}" style="display: block; opacity: 0.6;">
                 {% if settings.currency_code_enable %}
                   {{ line_item.original_price | money_with_currency }}
                 {% else %}
@@ -147,7 +147,8 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
               data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" {% endif %} 
                 data-wpd-cart-variant-id="{{ line_item.variant.id }}"   
                 data-wpd-cart-item="{{ line_item.key }}"
-                data-item-price="{{ line_item.key }}">
+                data-item-price="{{ line_item.key }}"
+                style="display: inline-block; background: none; font-weight: normal;">
                 {% if settings.currency_code_enable %}
                   {{ line_item.final_price | money_with_currency }}
                 {% else %}
@@ -166,7 +167,8 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
               data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" {% endif %} 
               data-wpd-cart-variant-id="{{ line_item.variant.id }}"   
               data-wpd-cart-item="{{ line_item.key }}"
-              data-item-price="{{ line_item.key }}">
+              data-item-price="{{ line_item.key }}"
+              style="display: inline-block;">
                 {% if settings.currency_code_enable %}
                   {{ line_item.final_price | money_with_currency }}
                 {% else %}
@@ -214,11 +216,12 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
           </div>
         </div>
 
-            <div class="cart__items__total" 
+        <div class="cart__items__total" 
             data-wpd-cart-variant-id="{{ line_item.variant.id }}"   
             data-wpd-cart-item="{{ line_item.key }}"                                
             data-wpd-cart-line-price
-            data-line-total="{{ line_item.key }}">
+            data-line-total="{{ line_item.key }}"
+            style="display: block;">
           {% if settings.currency_code_enable %}
             {{ line_item.final_line_price | money_with_currency }}
           {% else %}
