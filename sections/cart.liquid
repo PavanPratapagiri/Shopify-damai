@@ -134,31 +134,35 @@
     <form action="{{ routes.cart_url }}" method="post" novalidate class="cart">
       <h3 class="cart__page__title body-size-8">{{ 'cart.general.title' | t }}</h3>
       <div class="errors" data-form-errors style="display: none;"></div>
-      <div class="cart__items__grid cart__heading__wrapper">
-        <div class="cart__heading__back">
-          <a href="{{ settings.cart_continue_browsing | default: routes.all_products_collection_url }}" class="cart__heading cart__return">
-            {% render 'icon-arrow-long-left' %}
-            &nbsp;
-            {{ 'cart.general.continue_browsing' | t }}
-          </a>
-        </div>
-        <div class="cart__items__quantity">
-          <p class="cart__heading">{{ 'cart.label.quantity' | t }}</p>
-        </div>
-        <div class="cart__items__total">
-          <p class="cart__heading">{{ 'cart.label.total' | t }}</p>
-        </div>
-      </div>
+      
+      <!-- Cart Table Structure -->
+      <table class="cart__table">
+        <thead>
+          <tr class="cart__heading__wrapper">
+            <th class="cart__heading__back" colspan="2">
+              <a href="{{ settings.cart_continue_browsing | default: routes.all_products_collection_url }}" class="cart__heading cart__return">
+                {% render 'icon-arrow-long-left' %}
+                &nbsp;
+                {{ 'cart.general.continue_browsing' | t }}
+              </a>
+            </th>
+            <th class="cart__heading">{{ 'cart.label.product' | t }}</th>
+            <th class="cart__heading cart__heading__price">{{ 'cart.label.price' | t }}</th>
+            <th class="cart__heading cart__heading__quantity">{{ 'cart.label.quantity' | t }}</th>
+            <th class="cart__heading cart__heading__total">{{ 'cart.label.total' | t }}</th>
+          </tr>
+        </thead>
+        <tbody data-line-items>
+          {% render 'cart-line-items',  wpddrawer: false %}
+        </tbody>
+      </table>
+      
       <div class="template__cart__body">
         <div class="errors" data-form-errors style="display: none;"></div>
-        <div data-cart-form>
+        <div data-cart-form style="display: none;">
             {% comment %}
-              The following snippet is refreshed via ajax with
-              cart.items.liquid when the quantity is adjusted.
+              Hidden container for compatibility - actual items render in table above
             {% endcomment %}
-            <div data-line-items>
-            {% render 'cart-line-items',  wpddrawer: false %}
-            </div>
         </div>
 
         <div class="template__cart__footer{% if additional_checkout_buttons and settings.cart_show_additional_buttons %} template__cart__footer--additional_buttons{% endif %}" data-cart-bottom>
