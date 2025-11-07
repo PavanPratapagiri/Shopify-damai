@@ -843,7 +843,30 @@
         // Update line total (quantity × unit price)
         const lineTotalElement = document.querySelector(`[data-line-total="${item.key}"]`);
         if (lineTotalElement) {
-          lineTotalElement.textContent = formatter.format(lineTotal / 100);
+          // Update the main line total price span
+          const lineTotalPriceSpan = lineTotalElement.querySelector(`[data-line-total-price="${item.key}"]`);
+          if (lineTotalPriceSpan) {
+            lineTotalPriceSpan.textContent = formatter.format(lineTotal / 100);
+            
+            // Apply green styling if discounted
+            if (hasDiscount && msrpPrice > finalUnitPrice) {
+              lineTotalPriceSpan.style.color = '#28a745';
+              lineTotalPriceSpan.style.fontWeight = '600';
+            } else {
+              lineTotalPriceSpan.style.color = '';
+              lineTotalPriceSpan.style.fontWeight = '600';
+            }
+          }
+          
+          // Update compare line total (MSRP × quantity) if exists
+          const compareLineTotalElement = lineTotalElement.querySelector(`[data-compare-line-total="${item.key}"]`);
+          if (compareLineTotalElement && hasDiscount) {
+            const msrpLineTotal = msrpPrice * item.quantity;
+            compareLineTotalElement.textContent = formatter.format(msrpLineTotal / 100);
+            compareLineTotalElement.style.display = 'block';
+          } else if (compareLineTotalElement) {
+            compareLineTotalElement.style.display = 'none';
+          }
         }
         
         // Update WPD wholesale pricing line price

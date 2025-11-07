@@ -223,11 +223,26 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
             data-wpd-cart-line-price
             data-line-total="{{ line_item.key }}"
             style="display: block;">
-          {% if settings.currency_code_enable %}
-            {{ line_item.final_line_price | money_with_currency }}
-          {% else %}
-            {{ line_item.final_line_price | money }}
-          {% endif %}
+          {%- comment -%} Show original MSRP total if item has compare_at_price {%- endcomment -%}
+          {%- if sale -%}
+            <del data-compare-line-total="{{ line_item.key }}" style="display: block; opacity: 0.6; font-size: 0.9em; margin-bottom: 4px;">
+              {%- assign msrp_line_total = line_item.variant.compare_at_price | times: line_item.quantity -%}
+              {% if settings.currency_code_enable %}
+                {{ msrp_line_total | money_with_currency }}
+              {% else %}
+                {{ msrp_line_total | money }}
+              {% endif %}
+            </del>
+          {%- endif -%}
+          
+          {%- comment -%} Show updated discounted total {%- endcomment -%}
+          <span data-line-total-price="{{ line_item.key }}" style="display: block; font-weight: 600;{% if sale %} color: #28a745;{% endif %}">
+            {% if settings.currency_code_enable %}
+              {{ line_item.final_line_price | money_with_currency }}
+            {% else %}
+              {{ line_item.final_line_price | money }}
+            {% endif %}
+          </span>
         </div>
 
         {% if discounted and line_item.quantity >= 1 %}
