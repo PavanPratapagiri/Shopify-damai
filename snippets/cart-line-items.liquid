@@ -7,6 +7,7 @@
     <thead>
       <tr>
         <th class="product-heading">Product</th>
+        <th class="price-heading">Price</th>
         <th class="quantity-heading">Quantity</th>
         <th class="total-heading">Total</th>
       </tr>
@@ -80,36 +81,35 @@
                     {%- endfor -%}
                   {%- endif -%}
                 </div>
-                
-                {%- comment -%} Mobile price and stock display {%- endcomment -%}
-                <div class="cart-mobile-info">
-                  {%- assign sale = false -%}
-                  {%- if line_item.variant.compare_at_price > line_item.final_price -%}
-                    {%- assign sale = true -%}
-                  {%- endif -%}
-                  
-                  <div class="cart-mobile-price">
-                    {%- if sale -%}
-                      <del style="opacity: 0.6; margin-right: 8px;">
-                        {{ line_item.variant.compare_at_price | money }}
-                      </del>
-                    {%- endif -%}
-                    <span data-item-price="{{ line_item.key }}">
-                      {{ line_item.final_price | money }}
-                    </span>
-                  </div>
-                  
-                  <div class="cart-mobile-stock">
-                    {% if line_item.variant.inventory_management %}
-                      {% if line_item.variant.inventory_quantity > 0 %}
-                        In stock: {{ line_item.variant.inventory_quantity }}
-                      {% else %}
-                        Limited stock
-                      {% endif %}
-                    {% endif %}
-                  </div>
-                </div>
               </div>
+            </div>
+          </td>
+          
+          {%- comment -%} Price Column {%- endcomment -%}
+          <td class="cart-price-cell">
+            {%- assign sale = false -%}
+            {%- if line_item.variant.compare_at_price > line_item.final_price -%}
+              {%- assign sale = true -%}
+            {%- endif -%}
+
+            {%- if sale -%}
+              <div class="cart-msrp">MSRP: {{ line_item.variant.compare_at_price | money }}</div>
+            {%- endif -%}
+
+            <div class="cart-current-price">
+              <span data-wpd-cart-drawer-product-handle="{{ line_item.product.handle }}"                                  
+                data-wpd-cart-drawer-variant-id="{{ line_item.variant.id }}"                                   
+                data-wpd-cart-drawer-variant-price="{{ line_item.final_price }}"                                  
+                data-wpd-cart-drawer-variant-compare-at-price="{{ line_item.variant.compare_at_price }}"                                  
+                data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds = line_item.product.collections | map:'id' %}{{ wpdProductCollectionIds | join:',' }}"                                  
+                data-wpd-cart-drawer-product-id="{{ line_item.product.id }}"                                  
+                data-wpd-cart-drawer-item="{{ line_item.key }}"                          
+                data-wpd-cart-drawer-quantity="{{ line_item.quantity }}"
+                data-wpd-cart-variant-id="{{ line_item.variant.id }}"   
+                data-wpd-cart-item="{{ line_item.key }}"
+                data-item-price="{{ line_item.key }}">
+                {{ line_item.final_price | money }}
+              </span>
             </div>
           </td>
           
@@ -153,20 +153,17 @@
               </del>
             {%- endif -%}
             
-            <div class="cart-line-total">
-              <span data-line-total-price="{{ line_item.key }}">
-                {{ line_item.final_line_price | money }}
-              </span>
-            </div>
+            <span class="cart-total-amount" data-line-total-price="{{ line_item.key }}">
+              {{ line_item.final_line_price | money }}
+            </span>
             
-            <div class="cart-tier-hint" data-volume-hint="{{ line_item.key }}">
-            </div>
+            <span class="cart-next-tier-hint" data-volume-hint="{{ line_item.key }}"></span>
           </td>
         </tr>
         
         {%- if discounted and line_item.quantity >= 1 -%}
           <tr class="cart-discount-row">
-            <td colspan="3">
+            <td colspan="4">
               {%- for discount in line_item.line_level_discount_allocations -%}
                 <div class="cart__items__savings">
                   <span class="item__total__savings">
