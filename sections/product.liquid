@@ -304,6 +304,9 @@
   </style>
 
   <script>
+    // Debounce function to prevent flickering
+    let grandTotalTimeout = null;
+    
     function updateQuantityDisplay(variantId) {
       const input = document.getElementById('quantity_' + variantId);
       const totalSpan = document.getElementById('total-' + variantId);
@@ -312,7 +315,11 @@
       
       totalSpan.textContent = '$' + (qty * price / 100).toFixed(2);
       
-      updateGrandTotal();
+      // Debounce the grand total update to prevent flickering
+      if (grandTotalTimeout) {
+        clearTimeout(grandTotalTimeout);
+      }
+      grandTotalTimeout = setTimeout(updateGrandTotal, 300);
     }
 
     function updateGrandTotal() {
@@ -336,8 +343,16 @@
       const totalItemsEl = document.getElementById('total-items');
       const grandTotalEl = document.getElementById('grand-total');
       
-      if (totalItemsEl) totalItemsEl.textContent = totalItems;
-      if (grandTotalEl) grandTotalEl.textContent = '$' + (grandTotal / 100).toFixed(2);
+      // Only update if the elements exist and values have changed
+      if (totalItemsEl && totalItemsEl.textContent !== totalItems.toString()) {
+        totalItemsEl.textContent = totalItems;
+      }
+      if (grandTotalEl) {
+        const formattedTotal = '$' + (grandTotal / 100).toFixed(2);
+        if (grandTotalEl.textContent !== formattedTotal) {
+          grandTotalEl.textContent = formattedTotal;
+        }
+      }
     }
 
     function increaseQuantity(variantId) {

@@ -155,10 +155,13 @@
       updatePrice(`[data-line-total="${key}"]`, item.final_line_price, formatter);
       updatePrice(`[data-wpd-cart-line-price][data-wpd-cart-item="${key}"]`, item.final_line_price, formatter);
       
-      // Update quantity to match cart
+      // Update quantity ONLY if the input is not currently focused (prevents flickering)
       const qtyInput = document.querySelector(`input[data-update-cart="${key}"]`);
       if (qtyInput && parseInt(qtyInput.value) !== item.quantity) {
-        qtyInput.value = item.quantity;
+        // Don't update if user is currently typing in this input
+        if (document.activeElement !== qtyInput) {
+          qtyInput.value = item.quantity;
+        }
       }
     });
     
