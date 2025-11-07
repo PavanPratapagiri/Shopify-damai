@@ -139,14 +139,13 @@
       <table class="cart__table">
         <thead>
           <tr class="cart__heading__wrapper">
-            <th class="cart__heading__back" colspan="2">
+            <th class="cart__heading__back" colspan="3">
               <a href="{{ settings.cart_continue_browsing | default: routes.all_products_collection_url }}" class="cart__heading cart__return">
                 {% render 'icon-arrow-long-left' %}
                 &nbsp;
                 {{ 'cart.general.continue_browsing' | t }}
               </a>
             </th>
-            <th class="cart__heading">{{ 'cart.label.product' | t }}</th>
             <th class="cart__heading cart__heading__price">{{ 'cart.label.price' | t }}</th>
             <th class="cart__heading cart__heading__quantity">{{ 'cart.label.quantity' | t }}</th>
             <th class="cart__heading cart__heading__total">{{ 'cart.label.total' | t }}</th>
