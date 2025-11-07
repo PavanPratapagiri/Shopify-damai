@@ -170,6 +170,36 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
             {%- endif -%}
           </p>
           
+          {%- comment -%} Total line price (unit price × quantity) {%- endcomment -%}
+          <p class="line__total__price" data-line-total-display="{{ line_item.key }}" style="margin-top: 8px; font-size: 16px; font-weight: 700; color: #333;">
+            {%- assign sale = false -%}
+            {%- if line_item.variant.compare_at_price > line_item.final_price -%}
+              {%- assign sale = true -%}
+            {%- endif -%}
+            
+            {%- comment -%} Show compare at total if on sale {%- endcomment -%}
+            {%- if sale -%}
+              {%- assign compare_total = line_item.variant.compare_at_price | times: line_item.quantity -%}
+              <del style="display: block; opacity: 0.6; font-size: 0.85em; margin-bottom: 2px;">
+                {% if settings.currency_code_enable %}
+                  {{ compare_total | money_with_currency }}
+                {% else %}
+                  {{ compare_total | money }}
+                {% endif %}
+              </del>
+            {%- endif -%}
+            
+            {%- comment -%} Show total line price {%- endcomment -%}
+            <span style="display: block; {% if sale %}color: #c33;{% endif %}">
+              Total: 
+              {% if settings.currency_code_enable %}
+                {{ line_item.final_line_price | money_with_currency }}
+              {% else %}
+                {{ line_item.final_line_price | money }}
+              {% endif %}
+            </span>
+          </p>
+          
           {%- comment -%} Volume discount price (calculated by JavaScript) {%- endcomment -%}
           <p class="line__price line__price--discounted" data-volume-discounted-price="{{ line_item.key }}" style="display: none; margin-top: 4px;">
             <span style="font-size: 12px; color: #28a745; font-weight: 600;">
@@ -226,69 +256,6 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
                   title="Maximum available quantity reached"
                 {% endif %}
               {% endif %}>+</button>
-          </div>
-          
-          {%- comment -%} Price display next to quantity {%- endcomment -%}
-          <div class="cart__quantity__price" style="margin-top: 8px; font-size: 14px; font-weight: 600;">
-            {%- assign discounted = false -%}
-            {%- if line_item.original_price > line_item.final_price -%}
-              {%- assign discounted = true -%}
-            {%- endif -%}
-
-            {%- assign sale = false -%}
-            {%- assign sale_plan_allocation = false -%}
-
-            {%- if line_item.selling_plan_allocation != blank -%}
-              {%- assign sale_plan_allocation = true -%}
-            {%- endif -%}
-
-            {%- if sale_plan_allocation -%}
-              {%- if line_item.selling_plan_allocation.compare_at_price > line_item.selling_plan_allocation.price -%}
-                {%- assign sale = true -%}
-              {%- endif -%}
-            {%- else -%}
-              {%- if line_item.variant.compare_at_price > line_item.final_price -%}
-                {%- assign sale = true -%}
-              {%- endif -%}
-            {%- endif -%}
-
-            {%- comment -%} Show compare at price if on sale {%- endcomment -%}
-            {%- if sale -%}
-              <del style="display: block; opacity: 0.6; font-size: 0.85em;">
-                {%- if sale_plan_allocation -%}
-                  {% if settings.currency_code_enable %}
-                    {{ line_item.selling_plan_allocation.compare_at_price | money_with_currency }}
-                  {% else %}
-                    {{ line_item.selling_plan_allocation.compare_at_price | money }}
-                  {% endif %}
-                {%- else -%}
-                  {% if settings.currency_code_enable %}
-                    {{ line_item.variant.compare_at_price | money_with_currency }}
-                  {% else %}
-                    {{ line_item.variant.compare_at_price | money }}
-                  {% endif %}
-                {% endif %}
-              </del>
-            {%- endif -%}
-
-            {%- comment -%} Show current per-unit price {%- endcomment -%}
-            {%- if sale or discounted -%}
-              <mark style="display: block; background: none; font-weight: 600; color: #c33;">
-                {% if settings.currency_code_enable %}
-                  {{ line_item.final_price | money_with_currency }}
-                {% else %}
-                  {{ line_item.final_price | money }}
-                {% endif %}
-              </mark>
-            {%- else -%}
-              <span style="display: block;">
-                {% if settings.currency_code_enable %}
-                  {{ line_item.final_price | money_with_currency }}
-                {% else %}
-                  {{ line_item.final_price | money }}
-                {% endif %}
-              </span>
-            {%- endif -%}
           </div>
         </div>
 
