@@ -201,7 +201,12 @@
               <tr style="border-bottom: 1px solid #e5e5e5;">
                 <td style="padding: 16px 8px; font-size: 13px; color: #666;">{{ variant.sku }}</td>
                 <td style="padding: 16px 8px; font-size: 14px; font-weight: 500;">{{ variant.title }}</td>
-                <td style="padding: 16px 8px; font-size: 14px; font-weight: 600;">${{ variant.price | money_without_currency }}</td>
+                <td style="padding: 16px 8px; font-size: 14px; font-weight: 600;">
+                  {% if variant.compare_at_price and variant.compare_at_price > variant.price %}
+                    <span style="font-size: 12px; color: #666; font-weight: 400;">MSRP: </span>${{ variant.compare_at_price | money_without_currency }}<br>
+                  {% endif %}
+                  ${{ variant.price | money_without_currency }}
+                </td>
                 <td style="padding: 16px 8px;">
                   {% if variant.available %}
                     <span style="display: inline-flex; align-items: center; padding: 4px 12px; background: #e8f5e9; color: #2e7d32; font-size: 13px; font-weight: 600; border-radius: 12px;">
