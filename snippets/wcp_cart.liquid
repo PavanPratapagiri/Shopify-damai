@@ -145,25 +145,44 @@ reqJquery(function($){
 
   // New function to recalculate cart total after applying custom discounts
   window.recalculateCartTotal = function(discounted_hash) {
+    // Safety check: ensure cart items exist
+    if (!window.wcp_data || !window.wcp_data.wcp_cart || !window.wcp_data.wcp_cart.items) {
+      console.warn('[Cart Total] Cart data not ready, skipping recalculation');
+      return discounted_hash;
+    }
+    
     var total = 0;
     var currency = discounted_hash.currency || '$';
     
     // Calculate total from our custom-discounted items
     for (var i = 0; i < window.wcp_data.wcp_cart.items.length; i++) {
       var item = window.wcp_data.wcp_cart.items[i];
+      
+      // Safety check: ensure item has required properties
+      if (!item || typeof item.wcp_v_price === 'undefined' || typeof item.quantity === 'undefined') {
+        console.warn('[Cart Total] Skipping item ' + i + ' - missing price or quantity');
+        continue;
+      }
+      
       var itemTotal = item.wcp_v_price * item.quantity;
       total += itemTotal;
-      console.log('[Cart Total] Item ' + i + ':', item.original_item.product_title, 
+      
+      console.log('[Cart Total] Item ' + i + ':', item.original_item ? item.original_item.product_title : 'Unknown', 
                   'Price:', (item.wcp_v_price/100).toFixed(2), 
                   'Qty:', item.quantity,
                   'Line Total:', (itemTotal/100).toFixed(2));
     }
     
-    console.log('[Cart Total] Calculated Total:', currency + (total/100).toFixed(2));
-    
-    // Update the discounted hash with our calculated total
-    discounted_hash.wcp_total = (total / 100).toFixed(2);
-    discounted_hash.formatted_wcp_total = currency + (total / 100).toFixed(2);
+    // Only update if we have a valid total
+    if (total > 0) {
+      console.log('[Cart Total] Calculated Total:', currency + (total/100).toFixed(2));
+      
+      // Update the discounted hash with our calculated total
+      discounted_hash.wcp_total = (total / 100).toFixed(2);
+      discounted_hash.formatted_wcp_total = currency + (total / 100).toFixed(2);
+    } else {
+      console.warn('[Cart Total] Total is zero or invalid, keeping original WCP total');
+    }
     
     return discounted_hash;
   };
