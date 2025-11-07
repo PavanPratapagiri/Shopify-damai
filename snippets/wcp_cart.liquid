@@ -62,9 +62,9 @@ function reqJquery(onload) {
 reqJquery(function($){
 
   // ========================================
-  // CUSTOM CART-BASED VOLUME DISCOUNT FIX
+  // CUSTOM PRODUCT-BASED VOLUME DISCOUNT FIX
   // ========================================
-  // This overrides WCP's per-product calculation with cart-based totals
+  // This applies volume discounts per product, not per cart total
   
   window.VOLUME_DISCOUNT_TIERS = [
     { min: 1, max: 4, discount: 0.39 },   // 39% off for 1-4 items
@@ -72,50 +72,72 @@ reqJquery(function($){
     { min: 10, max: Infinity, discount: 0.45 }  // 45% off for 10+ items
   ];
   
-  window.applyCartBasedVolumeDiscount = function(wcp_cart_data) {
-    // Calculate total cart quantity
-    var totalQty = 0;
-    for (var i = 0; i < wcp_cart_data.items.length; i++) {
-      totalQty += wcp_cart_data.items[i].quantity;
-    }
+  window.applyProductBasedVolumeDiscount = function(wcp_cart_data) {
+    // Group items by product_id to calculate per-product quantity
+    var productQuantities = {};
     
-    // Find the correct discount tier
-    var discountTier = null;
-    for (var j = 0; j < window.VOLUME_DISCOUNT_TIERS.length; j++) {
-      var tier = window.VOLUME_DISCOUNT_TIERS[j];
-      if (totalQty >= tier.min && totalQty <= tier.max) {
-        discountTier = tier;
-        break;
-      }
-    }
-    
-    if (!discountTier) {
-      console.warn('[Volume Discount] No tier found for quantity:', totalQty);
-      return wcp_cart_data;
-    }
-    
-    console.log('[Volume Discount] Applying ' + (discountTier.discount * 100) + '% discount for ' + totalQty + ' items');
-    
-    // Apply the discount to each item
     for (var i = 0; i < wcp_cart_data.items.length; i++) {
       var item = wcp_cart_data.items[i];
+      var productId = item.product_id || item.original_item.product_id;
       
-      // Get the base price (compare_at_price or regular price)
-      var basePrice = item.compare_at_price;
-      if (!basePrice || basePrice === 0 || basePrice < item.price) {
-        basePrice = item.price;
+      if (!productQuantities[productId]) {
+        productQuantities[productId] = {
+          totalQty: 0,
+          items: []
+        };
       }
       
-      // Calculate discounted price
-      var discountedPrice = Math.floor(basePrice * (1 - discountTier.discount));
+      productQuantities[productId].totalQty += item.quantity;
+      productQuantities[productId].items.push(i);
+    }
+    
+    // Apply discount to each product based on its total quantity
+    for (var productId in productQuantities) {
+      var productData = productQuantities[productId];
+      var totalQty = productData.totalQty;
       
-      // Update WCP prices
-      item.wcp_v_price = discountedPrice;
-      item.wcp_vd_price = discountedPrice;
+      // Find the correct discount tier for this product
+      var discountTier = null;
+      for (var j = 0; j < window.VOLUME_DISCOUNT_TIERS.length; j++) {
+        var tier = window.VOLUME_DISCOUNT_TIERS[j];
+        if (totalQty >= tier.min && totalQty <= tier.max) {
+          discountTier = tier;
+          break;
+        }
+      }
       
-      console.log('[Volume Discount] Item:', item.original_item.product_title, 
-                  'Base:', (basePrice/100).toFixed(2), 
-                  'Discounted:', (discountedPrice/100).toFixed(2));
+      if (!discountTier) {
+        console.warn('[Volume Discount] No tier found for product', productId, 'quantity:', totalQty);
+        continue;
+      }
+      
+      console.log('[Volume Discount] Product ID:', productId, 
+                  'Quantity:', totalQty, 
+                  'Discount:', (discountTier.discount * 100) + '%');
+      
+      // Apply the discount to all items of this product
+      for (var k = 0; k < productData.items.length; k++) {
+        var itemIndex = productData.items[k];
+        var item = wcp_cart_data.items[itemIndex];
+        
+        // Get the base price (compare_at_price or regular price)
+        var basePrice = item.compare_at_price;
+        if (!basePrice || basePrice === 0 || basePrice < item.price) {
+          basePrice = item.price;
+        }
+        
+        // Calculate discounted price
+        var discountedPrice = Math.floor(basePrice * (1 - discountTier.discount));
+        
+        // Update WCP prices
+        item.wcp_v_price = discountedPrice;
+        item.wcp_vd_price = discountedPrice;
+        
+        console.log('[Volume Discount] Item:', item.original_item.product_title, 
+                    'Variant:', item.original_item.variant_title,
+                    'Base:', (basePrice/100).toFixed(2), 
+                    'Discounted:', (discountedPrice/100).toFixed(2));
+      }
     }
     
     return wcp_cart_data;
@@ -603,7 +625,7 @@ reqJquery(function($){
         data=JSON.parse(data);
         window.wcp_data.wcp_cart= data;
         window.wcp_data.wcp_cart.token=data.token.token;
-        window.wcp_data.wcp_cart = applyCartBasedVolumeDiscount(window.wcp_data.wcp_cart);
+        window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
         wcpCheckCart(window.wcp_data);
     });
     }
@@ -747,8 +769,8 @@ var fnCalled = false;
       window.wcp_data.discount_code = wcpCookieCode;
     }
 
-  // Apply cart-based volume discount override
-  window.wcp_data.wcp_cart = applyCartBasedVolumeDiscount(window.wcp_data.wcp_cart);
+  // Apply product-based volume discount override
+  window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
 
   wcpCheckCart(window.wcp_data);
 
