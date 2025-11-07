@@ -664,6 +664,9 @@
         // Update item prices from actual cart data (WCP handles the discounts)
         this.updateItemPrices(cart);
         
+        // CRITICAL: Update inventory-based button states
+        this.updateInventoryStates(cart);
+        
         // Handle empty cart
         this.toggleEmptyCart(cart.item_count === 0);
         
@@ -681,128 +684,57 @@
       }
     }
     
-    // Update item prices - Let WCP plugin handle all discount calculations
-    updateItemPrices(cart) {
-      const formatter = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: cart.currency || 'USD'
-      });
-      
-      const totalQty = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-      
+    // Update inventory states for all items
+    updateInventoryStates(cart) {
       cart.items.forEach(item => {
-        // Use Shopify's actual prices (WCP plugin will override these via JavaScript)
-        const lineTotal = item.final_line_price;
-        const finalUnitPrice = item.final_price;
+        const input = document.querySelector(`input[data-update-cart="${item.key}"]`);
+        if (!input) return;
         
-        // Check if item has a compare_at_price
-        const hasComparePrice = item.variant.compare_at_price && item.variant.compare_at_price > item.final_price;
+        const inventoryQty = parseInt(input.getAttribute('data-inventory-quantity'));
+        const inventoryManagement = input.getAttribute('data-inventory-management');
+        const inventoryPolicy = input.getAttribute('data-inventory-policy');
         
-        // Update unit price display
-        const priceElement = document.querySelector(`[data-item-price="${item.key}"]`);
-        if (priceElement) {
-          priceElement.textContent = formatter.format(finalUnitPrice / 100);
+        // Only enforce inventory limits if managed by Shopify and policy is 'deny'
+        if (inventoryManagement === 'shopify' && inventoryPolicy === 'deny') {
+          const wrapper = input.closest('[data-quantity-selector]');
+          const plusBtn = wrapper?.querySelector('.quantity__button--plus');
+          const minusBtn = wrapper?.querySelector('.quantity__button--minus');
           
-          if (hasComparePrice || item.original_price > item.final_price) {
-            priceElement.style.color = '#28a745';
-            priceElement.style.fontWeight = '600';
-          } else {
-            priceElement.style.color = '';
-            priceElement.style.fontWeight = '';
-          }
-        }
-        
-        // Show discount message if applicable
-        const volumeDiscountElement = document.querySelector(`[data-volume-discounted-price="${item.key}"]`);
-        if (volumeDiscountElement) {
-          if (item.original_price > item.final_price) {
-            const savings = item.original_price - item.final_price;
-            const savingsPercent = Math.round((savings / item.original_price) * 100);
-            volumeDiscountElement.innerHTML = `<span style="font-size: 13px; color: #28a745; font-weight: 600;">You save ${formatter.format(savings / 100)} (${savingsPercent}% off)</span>`;
-            volumeDiscountElement.style.display = 'block';
-          } else {
-            volumeDiscountElement.style.display = 'none';
-          }
-        }
-        
-        // Update compare-at price
-        const comparePriceElement = document.querySelector(`[data-compare-price="${item.key}"]`);
-        if (comparePriceElement && hasComparePrice) {
-          comparePriceElement.textContent = formatter.format(item.variant.compare_at_price / 100);
-          comparePriceElement.style.display = 'block';
-        } else if (comparePriceElement) {
-          comparePriceElement.style.display = 'none';
-        }
-        
-        // Update line total
-        const lineTotalElement = document.querySelector(`[data-line-total="${item.key}"]`);
-        if (lineTotalElement) {
-          const lineTotalPriceSpan = lineTotalElement.querySelector(`[data-line-total-price="${item.key}"]`);
-          if (lineTotalPriceSpan) {
-            lineTotalPriceSpan.textContent = formatter.format(lineTotal / 100);
-            
-            if (item.original_line_price > item.final_line_price) {
-              lineTotalPriceSpan.style.color = '#28a745';
-              lineTotalPriceSpan.style.fontWeight = '600';
+          if (plusBtn) {
+            if (item.quantity >= inventoryQty) {
+              plusBtn.disabled = true;
+              plusBtn.setAttribute('title', 'Maximum available quantity reached');
+              plusBtn.style.opacity = '0.4';
+              plusBtn.style.cursor = 'not-allowed';
             } else {
-              lineTotalPriceSpan.style.color = '';
-              lineTotalPriceSpan.style.fontWeight = '600';
+              plusBtn.disabled = false;
+              plusBtn.removeAttribute('title');
+              plusBtn.style.opacity = '';
+              plusBtn.style.cursor = '';
             }
           }
           
-          // Update compare line total
-          const compareLineTotalElement = lineTotalElement.querySelector(`[data-compare-line-total="${item.key}"]`);
-          if (compareLineTotalElement && hasComparePrice) {
-            const msrpLineTotal = item.variant.compare_at_price * item.quantity;
-            compareLineTotalElement.textContent = formatter.format(msrpLineTotal / 100);
-            compareLineTotalElement.style.display = 'block';
-          } else if (compareLineTotalElement && item.original_line_price > item.final_line_price) {
-            compareLineTotalElement.textContent = formatter.format(item.original_line_price / 100);
-            compareLineTotalElement.style.display = 'block';
-          } else if (compareLineTotalElement) {
-            compareLineTotalElement.style.display = 'none';
+          // Always enable minus button if quantity > 0
+          if (minusBtn) {
+            minusBtn.disabled = item.quantity <= 0;
+          }
+          
+          // Update or add inventory warning message
+          const quantityDiv = input.closest('.cart__items__quantity');
+          let warningMsg = quantityDiv?.querySelector('.inventory-warning');
+          
+          if (item.quantity >= inventoryQty) {
+            if (!warningMsg) {
+              warningMsg = document.createElement('p');
+              warningMsg.className = 'inventory-warning';
+              warningMsg.style.cssText = 'font-size: 11px; color: #c33; margin-top: 4px;';
+              quantityDiv?.appendChild(warningMsg);
+            }
+            warningMsg.textContent = `Only ${inventoryQty} available`;
+          } else if (warningMsg) {
+            warningMsg.remove();
           }
         }
-        
-        // Update WPD wholesale pricing elements
-        const wpdLineElement = document.querySelector(`[data-wpd-cart-item="${item.key}"][data-wpd-cart-line-price]`);
-        if (wpdLineElement) {
-          wpdLineElement.textContent = formatter.format(lineTotal / 100);
-        }
-        
-        // Update quantity input
-        const qtyInput = document.querySelector(`input[data-update-cart="${item.key}"]`);
-        if (qtyInput && parseInt(qtyInput.value) !== item.quantity) {
-          qtyInput.value = item.quantity;
-        }
-        
-        // Update data attributes for WCP compatibility
-        const allPriceElements = document.querySelectorAll(`[data-wpd-cart-drawer-item="${item.key}"]`);
-        allPriceElements.forEach(el => {
-          el.setAttribute('data-wpd-cart-drawer-quantity', item.quantity);
-          el.setAttribute('data-wpd-cart-drawer-variant-price', finalUnitPrice);
-        });
-      });
-      
-      // Update cart subtotal - Use Shopify's actual total (WCP will override)
-      const actualTotal = cart.total_price;
-      
-      const subtotalElement = document.querySelector('[data-cart-final]');
-      if (subtotalElement) {
-        subtotalElement.textContent = formatter.format(actualTotal / 100);
-      }
-      
-      const originalTotal = document.querySelector('.wcp-original-cart-total');
-      if (originalTotal) {
-        originalTotal.textContent = formatter.format(actualTotal / 100);
-      }
-      
-      // Log cart info
-      console.log('Cart Summary:', {
-        totalQuantity: totalQty,
-        itemCount: cart.items.length,
-        cartTotal: formatter.format(cart.total_price / 100),
-        wcpActive: CONFIG.isWholesaleCustomer
       });
     }
     
