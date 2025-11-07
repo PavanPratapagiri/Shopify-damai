@@ -3,141 +3,398 @@
 {%- assign cart_products = '' -%}
 
 <div class="cart__items">
-  {% for line_item in cart.items %}
-    <div class="cart__items__row" data-cart-item>
-      <div class="item--loadbar" data-item-loadbar style="display: none;">&nbsp;</div>
-      <div class="cart__items__grid" data-item>
-        <div class="cart__items__remove">
-          <a href="{{ routes.cart_change_url }}?line={{ forloop.index }}&amp;quantity=0"
-            data-remove-key="{{ line_item.key }}"
-            tabindex="0">
-            <span class="cart__remove__icon">
-              {%- render 'icon-bin' -%}
-            </span>
-            <span class="cart__remove badge">
-              {{ 'cart.general.remove' | t }}
-            </span>
-          </a>
-        </div>
+  <style>
+    .cart__items__table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    
+    .cart__items__table thead tr {
+      border-bottom: 2px solid #e5e5e5;
+    }
+    
+    .cart__items__table thead th {
+      padding: 12px 8px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .cart__items__table thead th:last-child {
+      text-align: right;
+    }
+    
+    .cart__items__table tbody tr {
+      border-bottom: 1px solid #e5e5e5;
+    }
+    
+    .cart__items__table tbody tr:hover {
+      background: #f9fafb;
+    }
+    
+    .cart__items__table tbody td {
+      padding: 20px 8px;
+      vertical-align: middle;
+    }
+    
+    .cart__item__image-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .cart__item__image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    
+    .cart__item__details {
+      flex: 1;
+    }
+    
+    .cart__item__title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #000;
+    }
+    
+    .cart__item__title a {
+      color: #000;
+      text-decoration: none;
+    }
+    
+    .cart__item__title a:hover {
+      text-decoration: underline;
+    }
+    
+    .cart__item__meta {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+    
+    .cart__item__meta p {
+      margin: 2px 0;
+    }
+    
+    .cart__item__remove {
+      margin-top: 8px;
+    }
+    
+    .cart__item__remove a {
+      color: #999;
+      font-size: 12px;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .cart__item__remove a:hover {
+      color: #c62828;
+    }
+    
+    .cart__item__price {
+      font-size: 14px;
+      font-weight: 600;
+      color: #000;
+    }
+    
+    .cart__item__price--compare {
+      font-size: 12px;
+      color: #666;
+      text-decoration: line-through;
+      font-weight: 400;
+      margin-right: 8px;
+    }
+    
+    .cart__quantity__wrapper {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+    }
+    
+    .cart__quantity__button {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: white;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      transition: background 0.2s;
+    }
+    
+    .cart__quantity__button:hover:not(:disabled) {
+      background: #f3f4f6;
+    }
+    
+    .cart__quantity__button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    
+    .cart__quantity__input {
+      width: 50px;
+      height: 36px;
+      border: none;
+      border-left: 1px solid #d1d5db;
+      border-right: 1px solid #d1d5db;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 0;
+    }
+    
+    .cart__quantity__input:focus {
+      outline: none;
+    }
+    
+    .cart__item__total {
+      font-weight: 700;
+      font-size: 16px;
+      text-align: right;
+      color: #000;
+    }
+    
+    @media (max-width: 768px) {
+      .cart__items__table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .cart__items__table thead,
+      .cart__items__table tbody,
+      .cart__items__table tr,
+      .cart__items__table td,
+      .cart__items__table th {
+        display: block;
+      }
+      
+      .cart__items__table thead {
+        display: none;
+      }
+      
+      .cart__items__table tbody tr {
+        margin-bottom: 20px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 16px;
+      }
+      
+      .cart__items__table tbody td {
+        padding: 8px 0;
+        border: none;
+      }
+      
+      .cart__items__table tbody td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px;
+        color: #666;
+        display: block;
+        margin-bottom: 4px;
+      }
+      
+      .cart__item__total {
+        text-align: left;
+      }
+    }
+  </style>
 
-        <div class="cart__items__image{% unless line_item.image %} product-no-image{% endunless %}">
-          <a href="{{ line_item.url }}">
-            {% if line_item.image %}
-              <img class="cart__items__img" src="{{ line_item | img_url: '180x' }}" alt="{{ line_item.title | strip_html | escape }}">
-            {% endif %}
-          </a>
-        </div>
-
-        <div class="cart__items__title">
-          <p>
-            <a href="{{ line_item.url }}">
-              {{ line_item.product.title }}
-            </a>
-          </p>
-          <div class="cart__items__meta">
-            {% comment %} Vendor if enabled {% endcomment %}
-            {% if settings.cart_vendor_enable %}
-              <p class="body-size-3">{{ line_item.vendor }}</p>
-            {% endif %}
-
-            {% comment %} Variant as name/name/name {% endcomment %}
-            {% unless line_item.product.has_only_default_variant %}
-              <p class="body-size-3">{{ line_item.variant.title }}</p>
-            {% endunless %}
-
-            {% comment %} Subscription plan name {% endcomment %}
-            {% if line_item.selling_plan_allocation %}
-              <p class="body-size-3">{{ line_item.selling_plan_allocation.selling_plan.name }}</p>
-            {%- endif -%}
-
-            {% comment %} Line item properties, including files {% endcomment %}
-            {% assign property_size = line_item.properties | size %}
-            {%- if property_size > 0 -%}
-              {%- for p in line_item.properties -%}
-                {%- assign property_first_char = p.first | slice: 0 -%}
-                {%- if p.last != blank and property_first_char != '_' -%}
-                  <p class="body-size-3">
-                    <span>{{ p.first }}: </span>
-                    <span>
-                      {%- if p.last contains '/uploads/' -%}
-                        <a href="{{ p.last }}">{{ p.last | split: '/' | last }}</a>
-                      {%- else -%}
-                        {{ p.last }}
-                      {%- endif -%}
-                    </span>
-                  </p>
-                {%- endif -%}
-              {%- endfor -%}
-            {%- endif -%}
-          </div>
-        </div>
-
-        {% if template != 'cart' %}
-        <input type="hidden" data-wpd-cart-drawer-product-handle="{{ line_item.product.handle }}"                                  
-data-wpd-cart-drawer-variant-id="{{ line_item.variant.id }}"                                   
-data-wpd-cart-drawer-variant-price="{{ line_item.variant.price }}"                                  
-data-wpd-cart-drawer-variant-compare-at-price="{{ line_item.variant.compare_at_price }}"                                  
-data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds = line_item.product.collections | map:'id' %}{{ wpdProductCollectionIds | join:',' }}"                                  
-data-wpd-cart-drawer-product-id="{{ line_item.product.id }}"                                  
-data-wpd-cart-drawer-line-price                                  
-data-wpd-cart-drawer-item="{{ line_item.key }}"                          
-data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
-        
-        <!-- REMOVED: Price column display -->
-
-        <div class="cart__items__quantity">
-          <div class="quantity__wrapper" data-quantity-selector>
-            <button class="quantity__button quantity__button--minus" data-decrease-quantity type="button">&minus;</button>
-            <label for="updates_{{ line_item.key }}" class="visually-hidden">{{ 'cart.label.quantity' | t }}</label>
-            <input data-quantity-input
-              data-update-cart="{{ line_item.key }}"
-              class="quantity__input"
-              type="number"
-              min="0"
-              max="{{ line_item.variant.inventory_quantity }}"
-              data-inventory-quantity="{{ line_item.variant.inventory_quantity }}"
-              data-inventory-policy="{{ line_item.variant.inventory_policy }}"
-              data-inventory-management="{{ line_item.variant.inventory_management }}"
-              id="updates_{{ line_item.key }}"
-              name="updates[]"
-              value="{{ line_item.quantity }}"/>
-            <button class="quantity__button quantity__button--plus" 
-              data-increase-quantity 
-              type="button"
-              {% if line_item.variant.inventory_management == 'shopify' and line_item.variant.inventory_policy == 'deny' %}
-                {% if line_item.quantity >= line_item.variant.inventory_quantity %}
-                  disabled
-                  title="Maximum available quantity reached"
-                {% endif %}
-              {% endif %}>+</button>
-          </div>
-        </div>
-
-        <!-- REMOVED: Total column is no longer needed -->
-
-        {% if discounted and line_item.quantity >= 1 %}
-          {%- for discount in line_item.line_level_discount_allocations -%}
-            <div class="cart__items__savings">
-              <span class="item__total__savings">
-                <span class="cart__icon--tags">
-                  {% render 'icon-tags' %}
-                </span>
-                {{ 'cart.general.savings' | t }}
-                {% if settings.currency_code_enable %}
-                  {{ discount.amount | money_with_currency }}
+  <table class="cart__items__table">
+    <thead>
+      <tr>
+        <th style="width: 45%;">PRODUCT</th>
+        <th style="width: 20%;">PRICE</th>
+        <th style="width: 20%;">QUANTITY</th>
+        <th style="width: 15%; text-align: right;">TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line_item in cart.items %}
+        <tr data-cart-item class="cart__items__row">
+          <td data-label="Product">
+            <div class="cart__item__image-wrapper">
+              <a href="{{ line_item.url }}">
+                {% if line_item.image %}
+                  <img class="cart__item__image" src="{{ line_item | img_url: '180x' }}" alt="{{ line_item.title | strip_html | escape }}">
                 {% else %}
-                  {{ discount.amount | money_without_trailing_zeros }}
+                  <div class="cart__item__image" style="background: #f5f5f5;"></div>
                 {% endif %}
-                {{ 'cart.general.with' | t }}
-                {{ discount.discount_application.title }}
+              </a>
+              
+              <div class="cart__item__details">
+                <div class="cart__item__title">
+                  <a href="{{ line_item.url }}">
+                    {{ line_item.product.title }}
+                  </a>
+                </div>
+                
+                <div class="cart__item__meta">
+                  {% if settings.cart_vendor_enable %}
+                    <p>{{ line_item.vendor }}</p>
+                  {% endif %}
+                  
+                  {% unless line_item.product.has_only_default_variant %}
+                    <p>{{ line_item.variant.title }}</p>
+                  {% endunless %}
+                  
+                  {% if line_item.selling_plan_allocation %}
+                    <p>{{ line_item.selling_plan_allocation.selling_plan.name }}</p>
+                  {% endif %}
+                  
+                  {% assign property_size = line_item.properties | size %}
+                  {%- if property_size > 0 -%}
+                    {%- for p in line_item.properties -%}
+                      {%- assign property_first_char = p.first | slice: 0 -%}
+                      {%- if p.last != blank and property_first_char != '_' -%}
+                        <p>
+                          <span>{{ p.first }}: </span>
+                          <span>
+                            {%- if p.last contains '/uploads/' -%}
+                              <a href="{{ p.last }}">{{ p.last | split: '/' | last }}</a>
+                            {%- else -%}
+                              {{ p.last }}
+                            {%- endif -%}
+                          </span>
+                        </p>
+                      {%- endif -%}
+                    {%- endfor -%}
+                  {%- endif -%}
+                </div>
+                
+                <div class="cart__item__remove">
+                  <a href="{{ routes.cart_change_url }}?line={{ forloop.index }}&amp;quantity=0"
+                    data-remove-key="{{ line_item.key }}"
+                    tabindex="0">
+                    <span class="cart__remove__icon">
+                      {%- render 'icon-bin' -%}
+                    </span>
+                    <span>Remove</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+            {% if template != 'cart' %}
+              <input type="hidden" 
+                data-wpd-cart-drawer-product-handle="{{ line_item.product.handle }}"
+                data-wpd-cart-drawer-variant-id="{{ line_item.variant.id }}"
+                data-wpd-cart-drawer-variant-price="{{ line_item.variant.price }}"
+                data-wpd-cart-drawer-variant-compare-at-price="{{ line_item.variant.compare_at_price }}"
+                data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds = line_item.product.collections | map:'id' %}{{ wpdProductCollectionIds | join:',' }}"
+                data-wpd-cart-drawer-product-id="{{ line_item.product.id }}"
+                data-wpd-cart-drawer-line-price
+                data-wpd-cart-drawer-item="{{ line_item.key }}"
+                data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" />
+            {% endif %}
+          </td>
+          
+          <td data-label="Price">
+            <div class="cart__item__price">
+              {% if line_item.original_price > line_item.final_price %}
+                <span class="cart__item__price--compare">
+                  {% if settings.currency_code_enable %}
+                    {{ line_item.original_price | money_with_currency }}
+                  {% else %}
+                    {{ line_item.original_price | money_without_trailing_zeros }}
+                  {% endif %}
+                </span>
+              {% endif %}
+              
+              <span>
+                {% if settings.currency_code_enable %}
+                  {{ line_item.final_price | money_with_currency }}
+                {% else %}
+                  {{ line_item.final_price | money_without_trailing_zeros }}
+                {% endif %}
               </span>
             </div>
-          {%- endfor -%}
+          </td>
+          
+          <td data-label="Quantity">
+            <div class="cart__quantity__wrapper" data-quantity-selector>
+              <button class="cart__quantity__button quantity__button--minus" type="button">&minus;</button>
+              <label for="updates_{{ line_item.key }}" class="visually-hidden">{{ 'cart.label.quantity' | t }}</label>
+              <input 
+                data-quantity-input
+                data-update-cart="{{ line_item.key }}"
+                class="cart__quantity__input quantity__input"
+                type="number"
+                min="0"
+                max="{{ line_item.variant.inventory_quantity }}"
+                data-inventory-quantity="{{ line_item.variant.inventory_quantity }}"
+                data-inventory-policy="{{ line_item.variant.inventory_policy }}"
+                data-inventory-management="{{ line_item.variant.inventory_management }}"
+                id="updates_{{ line_item.key }}"
+                name="updates[]"
+                value="{{ line_item.quantity }}"/>
+              <button class="cart__quantity__button quantity__button--plus" 
+                type="button"
+                {% if line_item.variant.inventory_management == 'shopify' and line_item.variant.inventory_policy == 'deny' %}
+                  {% if line_item.quantity >= line_item.variant.inventory_quantity %}
+                    disabled
+                    title="Maximum available quantity reached"
+                  {% endif %}
+                {% endif %}>+</button>
+            </div>
+          </td>
+          
+          <td data-label="Total">
+            <div class="cart__item__total" data-line-item-total="{{ line_item.key }}">
+              {% if settings.currency_code_enable %}
+                {{ line_item.final_line_price | money_with_currency }}
+              {% else %}
+                {{ line_item.final_line_price | money_without_trailing_zeros }}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        
+        {% if line_item.line_level_discount_allocations.size > 0 %}
+          <tr>
+            <td colspan="4" style="padding: 8px;">
+              {%- for discount in line_item.line_level_discount_allocations -%}
+                <div style="color: #059669; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                  <span class="cart__icon--tags" style="width: 14px; height: 14px;">
+                    {% render 'icon-tags' %}
+                  </span>
+                  <span>
+                    {{ 'cart.general.savings' | t }}
+                    {% if settings.currency_code_enable %}
+                      {{ discount.amount | money_with_currency }}
+                    {% else %}
+                      {{ discount.amount | money_without_trailing_zeros }}
+                    {% endif %}
+                    {{ 'cart.general.with' | t }}
+                    {{ discount.discount_application.title }}
+                  </span>
+                </div>
+              {%- endfor -%}
+            </td>
+          </tr>
         {% endif %}
-      </div>
-    </div>
-    {%- assign cart_products = cart_products | append: line_item.product.id | append: ',' -%}
-  {% endfor %}
+        
+        {%- assign cart_products = cart_products | append: line_item.product.id | append: ',' -%}
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 {%- liquid
@@ -145,8 +402,6 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
   assign for_free_shipping = settings.free_shipping_limit | times: 100 | minus: cart.total_price | at_least: 0
 
   for cart_item in cart.items
-
-    # Cart upsell will be the first line item upsell available, best single upsell beats best upsell_list
     assign upsell_list = cart_item.product.metafields.theme.upsell_list.value
     assign upsell_product = cart_item.product.metafields.theme.upsell.value
 
