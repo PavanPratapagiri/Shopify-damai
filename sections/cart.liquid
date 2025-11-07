@@ -64,30 +64,20 @@
     z-index: 10;
   }
   
-  /* Column widths */
+  /* Column widths - 3 columns layout */
   .cart-variant-table th.product-heading {
     text-align: left;
-    width: 35%;
+    width: 50%;
   }
   
   .cart-variant-table th.quantity-heading {
     text-align: center;
-    width: 20%;
-  }
-  
-  .cart-variant-table th.stock-heading {
-    text-align: center;
-    width: 15%;
-  }
-  
-  .cart-variant-table th.price-heading {
-    text-align: right;
-    width: 15%;
+    width: 25%;
   }
   
   .cart-variant-table th.total-heading {
     text-align: right;
-    width: 15%;
+    width: 25%;
   }
   
   /* Product cell */
@@ -152,10 +142,19 @@
     color: #999 !important;
   }
   
-  .cart-mobile-price {
+  .cart-mobile-info {
     display: none;
     margin-top: 8px;
+  }
+  
+  .cart-mobile-price {
     font-weight: 600;
+    margin-bottom: 4px;
+  }
+  
+  .cart-mobile-stock {
+    font-size: 11px;
+    color: #666;
   }
   
   /* Quantity cell */
@@ -168,46 +167,6 @@
     flex-direction: column;
     align-items: center;
     gap: 12px;
-  }
-  
-  .cart-stock-mobile {
-    display: none;
-    font-size: 11px;
-    color: #666;
-    text-align: center;
-  }
-  
-  /* Stock cell */
-  .cart-stock-cell {
-    text-align: center;
-    font-size: 14px;
-    font-weight: 600;
-    color: #000;
-  }
-  
-  /* Price cell */
-  .cart-price-cell {
-    text-align: right;
-  }
-  
-  .cart-msrp {
-    font-size: 14px;
-    color: #999;
-    text-decoration: line-through;
-    margin-bottom: 4px;
-  }
-  
-  .cart-current-price {
-    font-size: 16px;
-    font-weight: 600;
-    color: #000;
-  }
-  
-  .cart-volume-discount {
-    font-size: 13px;
-    color: #28a745;
-    font-weight: 600;
-    margin-top: 4px;
   }
   
   /* Total cell */
@@ -369,6 +328,18 @@
       font-size: 10px;
     }
     
+    .cart-variant-table th.product-heading {
+      width: 50%;
+    }
+    
+    .cart-variant-table th.quantity-heading {
+      width: 25%;
+    }
+    
+    .cart-variant-table th.total-heading {
+      width: 25%;
+    }
+    
     .cart-product-image {
       width: 70px;
       height: 70px;
@@ -380,10 +351,6 @@
     
     .cart-product-meta small {
       font-size: 11px;
-    }
-    
-    .cart-current-price {
-      font-size: 15px;
     }
     
     .cart-line-total {
@@ -438,7 +405,7 @@
       font-size: 14px;
     }
     
-    .cart-mobile-price {
+    .cart-mobile-info {
       display: block;
     }
     
@@ -451,16 +418,6 @@
       flex-direction: row;
       justify-content: space-between;
       gap: 12px;
-    }
-    
-    .cart-stock-mobile {
-      display: block;
-      margin-top: 8px;
-    }
-    
-    .cart-stock-cell,
-    .cart-price-cell {
-      display: none;
     }
     
     .cart-total-cell {
@@ -1276,7 +1233,7 @@
         items: cart.items.map(item => {
           const hasDiscount = item.variant.compare_at_price && item.variant.compare_at_price > item.original_price;
           const msrpPrice = hasDiscount ? item.variant.compare_at_price : item.original_price;
-          const volumeDiscountedPrice = hasDiscount ? PricingUtils.getDiscountedPrice(totalQty, msrpPrice) : item.original_price;
+          const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
           const lineTotal = PricingUtils.calculateLineTotal(item.quantity, volumeDiscountedPrice);
           return {
             title: item.product_title,
