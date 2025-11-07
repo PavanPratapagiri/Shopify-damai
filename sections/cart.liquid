@@ -378,7 +378,6 @@
   'use strict';
   
   // Prevent legacy theme.js quantity handlers from running on cart page
-  // by removing the attributes they look for BEFORE they initialize
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function disableLegacyHandlers() {
       const cartQuantityButtons = document.querySelectorAll('[data-cart-loading] [data-increase-quantity], [data-cart-loading] [data-decrease-quantity]');
@@ -389,20 +388,12 @@
     });
   }
   
-  // Volume Discount Tiers Configuration - matches product multi-variants
-  const DISCOUNT_TIERS = [
-    { min: 1, max: 4, discount: 0.39, price: 212.22 },
-    { min: 5, max: 9, discount: 0.43, price: 198.30 },
-    { min: 10, max: Infinity, discount: 0.45, price: 191.34 }
-  ];
-  
   // Configuration
   const CONFIG = {
     isWholesaleCustomer: {% if wcp_wholesale_customer == true %}true{% else %}false{% endif %},
     wcpDelay: 500,
     debounceDelay: 300,
-    maxRetries: 3,
-    discountTiers: DISCOUNT_TIERS
+    maxRetries: 3
   };
   
   // State management
@@ -412,45 +403,6 @@
     retryCount: 0
   };
   
-  // Pricing utilities
-  const PricingUtils = {
-    getTotalQuantity(cart) {
-      return cart.items.reduce((sum, item) => sum + item.quantity, 0);
-    },
-    
-    getDiscountTier(totalQuantity) {
-      if (totalQuantity === 0) return null;
-      return DISCOUNT_TIERS.find(t => totalQuantity >= t.min && totalQuantity <= t.max);
-    },
-    
-    getDiscountedPrice(totalQuantity, msrpPrice) {
-      if (totalQuantity === 0) return msrpPrice;
-      const tier = this.getDiscountTier(totalQuantity);
-      return tier ? Math.round(msrpPrice * (1 - tier.discount)) : msrpPrice;
-    },
-    
-    getNextTierInfo(totalQuantity) {
-      if (totalQuantity === 0) return null;
-      const nextTier = DISCOUNT_TIERS.find(t => totalQuantity < t.min);
-      if (nextTier) {
-        const currentTier = this.getDiscountTier(totalQuantity);
-        const itemsNeeded = nextTier.min - totalQuantity;
-        const additionalDiscount = Math.round((nextTier.discount - (currentTier?.discount || 0)) * 100);
-        return {
-          itemsNeeded,
-          additionalDiscount,
-          nextTierDiscount: Math.round(nextTier.discount * 100),
-          nextTierPrice: nextTier.price
-        };
-      }
-      return null;
-    },
-    
-    calculateLineTotal(quantity, unitPrice) {
-      return quantity * unitPrice;
-    }
-  };
-  
   // Cart Manager Class
   class CartManager {
     constructor() {
@@ -458,22 +410,20 @@
       this.cartLoading = document.querySelector('[data-cart-loading]');
       this.cartEmpty = document.querySelector('[data-cart-empty]');
       this.cartForm = document.querySelector('[data-cart-form]');
-      this.debounceTimers = new Map(); // Track debounce timers per item
-      this.pendingUpdates = new Map(); // Track pending quantity updates
+      this.debounceTimers = new Map();
+      this.pendingUpdates = new Map();
     }
     
     // Initialize cart
     init() {
       this.attachEventListeners();
       this.preventDefaultUpdate();
-      // Calculate and display prices on initial load
       this.initializePrices();
     }
     
     // Initialize prices on page load
     async initializePrices() {
       try {
-        // Fetch current cart data
         const response = await fetch('/cart.js', {
           headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -482,7 +432,6 @@
         
         if (response.ok) {
           const cart = await response.json();
-          // Apply volume discount pricing to all items
           this.updateItemPrices(cart);
         }
       } catch (error) {
@@ -492,7 +441,6 @@
     
     // Attach all event listeners
     attachEventListeners() {
-      // Use event delegation for better performance
       document.addEventListener('click', this.handleClick.bind(this));
       document.addEventListener('change', this.handleChange.bind(this));
       document.addEventListener('input', this.handleInput.bind(this));
@@ -505,18 +453,17 @@
       const removeBtn = e.target.closest('[data-remove-key]');
       const checkoutBtn = e.target.closest('.checkout__button');
       
-      // Don't interfere with checkout button
       if (checkoutBtn) {
         return;
       }
       
       if (plusBtn) {
         e.preventDefault();
-        e.stopImmediatePropagation(); // Stop other listeners from firing
+        e.stopImmediatePropagation();
         this.adjustQuantity(plusBtn, 1);
       } else if (minusBtn) {
         e.preventDefault();
-        e.stopImmediatePropagation(); // Stop other listeners from firing
+        e.stopImmediatePropagation();
         this.adjustQuantity(minusBtn, -1);
       } else if (removeBtn) {
         e.preventDefault();
@@ -534,15 +481,12 @@
         
         qtyInput.classList.add('updating');
         
-        // Clear existing debounce timer for this item
         if (this.debounceTimers.has(key)) {
           clearTimeout(this.debounceTimers.get(key));
         }
         
-        // Store the pending update
         this.pendingUpdates.set(key, newQty);
         
-        // Debounce the cart update
         const timer = setTimeout(() => {
           this.updateCartDebounced(key, newQty);
           this.debounceTimers.delete(key);
@@ -553,18 +497,17 @@
       }
     }
     
-    // Handle input events with debounce
+    // Handle input events
     handleInput(e) {
       const qtyInput = e.target.closest('.quantity__input');
       if (qtyInput) {
-        // Validate input immediately
         let value = parseInt(qtyInput.value) || 0;
         if (value < 0) value = 0;
         qtyInput.value = value;
       }
     }
     
-    // Adjust quantity by delta with optimistic UI update
+    // Adjust quantity by delta
     adjustQuantity(button, delta) {
       const wrapper = button.closest('[data-quantity-selector]');
       const input = wrapper.querySelector('.quantity__input');
@@ -572,30 +515,24 @@
       const currentQty = parseInt(input.value) || 0;
       const newQty = Math.max(0, currentQty + delta);
       
-      // Instantly update the UI (optimistic update)
       input.value = newQty;
       input.classList.add('updating');
       
-      // Disable buttons temporarily to prevent rapid clicking
       const plusBtn = wrapper.querySelector('.quantity__button--plus');
       const minusBtn = wrapper.querySelector('.quantity__button--minus');
       plusBtn.disabled = true;
       minusBtn.disabled = true;
       
-      // Store the pending update
       this.pendingUpdates.set(key, newQty);
       
-      // Clear existing debounce timer for this item
       if (this.debounceTimers.has(key)) {
         clearTimeout(this.debounceTimers.get(key));
       }
       
-      // Debounce the actual cart update
       const timer = setTimeout(() => {
         this.updateCartDebounced(key, newQty);
         this.debounceTimers.delete(key);
         
-        // Re-enable buttons
         plusBtn.disabled = false;
         minusBtn.disabled = false;
         input.classList.remove('updating');
@@ -624,7 +561,6 @@
     // Update cart via AJAX
     async updateCart(key, quantity) {
       if (state.isUpdating) {
-        // Queue the update
         state.updateQueue.push({ key, quantity });
         return;
       }
@@ -657,17 +593,13 @@
         await this.refreshCart(cart);
         state.retryCount = 0;
         
-        // Dispatch success event for product multi-variants page
         this.dispatchCartEvent('success', cart);
-        
-        // Notify product page of cart update
         document.dispatchEvent(new Event('cartUpdateComplete'));
         
       } catch (error) {
         console.error('Cart update error:', error);
         this.showError('Unable to update cart. Please try again.');
         
-        // Retry logic
         if (state.retryCount < CONFIG.maxRetries) {
           state.retryCount++;
           setTimeout(() => this.updateCart(key, quantity), 1000 * state.retryCount);
@@ -677,7 +609,6 @@
         state.isUpdating = false;
         this.hideLoading();
         
-        // Process queued updates
         if (state.updateQueue.length > 0) {
           const next = state.updateQueue.shift();
           setTimeout(() => this.updateCart(next.key, next.quantity), 100);
@@ -698,7 +629,6 @@
             }
           }, 100);
           
-          // Timeout after 5 seconds
           setTimeout(() => {
             clearInterval(checkInterval);
             resolve();
@@ -707,10 +637,9 @@
       });
     }
     
-    // Refresh cart display efficiently
+    // Refresh cart display
     async refreshCart(cart) {
       try {
-        // Fetch only the cart section HTML
         const response = await fetch(window.location.href + '?section_id=cart', {
           headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -732,7 +661,7 @@
         this.updateSection('.wcp-minimums-note', doc);
         this.updateSection('.wcp-extra-note', doc);
         
-        // Update individual item prices from cart data with volume pricing
+        // Update item prices from actual cart data (WCP handles the discounts)
         this.updateItemPrices(cart);
         
         // Handle empty cart
@@ -748,32 +677,25 @@
         
       } catch (error) {
         console.error('Cart refresh error:', error);
-        // Fallback to full page reload
         window.location.reload();
       }
     }
     
-    // Update individual item prices to match cart data with volume discount pricing
+    // Update item prices - Let WCP plugin handle all discount calculations
     updateItemPrices(cart) {
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: cart.currency || 'USD'
       });
       
-      const totalQty = PricingUtils.getTotalQuantity(cart);
-      const discountTier = PricingUtils.getDiscountTier(totalQty);
-      const discountPercent = discountTier ? Math.round(discountTier.discount * 100) : 0;
-      let calculatedTotal = 0;
+      const totalQty = cart.items.reduce((sum, item) => sum + item.quantity, 0);
       
       cart.items.forEach(item => {
-        // Use the actual final_line_price from Shopify cart (which includes all discounts)
+        // Use Shopify's actual prices (WCP plugin will override these via JavaScript)
         const lineTotal = item.final_line_price;
         const finalUnitPrice = item.final_price;
         
-        // Add to running total
-        calculatedTotal += lineTotal;
-        
-        // Check if item has a compare_at_price (MSRP/sale price)
+        // Check if item has a compare_at_price
         const hasComparePrice = item.variant.compare_at_price && item.variant.compare_at_price > item.final_price;
         
         // Update unit price display
@@ -781,7 +703,6 @@
         if (priceElement) {
           priceElement.textContent = formatter.format(finalUnitPrice / 100);
           
-          // Style it to show it's discounted
           if (hasComparePrice || item.original_price > item.final_price) {
             priceElement.style.color = '#28a745';
             priceElement.style.fontWeight = '600';
@@ -804,7 +725,7 @@
           }
         }
         
-        // Update compare-at price if exists
+        // Update compare-at price
         const comparePriceElement = document.querySelector(`[data-compare-price="${item.key}"]`);
         if (comparePriceElement && hasComparePrice) {
           comparePriceElement.textContent = formatter.format(item.variant.compare_at_price / 100);
@@ -813,23 +734,13 @@
           comparePriceElement.style.display = 'none';
         }
         
-        // Update original price if discounted
-        const originalPriceElement = document.querySelector(`[data-original-price="${item.key}"]`);
-        if (originalPriceElement && item.original_price > item.final_price) {
-          originalPriceElement.textContent = formatter.format(item.original_price / 100);
-          originalPriceElement.style.display = 'block';
-        } else if (originalPriceElement) {
-          originalPriceElement.style.display = 'none';
-        }
-        
-        // Update line total (quantity × unit price) - use actual final_line_price
+        // Update line total
         const lineTotalElement = document.querySelector(`[data-line-total="${item.key}"]`);
         if (lineTotalElement) {
           const lineTotalPriceSpan = lineTotalElement.querySelector(`[data-line-total-price="${item.key}"]`);
           if (lineTotalPriceSpan) {
             lineTotalPriceSpan.textContent = formatter.format(lineTotal / 100);
             
-            // Apply green styling if discounted
             if (item.original_line_price > item.final_line_price) {
               lineTotalPriceSpan.style.color = '#28a745';
               lineTotalPriceSpan.style.fontWeight = '600';
@@ -839,7 +750,7 @@
             }
           }
           
-          // Update compare line total if exists
+          // Update compare line total
           const compareLineTotalElement = lineTotalElement.querySelector(`[data-compare-line-total="${item.key}"]`);
           if (compareLineTotalElement && hasComparePrice) {
             const msrpLineTotal = item.variant.compare_at_price * item.quantity;
@@ -853,19 +764,19 @@
           }
         }
         
-        // Update WPD wholesale pricing line price
+        // Update WPD wholesale pricing elements
         const wpdLineElement = document.querySelector(`[data-wpd-cart-item="${item.key}"][data-wpd-cart-line-price]`);
         if (wpdLineElement) {
           wpdLineElement.textContent = formatter.format(lineTotal / 100);
         }
         
-        // Update quantity input to match cart
+        // Update quantity input
         const qtyInput = document.querySelector(`input[data-update-cart="${item.key}"]`);
         if (qtyInput && parseInt(qtyInput.value) !== item.quantity) {
           qtyInput.value = item.quantity;
         }
         
-        // Update data attributes for wholesale pricing compatibility
+        // Update data attributes for WCP compatibility
         const allPriceElements = document.querySelectorAll(`[data-wpd-cart-drawer-item="${item.key}"]`);
         allPriceElements.forEach(el => {
           el.setAttribute('data-wpd-cart-drawer-quantity', item.quantity);
@@ -873,7 +784,7 @@
         });
       });
       
-      // Update cart subtotal - use actual cart.total_price from Shopify
+      // Update cart subtotal - Use Shopify's actual total (WCP will override)
       const actualTotal = cart.total_price;
       
       const subtotalElement = document.querySelector('[data-cart-final]');
@@ -881,28 +792,17 @@
         subtotalElement.textContent = formatter.format(actualTotal / 100);
       }
       
-      // Update original cart total display
       const originalTotal = document.querySelector('.wcp-original-cart-total');
       if (originalTotal) {
         originalTotal.textContent = formatter.format(actualTotal / 100);
       }
       
-      // Log pricing details for debugging
-      console.log('Cart Pricing Summary:', {
+      // Log cart info
+      console.log('Cart Summary:', {
         totalQuantity: totalQty,
         itemCount: cart.items.length,
-        shopifyCartTotal: formatter.format(cart.total_price / 100),
-        calculatedTotal: formatter.format(calculatedTotal / 100),
-        match: calculatedTotal === cart.total_price ? '✓ Match' : '✗ Mismatch',
-        discountTier: discountTier ? `${discountPercent}% off` : 'No volume discount',
-        items: cart.items.map(item => ({
-          title: item.product_title,
-          quantity: item.quantity,
-          unitPrice: formatter.format(item.final_price / 100),
-          originalPrice: formatter.format(item.original_price / 100),
-          lineTotal: formatter.format(item.final_line_price / 100),
-          hasDiscount: item.original_price > item.final_price || item.variant.compare_at_price > item.final_price
-        }))
+        cartTotal: formatter.format(cart.total_price / 100),
+        wcpActive: CONFIG.isWholesaleCustomer
       });
     }
     
@@ -929,7 +829,6 @@
     
     // Update header cart count
     updateHeaderCart(cart) {
-      // Update cart count
       document.querySelectorAll('[data-header-cart-count], [data-cart-count-badge]').forEach(el => {
         el.textContent = cart.item_count;
         if (cart.item_count === 0) {
@@ -939,7 +838,6 @@
         }
       });
       
-      // Update cart price
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: cart.currency || 'USD'
@@ -950,33 +848,26 @@
       });
     }
     
-    // Show loading state
     showLoading() {
       this.cartLoading?.classList.add('cart--loading');
     }
     
-    // Hide loading state
     hideLoading() {
       this.cartLoading?.classList.remove('cart--loading');
     }
     
-    // Show error message
     showError(message) {
       if (this.errorContainer) {
         this.errorContainer.textContent = message;
         this.errorContainer.classList.add('active');
-        
-        // Auto-hide after 5 seconds
         setTimeout(() => this.hideError(), 5000);
       }
     }
     
-    // Hide error message
     hideError() {
       this.errorContainer?.classList.remove('active');
     }
     
-    // Prevent default form submission for update button
     preventDefaultUpdate() {
       const updateButton = document.querySelector('[name="update"]');
       if (updateButton) {
@@ -986,20 +877,16 @@
         });
       }
       
-      // Ensure checkout button submits the form
       const checkoutButtons = document.querySelectorAll('.checkout__button');
       checkoutButtons.forEach(button => {
         button.addEventListener('click', (e) => {
-          // Don't prevent default - let it submit the form
           if (!button.disabled) {
-            // Allow normal form submission
             return true;
           }
         });
       });
     }
     
-    // Dispatch custom cart event
     dispatchCartEvent(type, cart) {
       document.dispatchEvent(new CustomEvent('theme:cart:change', {
         detail: { type, cart },
@@ -1008,7 +895,7 @@
     }
   }
   
-  // Initialize on DOM ready
+  // Initialize
   let cartManager;
   
   function initCartPage() {
@@ -1018,17 +905,14 @@
     cartManager.init();
   }
   
-  // Make globally accessible
   window.initCartPage = initCartPage;
   
-  // Auto-initialize
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initCartPage);
   } else {
     initCartPage();
   }
   
-  // Re-initialize on visibility change
   document.addEventListener('theme:cart:open', () => {
     setTimeout(initCartPage, 100);
   });
