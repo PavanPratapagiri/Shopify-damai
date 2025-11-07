@@ -270,7 +270,7 @@
       <tr>
         <th style="width: 45%;">PRODUCT</th>
         <th style="width: 20%;">PRICE</th>
-        <th style="width: 20%;">QUANTITY</th>
+        <th style="width: 20%;"></th>
         <th style="width: 15%; text-align: right;">TOTAL</th>
       </tr>
     </thead>
@@ -356,30 +356,18 @@
           
           <td data-label="Price">
             <div class="cart__item__price">
-              {% if line_item.original_price > line_item.final_price %}
-                <span class="cart__item__price--compare">
-                  {% if settings.currency_code_enable %}
-                    {{ line_item.original_price | money_with_currency }}
-                  {% else %}
-                    {{ line_item.original_price | money_without_trailing_zeros }}
-                  {% endif %}
-                </span>
-                <span class="cart__item__price--final">
-                  {% if settings.currency_code_enable %}
-                    {{ line_item.final_price | money_with_currency }}
-                  {% else %}
-                    {{ line_item.final_price | money_without_trailing_zeros }}
-                  {% endif %}
-                </span>
-              {% else %}
-                <span class="cart__item__price--final">
-                  {% if settings.currency_code_enable %}
-                    {{ line_item.final_price | money_with_currency }}
-                  {% else %}
-                    {{ line_item.final_price | money_without_trailing_zeros }}
-                  {% endif %}
-                </span>
+              {%- comment -%} Always show MSRP (compare_at_price or original price) - doesn't change with quantity {%- endcomment -%}
+              {% assign msrp_price = line_item.variant.compare_at_price %}
+              {% if msrp_price == blank or msrp_price == 0 or msrp_price < line_item.variant.price %}
+                {% assign msrp_price = line_item.variant.price %}
               {% endif %}
+              <span class="cart__item__price--final">
+                {% if settings.currency_code_enable %}
+                  {{ msrp_price | money_with_currency }}
+                {% else %}
+                  {{ msrp_price | money_without_trailing_zeros }}
+                {% endif %}
+              </span>
             </div>
           </td>
           
