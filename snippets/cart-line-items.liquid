@@ -82,7 +82,7 @@ data-wpd-cart-drawer-product-id="{{ line_item.product.id }}"
 data-wpd-cart-drawer-line-price                                  
 data-wpd-cart-drawer-item="{{ line_item.key }}"                          
 data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
-        <div class="cart__items__price">
+        <div class="cart__items__price" style="display: block !important;">
           <p class="line__price {{ template }}" data-cart-item-price="{{ line_item.key }}">
             {%- assign discounted = false -%}
             {%- if line_item.original_price > line_item.final_price -%}
