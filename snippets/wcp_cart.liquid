@@ -456,8 +456,14 @@ reqJquery(function($){
     	    paramHash.FBT=JSON.parse(localStorage.getItem('wpd_integration_fbt_bundle'));
        }        
       
+      // CRITICAL: Use OUR calculated total, not WCP's
       var TempNetOrderPrice=data.formatted_wcp_total;
       var TempShippingCharge = 0;
+      
+      // FORCE display update with our correct total immediately
+      console.log('[FORCE UPDATE] Setting cart total to:', data.formatted_wcp_total);
+      $(".wcp-cart-total").html(data.formatted_wcp_total);
+      $("#wpdNetTotalValue").html(data.formatted_wcp_total);
       
       {% if shop.metafields.wcp_net.isNetShippingsCost == "true" or shop.metafields.wcp_net.isNetShippingsCost == '1' %}
        if(data.hasOwnProperty('ShippingCharges') && data.ShippingCharges.hasOwnProperty('price')){
