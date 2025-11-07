@@ -473,43 +473,36 @@
               {% assign items_needed = next_tier_qty | minus: current_qty %}
               {% assign discount_increase = next_tier_discount | minus: current_discount %}
               
-              {% if line_item.original_line_price > line_item.final_line_price %}
-                <span class="cart__item__total--original">
-                  {% if settings.currency_code_enable %}
-                    {{ line_item.original_line_price | money_with_currency }}
-                  {% else %}
-                    {{ line_item.original_line_price | money_without_trailing_zeros }}
-                  {% endif %}
-                </span>
-                <span class="cart__item__total--final cart__item__total--discounted">
-                  {% if settings.currency_code_enable %}
-                    {{ line_item.final_line_price | money_with_currency }}
-                  {% else %}
-                    {{ line_item.final_line_price | money_without_trailing_zeros }}
-                  {% endif %}
-                </span>
-                {% if next_tier_qty > 0 %}
-                  <div class="cart__item__total--message">
-                    Buy {{ items_needed }} more to get extra {{ discount_increase }}% discount
-                  </div>
+              {%- comment -%} Calculate original line total from compare_at_price or variant price {%- endcomment -%}
+              {% assign original_unit_price = line_item.variant.compare_at_price %}
+              {% if original_unit_price == blank or original_unit_price == 0 or original_unit_price < line_item.variant.price %}
+                {% assign original_unit_price = line_item.variant.price %}
+              {% endif %}
+              {% assign calculated_original_total = original_unit_price | times: line_item.quantity %}
+              
+              {%- comment -%} Always show both prices for WCP customers {%- endcomment -%}
+              <span class="cart__item__total--original">
+                {% if settings.currency_code_enable %}
+                  {{ calculated_original_total | money_with_currency }}
                 {% else %}
-                  <div class="cart__item__total--message" style="color: #059669;">
-                    Maximum discount applied!
-                  </div>
+                  {{ calculated_original_total | money_without_trailing_zeros }}
                 {% endif %}
+              </span>
+              <span class="cart__item__total--final cart__item__total--discounted">
+                {% if settings.currency_code_enable %}
+                  {{ line_item.final_line_price | money_with_currency }}
+                {% else %}
+                  {{ line_item.final_line_price | money_without_trailing_zeros }}
+                {% endif %}
+              </span>
+              {% if next_tier_qty > 0 %}
+                <div class="cart__item__total--message">
+                  Buy {{ items_needed }} more to get extra {{ discount_increase }}% discount
+                </div>
               {% else %}
-                <span class="cart__item__total--final">
-                  {% if settings.currency_code_enable %}
-                    {{ line_item.final_line_price | money_with_currency }}
-                  {% else %}
-                    {{ line_item.final_line_price | money_without_trailing_zeros }}
-                  {% endif %}
-                </span>
-                {% if next_tier_qty > 0 %}
-                  <div class="cart__item__total--message">
-                    Buy {{ items_needed }} more to get {{ discount_increase }}% discount
-                  </div>
-                {% endif %}
+                <div class="cart__item__total--message" style="color: #059669;">
+                  Maximum discount applied!
+                </div>
               {% endif %}
             </div>
           </td>
