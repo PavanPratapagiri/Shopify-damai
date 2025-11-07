@@ -356,29 +356,6 @@
           
           <td data-label="Price">
             <div class="cart__item__price">
-              {% assign current_qty = line_item.quantity %}
-              {% assign next_tier_qty = 0 %}
-              {% assign next_tier_discount = 0 %}
-              {% assign current_discount = 0 %}
-              
-              {%- comment -%} Calculate discount tiers based on quantity {%- endcomment -%}
-              {% if current_qty >= 1 and current_qty <= 4 %}
-                {% assign current_discount = 39 %}
-                {% assign next_tier_qty = 5 %}
-                {% assign next_tier_discount = 43 %}
-              {% elsif current_qty >= 5 and current_qty <= 9 %}
-                {% assign current_discount = 43 %}
-                {% assign next_tier_qty = 10 %}
-                {% assign next_tier_discount = 45 %}
-              {% elsif current_qty >= 10 %}
-                {% assign current_discount = 45 %}
-                {% assign next_tier_qty = 0 %}
-                {% assign next_tier_discount = 0 %}
-              {% endif %}
-              
-              {% assign items_needed = next_tier_qty | minus: current_qty %}
-              {% assign discount_increase = next_tier_discount | minus: current_discount %}
-              
               {% if line_item.original_price > line_item.final_price %}
                 <span class="cart__item__price--compare">
                   {% if settings.currency_code_enable %}
@@ -394,15 +371,6 @@
                     {{ line_item.final_price | money_without_trailing_zeros }}
                   {% endif %}
                 </span>
-                {% if next_tier_qty > 0 %}
-                  <div class="cart__item__price--message">
-                    Buy {{ items_needed }} more to get extra {{ discount_increase }}% discount
-                  </div>
-                {% else %}
-                  <div class="cart__item__price--message" style="color: #059669;">
-                    Maximum discount applied!
-                  </div>
-                {% endif %}
               {% else %}
                 <span class="cart__item__price--final">
                   {% if settings.currency_code_enable %}
@@ -411,11 +379,6 @@
                     {{ line_item.final_price | money_without_trailing_zeros }}
                   {% endif %}
                 </span>
-                {% if next_tier_qty > 0 %}
-                  <div class="cart__item__price--message">
-                    Buy {{ items_needed }} more to get {{ discount_increase }}% discount
-                  </div>
-                {% endif %}
               {% endif %}
             </div>
           </td>
