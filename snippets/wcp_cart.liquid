@@ -373,6 +373,10 @@ reqJquery(function($){
       datatype:'json',
       type: 'POST',
       success: function (data, success) {
+        // CRITICAL FIX: Reapply our custom volume discount after WCP server responds
+        // This ensures our per-product discount override is not lost
+        console.log('[Volume Discount Fix] Reapplying custom discount after WCP server response');
+        window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
         successCallback(data);
       }
     });
