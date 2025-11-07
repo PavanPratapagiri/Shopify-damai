@@ -78,6 +78,9 @@
     retryInterval: 200
   };
   
+  // Track which inputs are currently being interacted with
+  const interactingInputs = new Set();
+  
   /**
    * Update cart drawer prices dynamically after cart changes
    */
@@ -155,11 +158,11 @@
       updatePrice(`[data-line-total="${key}"]`, item.final_line_price, formatter);
       updatePrice(`[data-wpd-cart-line-price][data-wpd-cart-item="${key}"]`, item.final_line_price, formatter);
       
-      // Update quantity ONLY if the input is not currently focused (prevents flickering)
+      // Update quantity ONLY if the input is not currently being interacted with
       const qtyInput = document.querySelector(`input[data-update-cart="${key}"]`);
       if (qtyInput && parseInt(qtyInput.value) !== item.quantity) {
-        // Don't update if user is currently typing in this input
-        if (document.activeElement !== qtyInput) {
+        // Don't update if user is currently typing/focused or recently interacted
+        if (document.activeElement !== qtyInput && !interactingInputs.has(key)) {
           qtyInput.value = item.quantity;
         }
       }
@@ -197,6 +200,35 @@
    * Listen for cart change events
    */
   function initCartDrawerPriceUpdates() {
+    // Track user interactions with quantity inputs
+    document.addEventListener('focusin', function(e) {
+      const qtyInput = e.target.closest('input[data-update-cart]');
+      if (qtyInput) {
+        const key = qtyInput.getAttribute('data-update-cart');
+        interactingInputs.add(key);
+      }
+    }, true);
+    
+    document.addEventListener('focusout', function(e) {
+      const qtyInput = e.target.closest('input[data-update-cart]');
+      if (qtyInput) {
+        const key = qtyInput.getAttribute('data-update-cart');
+        // Keep the input locked for a short time after blur to prevent flickering
+        setTimeout(() => {
+          interactingInputs.delete(key);
+        }, 500);
+      }
+    }, true);
+    
+    // Also track input events to prevent updates during typing
+    document.addEventListener('input', function(e) {
+      const qtyInput = e.target.closest('input[data-update-cart]');
+      if (qtyInput) {
+        const key = qtyInput.getAttribute('data-update-cart');
+        interactingInputs.add(key);
+      }
+    }, true);
+    
     // Listen for theme cart change events
     document.addEventListener('theme:cart:change', function(event) {
       if (event.detail && event.detail.cart) {
