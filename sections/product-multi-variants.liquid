@@ -1262,8 +1262,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // — helper to refresh the summary at bottom —
   function refreshSummary(cart) {
-    // Calculate total quantity (sum of all item quantities)
-    const totalQuantity = cart.items ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : getTotalQuantity();
+    // Always calculate total quantity by summing all item quantities (never use cart.item_count)
+    const totalQuantity = getTotalQuantity();
     
     const count = document.querySelector('.action-total strong');
     const originalPrice = document.querySelector('.summary .original-price');
