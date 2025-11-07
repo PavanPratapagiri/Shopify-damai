@@ -61,6 +61,66 @@ function reqJquery(onload) {
 
 reqJquery(function($){
 
+  // ========================================
+  // CUSTOM CART-BASED VOLUME DISCOUNT FIX
+  // ========================================
+  // This overrides WCP's per-product calculation with cart-based totals
+  
+  window.VOLUME_DISCOUNT_TIERS = [
+    { min: 1, max: 4, discount: 0.39 },   // 39% off for 1-4 items
+    { min: 5, max: 9, discount: 0.43 },   // 43% off for 5-9 items
+    { min: 10, max: Infinity, discount: 0.45 }  // 45% off for 10+ items
+  ];
+  
+  window.applyCartBasedVolumeDiscount = function(wcp_cart_data) {
+    // Calculate total cart quantity
+    var totalQty = 0;
+    for (var i = 0; i < wcp_cart_data.items.length; i++) {
+      totalQty += wcp_cart_data.items[i].quantity;
+    }
+    
+    // Find the correct discount tier
+    var discountTier = null;
+    for (var j = 0; j < window.VOLUME_DISCOUNT_TIERS.length; j++) {
+      var tier = window.VOLUME_DISCOUNT_TIERS[j];
+      if (totalQty >= tier.min && totalQty <= tier.max) {
+        discountTier = tier;
+        break;
+      }
+    }
+    
+    if (!discountTier) {
+      console.warn('[Volume Discount] No tier found for quantity:', totalQty);
+      return wcp_cart_data;
+    }
+    
+    console.log('[Volume Discount] Applying ' + (discountTier.discount * 100) + '% discount for ' + totalQty + ' items');
+    
+    // Apply the discount to each item
+    for (var i = 0; i < wcp_cart_data.items.length; i++) {
+      var item = wcp_cart_data.items[i];
+      
+      // Get the base price (compare_at_price or regular price)
+      var basePrice = item.compare_at_price;
+      if (!basePrice || basePrice === 0 || basePrice < item.price) {
+        basePrice = item.price;
+      }
+      
+      // Calculate discounted price
+      var discountedPrice = Math.floor(basePrice * (1 - discountTier.discount));
+      
+      // Update WCP prices
+      item.wcp_v_price = discountedPrice;
+      item.wcp_vd_price = discountedPrice;
+      
+      console.log('[Volume Discount] Item:', item.original_item.product_title, 
+                  'Base:', (basePrice/100).toFixed(2), 
+                  'Discounted:', (discountedPrice/100).toFixed(2));
+    }
+    
+    return wcp_cart_data;
+  };
+
   window.wcp_data = {}
   window.wcp_data.api_version = 1;
   window.wcp_data.shop = "{{shop.permanent_domain}}";
@@ -543,6 +603,7 @@ reqJquery(function($){
         data=JSON.parse(data);
         window.wcp_data.wcp_cart= data;
         window.wcp_data.wcp_cart.token=data.token.token;
+        window.wcp_data.wcp_cart = applyCartBasedVolumeDiscount(window.wcp_data.wcp_cart);
         wcpCheckCart(window.wcp_data);
     });
     }
@@ -685,6 +746,9 @@ var fnCalled = false;
     if(wcpCookieCode){
       window.wcp_data.discount_code = wcpCookieCode;
     }
+
+  // Apply cart-based volume discount override
+  window.wcp_data.wcp_cart = applyCartBasedVolumeDiscount(window.wcp_data.wcp_cart);
 
   wcpCheckCart(window.wcp_data);
 
