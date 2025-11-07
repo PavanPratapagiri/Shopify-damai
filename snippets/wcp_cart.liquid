@@ -408,22 +408,25 @@ reqJquery(function($){
   }
 
   function sameDomainAjax (paramHash, successCallback) {
+    // CRITICAL: Apply custom discount BEFORE sending to WCP server
+    console.log('[CRITICAL FIX] Applying custom discount BEFORE WCP API call');
+    window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
+    paramHash.cart = window.wcp_data.wcp_cart;
+    
     $.ajax({
       data: JSON.stringify(paramHash),
       url: Wpd_domain +"storefront/validate-cart",
       contentType: "application/json; charset=utf-8",
-
       cache: false,
       datatype:'json',
       type: 'POST',
       success: function (data, success) {
-        // CRITICAL FIX: Reapply our custom volume discount after WCP server responds
-        // This ensures our per-product discount override is not lost
-        console.log('[Volume Discount Fix] Reapplying custom discount after WCP server response');
-        window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
-        
-        // Recalculate cart total with our custom prices
+        // FORCE recalculation with our custom prices - NO EXCEPTIONS
+        console.log('[CRITICAL FIX] Forcing total recalculation after WCP response');
         data = recalculateCartTotal(data);
+        
+        // Lock the total to prevent further changes
+        window.wcp_data.discounted_hash = data;
         
         successCallback(data);
       }
