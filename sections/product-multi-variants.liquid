@@ -1197,10 +1197,13 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Update header cart count and price
   function updateHeaderCart(cart) {
+    // Calculate total quantity (sum of all item quantities)
+    const totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    
     // Update cart count in header
     const cartCountElements = document.querySelectorAll('[data-header-cart-count]');
     cartCountElements.forEach(el => {
-      el.textContent = `(${cart.item_count})`;
+      el.textContent = `(${totalQuantity})`;
     });
     
     // Update cart price in header
@@ -1212,14 +1215,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update cart full status
     const cartFullElements = document.querySelectorAll('[data-header-cart-full]');
     cartFullElements.forEach(el => {
-      el.setAttribute('data-header-cart-full', cart.item_count > 0);
+      el.setAttribute('data-header-cart-full', totalQuantity > 0);
     });
     
     // Update visible cart count badges
     const cartBadgeElements = document.querySelectorAll('[data-cart-count-badge]');
     cartBadgeElements.forEach(badge => {
-      badge.textContent = cart.item_count;
-      if (cart.item_count === 0) {
+      badge.textContent = totalQuantity;
+      if (totalQuantity === 0) {
         badge.classList.add('hidden');
       } else {
         badge.classList.remove('hidden');
@@ -1255,13 +1258,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // — helper to refresh the summary at bottom —
   function refreshSummary(cart) {
+    // Calculate total quantity (sum of all item quantities)
+    const totalQuantity = cart.items ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : getTotalQuantity();
+    
     const count = document.querySelector('.action-total strong');
     const originalPrice = document.querySelector('.summary .original-price');
     const subtotal = document.querySelector('.summary .price');
     const totalSavings = document.querySelector('.summary .total-savings');
     
-    btn.disabled = cart.item_count === 0;
-    if (count) count.textContent = cart.item_count;
+    btn.disabled = totalQuantity === 0;
+    if (count) count.textContent = totalQuantity;
     
     // Calculate totals by summing up the displayed row totals
     let calculatedSubtotal = 0;
