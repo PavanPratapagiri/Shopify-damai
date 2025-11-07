@@ -73,6 +73,19 @@ reqJquery(function($){
   ];
   
   window.applyProductBasedVolumeDiscount = function(wcp_cart_data) {
+    // CRITICAL FIX: Store original prices on first run to prevent NaN issues
+    if (!window.WCP_ORIGINAL_PRICES) {
+      window.WCP_ORIGINAL_PRICES = {};
+      for (var i = 0; i < wcp_cart_data.items.length; i++) {
+        var item = wcp_cart_data.items[i];
+        var variantId = item.variant_id || item.original_item.variant_id;
+        window.WCP_ORIGINAL_PRICES[variantId] = {
+          price: item.price,
+          compare_at_price: item.compare_at_price
+        };
+      }
+    }
+    
     // Group items by product_id to calculate per-product quantity
     var productQuantities = {};
     
@@ -120,10 +133,19 @@ reqJquery(function($){
         var itemIndex = productData.items[k];
         var item = wcp_cart_data.items[itemIndex];
         
-        // Get the base price (compare_at_price or regular price)
-        var basePrice = item.compare_at_price;
-        if (!basePrice || basePrice === 0 || basePrice < item.price) {
-          basePrice = item.price;
+        // CRITICAL FIX: Use stored original prices to prevent NaN
+        var variantId = item.variant_id || item.original_item.variant_id;
+        var originalPrices = window.WCP_ORIGINAL_PRICES[variantId];
+        
+        if (!originalPrices) {
+          console.warn('[Volume Discount] No original prices found for variant', variantId);
+          continue;
+        }
+        
+        // Get the base price from our stored original prices
+        var basePrice = originalPrices.compare_at_price;
+        if (!basePrice || basePrice === 0 || basePrice < originalPrices.price) {
+          basePrice = originalPrices.price;
         }
         
         // Calculate discounted price
@@ -1237,6 +1259,7 @@ var fnCalled = false;
         Billingaddress.country  = $("select[name='wpdNetBillingAddress[country]']").val();
         Billingaddress.zip  = $("input[name='wpdNetBillingAddress[zip]']").val();
         Billingaddress.phone  = $("input[name='wpdNetBillingAddress[phone]']").val();  
+      
         window.wcp_data.isBillingSameAsShipping = document.getElementById('wpdSameBillingAddress').checked;         
         $("#wpdNetPlaceOrder").addClass("wpd-button-loading");
         $("#wpdNetPlaceOrder").prop("disabled", true);        
