@@ -178,6 +178,7 @@
       "free": "Free"
     },
     "label": {
+      "product": "Product",
       "price": "Price",
       "quantity": "Quantity",
       "total": "Total"
