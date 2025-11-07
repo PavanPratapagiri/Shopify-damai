@@ -488,7 +488,9 @@
                   {{ calculated_original_total | money_without_trailing_zeros }}
                 {% endif %}
               </span>
-              <span class="cart__item__total--final cart__item__total--discounted">
+              <span class="cart__item__total--final cart__item__total--discounted" 
+                    data-cart-item-line-total="{{ line_item.key }}"
+                    data-item-index="{{ forloop.index0 }}">
                 {% if settings.currency_code_enable %}
                   {{ line_item.final_line_price | money_with_currency }}
                 {% else %}

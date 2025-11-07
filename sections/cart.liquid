@@ -727,8 +727,17 @@
     
     // Update item prices
     updateItemPrices(cart) {
-      // Prices will be updated by WCP plugin or by the refreshCart section update
-      // This function is kept for compatibility
+      // Update WCP discounted prices in the Total column
+      if (window.wcp_data && window.wcp_data.wcp_cart && window.wcp_data.wcp_cart.items) {
+        window.wcp_data.wcp_cart.items.forEach((item, index) => {
+          const totalElement = document.querySelector(`[data-item-index="${index}"]`);
+          if (totalElement && item.wcp_vd_price) {
+            const lineTotal = (item.wcp_vd_price * item.quantity) / 100;
+            const currency = window.wcp_data.discounted_hash?.currency || '$';
+            totalElement.textContent = currency + lineTotal.toFixed(2);
+          }
+        });
+      }
       console.log('Cart updated:', cart.item_count, 'items');
     }
     
