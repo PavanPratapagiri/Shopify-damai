@@ -1454,16 +1454,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       qtyInput.value = newQty;
       updateButtonStates();
-      
-      // Update all rows and refresh summary immediately for instant UI feedback
-      updateAllPricesAndTotals();
-      
-      // Create a temporary cart object for immediate summary update
-      const tempCart = {
-        item_count: getTotalQuantity(),
-        total_price: 0
-      };
-      refreshSummary(tempCart);
 
       if (quantityElement) {
         quantityElement.isUpdating = true;
@@ -1504,6 +1494,7 @@ document.addEventListener('DOMContentLoaded', function() {
           updateButtonStates();
           updateAllPricesAndTotals();
           refreshSummary(cart);
+          updateHeaderCart(cart);
         } finally {
           updateQueue.delete(vid);
           loadingSvg.style.display = 'none';
@@ -1568,6 +1559,7 @@ document.addEventListener('DOMContentLoaded', function() {
           
           updateAllPricesAndTotals();
           refreshSummary(updatedCart);
+          updateHeaderCart(updatedCart);
         }, 1500); // Wait for WCP calculations to complete
         {% endif %}
       } catch (error) {
@@ -1660,29 +1652,18 @@ document.addEventListener('DOMContentLoaded', function() {
       // Wait for all removals to complete
       await Promise.all(removePromises);
       
-      // Fetch updated cart
+      // Fetch updated cart once after all removals
       const updatedCart = await fetch('/cart.js').then(r => r.json());
       
-      // Reset all quantity inputs to 0 on this page
+      // Update all quantities and UI in one pass
       document.querySelectorAll('tr[data-variant-id]').forEach(row => {
         const qtyInput = row.querySelector('.qty');
-        const totalAmountEl = row.querySelector('.total-cell .total-amount');
-        const hintEl = row.querySelector('.total-cell .next-tier-hint');
-        const priceCell = row.querySelector('.price-cell .current-price');
         const decBtn = row.querySelector(".MA-quantity__button[name='minus']");
         const incBtn = row.querySelector(".MA-quantity__button[name='plus']");
         const remBtn = row.querySelector('.remove-variant');
-        const msrp = parseInt(row.dataset.msrpPrice, 10);
         
         // Reset quantity to 0
         if (qtyInput) qtyInput.value = 0;
-        
-        // Reset total display
-        if (totalAmountEl) totalAmountEl.textContent = formatPrice(0);
-        if (hintEl) hintEl.textContent = '';
-        
-        // Reset price display to MSRP
-        if (priceCell) priceCell.innerHTML = formatPrice(msrp);
         
         // Update button states
         if (decBtn) decBtn.disabled = true;
@@ -1690,26 +1671,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (remBtn) remBtn.disabled = true;
       });
       
-      // Update all prices and totals
+      // Single update for all prices and totals
       updateAllPricesAndTotals();
       
-      // Refresh summary display
+      // Single summary refresh
       refreshSummary(updatedCart);
       
-      // Update header cart count and price
+      // Single header update
       updateHeaderCart(updatedCart);
       
-      // Dispatch cart change event for other components
+      // Dispatch events once
       document.dispatchEvent(new CustomEvent('theme:cart:change', {
         detail: { cart: updatedCart },
         bubbles: true
       }));
       
-      // Dispatch cart update complete event
       document.dispatchEvent(new Event('cartUpdateComplete'));
-      
-      // Show success message (optional)
-      console.log('Product variants cleared from cart successfully');
       
     } catch (error) {
       console.error('Failed to clear product variants:', error);
