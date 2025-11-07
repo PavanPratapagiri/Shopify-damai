@@ -229,14 +229,7 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
           </div>
         </div>
 
-        <div class="cart__items__total" 
-            data-wpd-cart-variant-id="{{ line_item.variant.id }}"   
-            data-wpd-cart-item="{{ line_item.key }}"                                
-            data-wpd-cart-line-price
-            data-line-total="{{ line_item.key }}"
-            style="display: none;">
-          {%- comment -%} Hidden total column {%- endcomment -%}
-        </div>
+        <!-- REMOVED: Total column is no longer needed -->
 
         {% if discounted and line_item.quantity >= 1 %}
           {%- for discount in line_item.line_level_discount_allocations -%}
