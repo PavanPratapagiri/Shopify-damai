@@ -227,13 +227,6 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
                 {% endif %}
               {% endif %}>+</button>
           </div>
-          {% if line_item.variant.inventory_management == 'shopify' and line_item.variant.inventory_policy == 'deny' %}
-            {% if line_item.quantity >= line_item.variant.inventory_quantity %}
-              <p style="font-size: 11px; color: #c33; margin-top: 4px;">
-                Only {{ line_item.variant.inventory_quantity }} available
-              </p>
-            {% endif %}
-          {% endif %}
         </div>
 
         <div class="cart__items__total" 

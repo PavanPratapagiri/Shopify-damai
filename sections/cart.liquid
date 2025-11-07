@@ -664,9 +664,6 @@
         // Update item prices from actual cart data (WCP handles the discounts)
         this.updateItemPrices(cart);
         
-        // CRITICAL: Update inventory-based button states
-        this.updateInventoryStates(cart);
-        
         // Handle empty cart
         this.toggleEmptyCart(cart.item_count === 0);
         
@@ -682,60 +679,6 @@
         console.error('Cart refresh error:', error);
         window.location.reload();
       }
-    }
-    
-    // Update inventory states for all items
-    updateInventoryStates(cart) {
-      cart.items.forEach(item => {
-        const input = document.querySelector(`input[data-update-cart="${item.key}"]`);
-        if (!input) return;
-        
-        const inventoryQty = parseInt(input.getAttribute('data-inventory-quantity'));
-        const inventoryManagement = input.getAttribute('data-inventory-management');
-        const inventoryPolicy = input.getAttribute('data-inventory-policy');
-        
-        // Only enforce inventory limits if managed by Shopify and policy is 'deny'
-        if (inventoryManagement === 'shopify' && inventoryPolicy === 'deny') {
-          const wrapper = input.closest('[data-quantity-selector]');
-          const plusBtn = wrapper?.querySelector('.quantity__button--plus');
-          const minusBtn = wrapper?.querySelector('.quantity__button--minus');
-          
-          if (plusBtn) {
-            if (item.quantity >= inventoryQty) {
-              plusBtn.disabled = true;
-              plusBtn.setAttribute('title', 'Maximum available quantity reached');
-              plusBtn.style.opacity = '0.4';
-              plusBtn.style.cursor = 'not-allowed';
-            } else {
-              plusBtn.disabled = false;
-              plusBtn.removeAttribute('title');
-              plusBtn.style.opacity = '';
-              plusBtn.style.cursor = '';
-            }
-          }
-          
-          // Always enable minus button if quantity > 0
-          if (minusBtn) {
-            minusBtn.disabled = item.quantity <= 0;
-          }
-          
-          // Update or add inventory warning message
-          const quantityDiv = input.closest('.cart__items__quantity');
-          let warningMsg = quantityDiv?.querySelector('.inventory-warning');
-          
-          if (item.quantity >= inventoryQty) {
-            if (!warningMsg) {
-              warningMsg = document.createElement('p');
-              warningMsg.className = 'inventory-warning';
-              warningMsg.style.cssText = 'font-size: 11px; color: #c33; margin-top: 4px;';
-              quantityDiv?.appendChild(warningMsg);
-            }
-            warningMsg.textContent = `Only ${inventoryQty} available`;
-          } else if (warningMsg) {
-            warningMsg.remove();
-          }
-        }
-      });
     }
     
     // Update a specific section
@@ -824,6 +767,44 @@
         detail: { type, cart },
         bubbles: true
       }));
+    }
+
+    // Update inventory states for all items
+    updateInventoryStates(cart) {
+      cart.items.forEach(item => {
+        const input = document.querySelector(`input[data-update-cart="${item.key}"]`);
+        if (!input) return;
+        
+        const inventoryQty = parseInt(input.getAttribute('data-inventory-quantity'));
+        const inventoryManagement = input.getAttribute('data-inventory-management');
+        const inventoryPolicy = input.getAttribute('data-inventory-policy');
+        
+        // Only enforce inventory limits if managed by Shopify and policy is 'deny'
+        if (inventoryManagement === 'shopify' && inventoryPolicy === 'deny') {
+          const wrapper = input.closest('[data-quantity-selector]');
+          const plusBtn = wrapper?.querySelector('.quantity__button--plus');
+          const minusBtn = wrapper?.querySelector('.quantity__button--minus');
+          
+          if (plusBtn) {
+            if (item.quantity >= inventoryQty) {
+              plusBtn.disabled = true;
+              plusBtn.setAttribute('title', 'Maximum available quantity reached');
+              plusBtn.style.opacity = '0.4';
+              plusBtn.style.cursor = 'not-allowed';
+            } else {
+              plusBtn.disabled = false;
+              plusBtn.removeAttribute('title');
+              plusBtn.style.opacity = '';
+              plusBtn.style.cursor = '';
+            }
+          }
+          
+          // Always enable minus button if quantity > 0
+          if (minusBtn) {
+            minusBtn.disabled = item.quantity <= 0;
+          }
+        }
+      });
     }
   }
   
