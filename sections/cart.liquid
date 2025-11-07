@@ -279,68 +279,67 @@
               <span class="cart__footer__value wcp-original-cart-total" data-cart-final>
                 {{ cart.total_price | money_with_currency }}
               </span>
-            
             </p>
-              <span class="cart__footer__value wcp-cart-total"></span>
-                       <div class="additional-notes">
-                          <span class="wcp-minimums-note"></span>
-                          <span class="wcp-extra-note "></span>
-                      </div>
-                      {% render "wcp_multi_currency_msg" %}  
+            
+            <span class="cart__footer__value wcp-cart-total"></span>
+            <div class="additional-notes">
+              <span class="wcp-minimums-note"></span>
+              <span class="wcp-extra-note "></span>
+            </div>
+            {% render "wcp_multi_currency_msg" %}  
             
             <p class="cart__footer__small">{{ 'cart.general.shipping_at_checkout' | t }}</p>
           </div>
 
           <div class="cart__footer__checkout">
-
-{% assign wcp_wholesale_customer = false %}
-{% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
-{% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
-{% assign active_discounts_array = active_discounts | split: ',' %}
-{% assign customer_tags = blank %}
-{% for tag in customer.tags %}
-{% assign tempTag = tag | downcase %}
-{% assign customer_tags = customer_tags | prepend:tempTag %}
-{% unless forloop.last %}
-{% assign customer_tags = customer_tags | prepend:','  %}
-{% endunless %}
-{% endfor %}
-{% assign customer_tags = customer_tags | split:',' %}
-{% assign active_discounts = active_discounts | downcase %}
-{% for discount_key in active_discounts_array %}
-{% assign key_split = discount_key | split: '-' %}
-{% assign key_split_length = key_split | size %}
-{% if key_split_length > 2 %}
-{% assign removeable_key = key_split.last | prepend: '-' %}
-{% assign wcp_customer_tag = discount_key | remove_last: removeable_key %}
-{% else %}
-{% assign wcp_customer_tag = key_split[0] %}
-{% endif %}
-{% assign wcp_customer_tag = wcp_customer_tag | downcase %}
-{% if customer_tags contains wcp_customer_tag %}
-{% assign wcp_wholesale_customer = true %}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if wcp_wholesale_customer == true %}
-            <button type="submit" class="wcp_checkout_btn btn btn--primary btn--large checkout__button WPDcheckoutBTN" style="color:white; padding: 12px 20px; margin-bottom: 2px;" disabled>{{ 'cart.general.checkout' | t }}</button>
-            <script>
-              document.addEventListener("DOMContentLoaded", function(){
-               var hidecheckoutBTN = setInterval(function(){
-                if(window.wcp_data){
-                	    document.getElementsByClassName("WPDcheckoutBTN")[0].removeAttribute("disabled");
-                        clearInterval(hidecheckoutBTN);
-            	}
-                },100) // Reduced from 2500ms to 100ms check interval
-                
-              });  
-            </script>   
-  {% else %}            
-            <button type="submit" name="checkout" class="btn btn--primary btn--large checkout__button">
-              {{ 'cart.general.checkout' | t }}
-            </button>
+            {% assign wcp_wholesale_customer = false %}
+            {% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
+              {% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
+              {% assign active_discounts_array = active_discounts | split: ',' %}
+              {% assign customer_tags = blank %}
+              {% for tag in customer.tags %}
+                {% assign tempTag = tag | downcase %}
+                {% assign customer_tags = customer_tags | prepend:tempTag %}
+                {% unless forloop.last %}
+                  {% assign customer_tags = customer_tags | prepend:','  %}
+                {% endunless %}
+              {% endfor %}
+              {% assign customer_tags = customer_tags | split:',' %}
+              {% assign active_discounts = active_discounts | downcase %}
+              {% for discount_key in active_discounts_array %}
+                {% assign key_split = discount_key | split: '-' %}
+                {% assign key_split_length = key_split | size %}
+                {% if key_split_length > 2 %}
+                  {% assign removeable_key = key_split.last | prepend: '-' %}
+                  {% assign wcp_customer_tag = discount_key | remove_last: removeable_key %}
+                {% else %}
+                  {% assign wcp_customer_tag = key_split[0] %}
+                {% endif %}
+                {% assign wcp_customer_tag = wcp_customer_tag | downcase %}
+                {% if customer_tags contains wcp_customer_tag %}
+                  {% assign wcp_wholesale_customer = true %}
+                {% endif %}
+              {% endfor %}
             {% endif %}
-         </div>
+            
+            {% if wcp_wholesale_customer == true %}
+              <button type="submit" class="wcp_checkout_btn btn btn--primary btn--large checkout__button WPDcheckoutBTN" style="color:white; padding: 12px 20px; margin-bottom: 2px;" disabled>{{ 'cart.general.checkout' | t }}</button>
+              <script>
+                document.addEventListener("DOMContentLoaded", function(){
+                  var hidecheckoutBTN = setInterval(function(){
+                    if(window.wcp_data){
+                      document.getElementsByClassName("WPDcheckoutBTN")[0].removeAttribute("disabled");
+                      clearInterval(hidecheckoutBTN);
+                    }
+                  },100) // Reduced from 2500ms to 100ms check interval
+                });  
+              </script>   
+            {% else %}            
+              <button type="submit" name="checkout" class="btn btn--primary btn--large checkout__button">
+                {{ 'cart.general.checkout' | t }}
+              </button>
+            {% endif %}
+          </div>
 
           <div class="cart__footer__update">
             <span class="cart__update" data-update-button>
