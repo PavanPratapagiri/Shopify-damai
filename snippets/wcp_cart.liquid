@@ -143,6 +143,31 @@ reqJquery(function($){
     return wcp_cart_data;
   };
 
+  // New function to recalculate cart total after applying custom discounts
+  window.recalculateCartTotal = function(discounted_hash) {
+    var total = 0;
+    var currency = discounted_hash.currency || '$';
+    
+    // Calculate total from our custom-discounted items
+    for (var i = 0; i < window.wcp_data.wcp_cart.items.length; i++) {
+      var item = window.wcp_data.wcp_cart.items[i];
+      var itemTotal = item.wcp_v_price * item.quantity;
+      total += itemTotal;
+      console.log('[Cart Total] Item ' + i + ':', item.original_item.product_title, 
+                  'Price:', (item.wcp_v_price/100).toFixed(2), 
+                  'Qty:', item.quantity,
+                  'Line Total:', (itemTotal/100).toFixed(2));
+    }
+    
+    console.log('[Cart Total] Calculated Total:', currency + (total/100).toFixed(2));
+    
+    // Update the discounted hash with our calculated total
+    discounted_hash.wcp_total = (total / 100).toFixed(2);
+    discounted_hash.formatted_wcp_total = currency + (total / 100).toFixed(2);
+    
+    return discounted_hash;
+  };
+
   window.wcp_data = {}
   window.wcp_data.api_version = 1;
   window.wcp_data.shop = "{{shop.permanent_domain}}";
@@ -377,6 +402,10 @@ reqJquery(function($){
         // This ensures our per-product discount override is not lost
         console.log('[Volume Discount Fix] Reapplying custom discount after WCP server response');
         window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
+        
+        // Recalculate cart total with our custom prices
+        data = recalculateCartTotal(data);
+        
         successCallback(data);
       }
     });
