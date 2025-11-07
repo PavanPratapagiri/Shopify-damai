@@ -770,15 +770,22 @@
       let calculatedTotal = 0;
       
       cart.items.forEach(item => {
-        // Get MSRP (compare_at_price or original price)
-        const msrpPrice = item.variant.compare_at_price || item.original_price;
+        // Check if item has a compare_at_price (discount/MSRP)
+        const hasDiscount = item.variant.compare_at_price && item.variant.compare_at_price > item.original_price;
         
-        // Calculate volume-discounted unit price based on total cart quantity
-        // This matches the product multi-variants logic exactly
-        const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
+        let finalUnitPrice;
+        let msrpPrice;
         
-        // Use volume discounted price directly (matching product multi-variants)
-        const finalUnitPrice = volumeDiscountedPrice;
+        if (hasDiscount) {
+          // Item has discount - use compare_at_price as MSRP and apply volume discount
+          msrpPrice = item.variant.compare_at_price;
+          const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
+          finalUnitPrice = volumeDiscountedPrice;
+        } else {
+          // Item has NO discount - use original price without volume discount
+          msrpPrice = item.original_price;
+          finalUnitPrice = item.original_price;
+        }
         
         // Calculate line total: quantity × unit price
         const lineTotal = PricingUtils.calculateLineTotal(item.quantity, finalUnitPrice);
@@ -792,19 +799,18 @@
           priceElement.textContent = formatter.format(finalUnitPrice / 100);
         }
         
-        // Show volume discount price below the original price if discounted
+        // Show volume discount price below the original price if item has discount
         const volumeDiscountElement = document.querySelector(`[data-volume-discounted-price="${item.key}"]`);
-        if (volumeDiscountElement && msrpPrice > finalUnitPrice && totalQty > 0) {
-          const savings = msrpPrice - finalUnitPrice;
+        if (volumeDiscountElement && hasDiscount && msrpPrice > finalUnitPrice && totalQty > 0) {
           volumeDiscountElement.innerHTML = `<span style="font-size: 12px; color: #28a745; font-weight: 600;">After ${discountPercent}% discount: ${formatter.format(finalUnitPrice / 100)}</span>`;
           volumeDiscountElement.style.display = 'block';
         } else if (volumeDiscountElement) {
           volumeDiscountElement.style.display = 'none';
         }
         
-        // Update compare-at price if exists
+        // Update compare-at price if exists and has discount
         const comparePriceElement = document.querySelector(`[data-compare-price="${item.key}"]`);
-        if (comparePriceElement && msrpPrice > finalUnitPrice) {
+        if (comparePriceElement && hasDiscount) {
           comparePriceElement.textContent = formatter.format(msrpPrice / 100);
           comparePriceElement.style.display = '';
         } else if (comparePriceElement) {
@@ -868,15 +874,18 @@
         totalQuantity: totalQty,
         itemCount: cart.items.length,
         calculatedTotal: formatter.format(calculatedTotal / 100),
+        discountTier: discountTier ? `${discountPercent}% off` : 'No discount',
         items: cart.items.map(item => {
-          const msrpPrice = item.variant.compare_at_price || item.original_price;
-          const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
+          const hasDiscount = item.variant.compare_at_price && item.variant.compare_at_price > item.original_price;
+          const msrpPrice = hasDiscount ? item.variant.compare_at_price : item.original_price;
+          const volumeDiscountedPrice = hasDiscount ? PricingUtils.getDiscountedPrice(totalQty, msrpPrice) : item.original_price;
           const lineTotal = PricingUtils.calculateLineTotal(item.quantity, volumeDiscountedPrice);
           return {
             title: item.product_title,
             quantity: item.quantity,
+            hasDiscount: hasDiscount,
             msrp: formatter.format(msrpPrice / 100),
-            volumePrice: formatter.format(volumeDiscountedPrice / 100),
+            finalPrice: formatter.format(volumeDiscountedPrice / 100),
             lineTotal: formatter.format(lineTotal / 100)
           };
         })
