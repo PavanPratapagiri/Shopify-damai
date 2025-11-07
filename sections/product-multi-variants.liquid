@@ -915,7 +915,11 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
           </button>
         </div>
         <div class="action-total">
-        <strong>{{ cart.item_count }}</strong> 
+        {%- assign total_item_quantity = 0 -%}
+        {%- for item in cart.items -%}
+          {%- assign total_item_quantity = total_item_quantity | plus: item.quantity -%}
+        {%- endfor -%}
+        <strong>{{ total_item_quantity }}</strong> 
         <p>Total items</p>
       </div>
       </div>
