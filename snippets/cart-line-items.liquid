@@ -225,7 +225,7 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
             style="display: block;">
           {%- comment -%} Show original MSRP total if item has compare_at_price {%- endcomment -%}
           {%- if sale -%}
-            <del data-compare-line-total="{{ line_item.key }}" style="display: block; opacity: 0.6; font-size: 0.9em; margin-bottom: 4px;">
+            <del data-compare-line-total="{{ line_item.key }}" style="display: block; opacity: 0.6; font-size: 0.85em; margin-bottom: 4px;">
               {%- assign msrp_line_total = line_item.variant.compare_at_price | times: line_item.quantity -%}
               {% if settings.currency_code_enable %}
                 {{ msrp_line_total | money_with_currency }}
@@ -235,13 +235,18 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
             </del>
           {%- endif -%}
           
-          {%- comment -%} Show updated discounted total {%- endcomment -%}
-          <span data-line-total-price="{{ line_item.key }}" style="display: block; font-weight: 600;{% if sale %} color: #28a745;{% endif %}">
+          {%- comment -%} Show line total (will be updated by JS with volume discount) {%- endcomment -%}
+          <span data-line-total-price="{{ line_item.key }}" style="display: block; font-weight: 600; font-size: 1em;">
             {% if settings.currency_code_enable %}
               {{ line_item.final_line_price | money_with_currency }}
             {% else %}
               {{ line_item.final_line_price | money }}
             {% endif %}
+          </span>
+          
+          {%- comment -%} Volume discount hint (populated by JavaScript) {%- endcomment -%}
+          <span data-volume-hint="{{ line_item.key }}" style="display: block; font-size: 0.75em; color: #667eea; margin-top: 4px; min-height: 16px;">
+            {%- comment -%} Will show "Buy X more to save Y%" message {%- endcomment -%}
           </span>
         </div>
 
