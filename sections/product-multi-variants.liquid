@@ -1623,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // — "Remove all" button —
   document.querySelector('.remove-all').addEventListener('click', async function() {
-    if (!confirm('Are you sure you want to remove all items from cart?')) {
+    if (!confirm('Are you sure you want to remove all variants of this product from cart?')) {
       return;
     }
     
@@ -1632,11 +1632,38 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.disabled = true;
     
     try {
-      // Clear the cart
-      const response = await fetch('/cart/clear.js', { method: 'POST' });
-      const cart = await response.json();
+      // Get current cart to find line items for this product's variants
+      const cart = await fetch('/cart.js').then(r => r.json());
       
-      // Reset all quantity inputs to 0
+      // Collect all variant IDs from this product page
+      const productVariantIds = [];
+      document.querySelectorAll('tr[data-variant-id]').forEach(row => {
+        productVariantIds.push(row.dataset.variantId);
+      });
+      
+      // Find and remove only the items that match this product's variants
+      const removePromises = [];
+      cart.items.forEach((item, index) => {
+        if (productVariantIds.includes(String(item.variant_id))) {
+          // Remove this item by setting quantity to 0
+          const lineIndex = index + 1; // Line numbers are 1-based
+          removePromises.push(
+            fetch('/cart/change.js', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ line: lineIndex, quantity: 0 })
+            })
+          );
+        }
+      });
+      
+      // Wait for all removals to complete
+      await Promise.all(removePromises);
+      
+      // Fetch updated cart
+      const updatedCart = await fetch('/cart.js').then(r => r.json());
+      
+      // Reset all quantity inputs to 0 on this page
       document.querySelectorAll('tr[data-variant-id]').forEach(row => {
         const qtyInput = row.querySelector('.qty');
         const totalAmountEl = row.querySelector('.total-cell .total-amount');
@@ -1667,14 +1694,14 @@ document.addEventListener('DOMContentLoaded', function() {
       updateAllPricesAndTotals();
       
       // Refresh summary display
-      refreshSummary(cart);
+      refreshSummary(updatedCart);
       
       // Update header cart count and price
-      updateHeaderCart(cart);
+      updateHeaderCart(updatedCart);
       
       // Dispatch cart change event for other components
       document.dispatchEvent(new CustomEvent('theme:cart:change', {
-        detail: { cart: cart },
+        detail: { cart: updatedCart },
         bubbles: true
       }));
       
@@ -1682,11 +1709,11 @@ document.addEventListener('DOMContentLoaded', function() {
       document.dispatchEvent(new Event('cartUpdateComplete'));
       
       // Show success message (optional)
-      console.log('Cart cleared successfully');
+      console.log('Product variants cleared from cart successfully');
       
     } catch (error) {
-      console.error('Failed to clear cart:', error);
-      alert('Failed to clear cart. Please try again.');
+      console.error('Failed to clear product variants:', error);
+      alert('Failed to clear items. Please try again.');
     } finally {
       loadingSvg.style.display = 'none';
       btn.style.display = 'inline-block';
