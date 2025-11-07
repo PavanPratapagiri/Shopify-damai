@@ -848,7 +848,7 @@ data-wpd-cart-drawer-product-id="{{ product.id }}"
 data-wpd-cart-drawer-item="{{ variant_key }}"                          
 data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                 {% if variant.compare_at_price > variant.price %}
-                  <span class="msrp">MSRP: {{ variant.compare_at_price | money }}</span><br>
+                  <span class="msrp">PRICE: {{ variant.compare_at_price | money }}</span><br>
                 {% endif %}
                 {{ variant.price | money }}
               </span>
@@ -886,7 +886,7 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
             </td>
             <td class="price-cell">
               {% if variant.compare_at_price > variant.price %}
-                <div class="msrp">MSRP: {{ variant.compare_at_price | money }}</div>
+                <div class="msrp">PRICE: {{ variant.compare_at_price | money }}</div>
               {% endif %}
               <div class="current-price">
                 {{ variant.price | money }}
