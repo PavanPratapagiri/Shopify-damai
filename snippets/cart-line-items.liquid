@@ -354,9 +354,9 @@
             {% endif %}
           </td>
           
-          <td data-label="MSRP">
+          <td data-label="PRICE">
             <div class="cart__item__price">
-              {%- comment -%} Show MSRP (compare_at_price or original price) - doesn't change with quantity {%- endcomment -%}
+              {%- comment -%} Show PRICE (compare_at_price or original price) - doesn't change with quantity {%- endcomment -%}
               {% assign msrp_price = line_item.variant.compare_at_price %}
               {% if msrp_price == blank or msrp_price == 0 or msrp_price < line_item.variant.price %}
                 {% assign msrp_price = line_item.variant.price %}
