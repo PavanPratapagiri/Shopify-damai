@@ -140,7 +140,7 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
                 data-wpd-cart-variant-id="{{ line_item.variant.id }}"   
                 data-wpd-cart-item="{{ line_item.key }}"
                 data-item-price="{{ line_item.key }}"
-                style="display: inline-block; background: none; font-weight: normal; color: #c33;">
+                style="display: inline-block; background: none; font-weight: 600; color: #c33; font-size: 16px;">
                 {% if settings.currency_code_enable %}
                   {{ line_item.final_price | money_with_currency }}
                 {% else %}
@@ -160,7 +160,7 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
               data-wpd-cart-variant-id="{{ line_item.variant.id }}"   
               data-wpd-cart-item="{{ line_item.key }}"
               data-item-price="{{ line_item.key }}"
-              style="display: inline-block;">
+              style="display: inline-block; font-weight: 600; font-size: 16px;">
                 {% if settings.currency_code_enable %}
                   {{ line_item.final_price | money_with_currency }}
                 {% else %}
@@ -168,36 +168,6 @@ data-wpd-cart-drawer-quantity="{{ line_item.quantity }}" /> {% endif %}
                 {% endif %}
               </span>
             {%- endif -%}
-          </p>
-          
-          {%- comment -%} Total line price (unit price × quantity) {%- endcomment -%}
-          <p class="line__total__price" data-line-total-display="{{ line_item.key }}" style="margin-top: 8px; font-size: 16px; font-weight: 700; color: #333;">
-            {%- assign sale = false -%}
-            {%- if line_item.variant.compare_at_price > line_item.final_price -%}
-              {%- assign sale = true -%}
-            {%- endif -%}
-            
-            {%- comment -%} Show compare at total if on sale {%- endcomment -%}
-            {%- if sale -%}
-              {%- assign compare_total = line_item.variant.compare_at_price | times: line_item.quantity -%}
-              <del style="display: block; opacity: 0.6; font-size: 0.85em; margin-bottom: 2px;">
-                {% if settings.currency_code_enable %}
-                  {{ compare_total | money_with_currency }}
-                {% else %}
-                  {{ compare_total | money }}
-                {% endif %}
-              </del>
-            {%- endif -%}
-            
-            {%- comment -%} Show total line price {%- endcomment -%}
-            <span style="display: block; {% if sale %}color: #c33;{% endif %}">
-              Total: 
-              {% if settings.currency_code_enable %}
-                {{ line_item.final_line_price | money_with_currency }}
-              {% else %}
-                {{ line_item.final_line_price | money }}
-              {% endif %}
-            </span>
           </p>
           
           {%- comment -%} Volume discount price (calculated by JavaScript) {%- endcomment -%}
