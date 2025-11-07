@@ -766,36 +766,23 @@
       let calculatedTotal = 0;
       
       cart.items.forEach(item => {
-        // Check if item has a compare_at_price (discount/MSRP)
-        const hasDiscount = item.variant.compare_at_price && item.variant.compare_at_price > item.original_price;
-        
-        let finalUnitPrice;
-        let msrpPrice;
-        
-        if (hasDiscount) {
-          // Item has discount - use compare_at_price as MSRP and apply volume discount
-          msrpPrice = item.variant.compare_at_price;
-          const volumeDiscountedPrice = PricingUtils.getDiscountedPrice(totalQty, msrpPrice);
-          finalUnitPrice = volumeDiscountedPrice;
-        } else {
-          // Item has NO discount - use original price without volume discount
-          msrpPrice = item.original_price;
-          finalUnitPrice = item.original_price;
-        }
-        
-        // Calculate line total: quantity × unit price
-        const lineTotal = PricingUtils.calculateLineTotal(item.quantity, finalUnitPrice);
+        // Use the actual final_line_price from Shopify cart (which includes all discounts)
+        const lineTotal = item.final_line_price;
+        const finalUnitPrice = item.final_price;
         
         // Add to running total
         calculatedTotal += lineTotal;
         
-        // Update unit price display - show the final price after volume discount
+        // Check if item has a compare_at_price (MSRP/sale price)
+        const hasComparePrice = item.variant.compare_at_price && item.variant.compare_at_price > item.final_price;
+        
+        // Update unit price display
         const priceElement = document.querySelector(`[data-item-price="${item.key}"]`);
         if (priceElement) {
           priceElement.textContent = formatter.format(finalUnitPrice / 100);
           
-          // Style it to show it's the active price
-          if (hasDiscount && msrpPrice > finalUnitPrice) {
+          // Style it to show it's discounted
+          if (hasComparePrice || item.original_price > item.final_price) {
             priceElement.style.color = '#28a745';
             priceElement.style.fontWeight = '600';
           } else {
@@ -804,13 +791,12 @@
           }
         }
         
-        // Show volume discount message if applicable
+        // Show discount message if applicable
         const volumeDiscountElement = document.querySelector(`[data-volume-discounted-price="${item.key}"]`);
         if (volumeDiscountElement) {
-          if (hasDiscount && msrpPrice > finalUnitPrice && totalQty > 0) {
-            // Show savings amount
-            const savings = msrpPrice - finalUnitPrice;
-            const savingsPercent = Math.round((savings / msrpPrice) * 100);
+          if (item.original_price > item.final_price) {
+            const savings = item.original_price - item.final_price;
+            const savingsPercent = Math.round((savings / item.original_price) * 100);
             volumeDiscountElement.innerHTML = `<span style="font-size: 13px; color: #28a745; font-weight: 600;">You save ${formatter.format(savings / 100)} (${savingsPercent}% off)</span>`;
             volumeDiscountElement.style.display = 'block';
           } else {
@@ -818,34 +804,33 @@
           }
         }
         
-        // Update compare-at price if exists and has discount
+        // Update compare-at price if exists
         const comparePriceElement = document.querySelector(`[data-compare-price="${item.key}"]`);
-        if (comparePriceElement && hasDiscount) {
-          comparePriceElement.textContent = formatter.format(msrpPrice / 100);
-          comparePriceElement.style.display = '';
+        if (comparePriceElement && hasComparePrice) {
+          comparePriceElement.textContent = formatter.format(item.variant.compare_at_price / 100);
+          comparePriceElement.style.display = 'block';
         } else if (comparePriceElement) {
           comparePriceElement.style.display = 'none';
         }
         
         // Update original price if discounted
         const originalPriceElement = document.querySelector(`[data-original-price="${item.key}"]`);
-        if (originalPriceElement && item.original_price > finalUnitPrice) {
+        if (originalPriceElement && item.original_price > item.final_price) {
           originalPriceElement.textContent = formatter.format(item.original_price / 100);
-          originalPriceElement.style.display = '';
+          originalPriceElement.style.display = 'block';
         } else if (originalPriceElement) {
           originalPriceElement.style.display = 'none';
         }
         
-        // Update line total (quantity × unit price)
+        // Update line total (quantity × unit price) - use actual final_line_price
         const lineTotalElement = document.querySelector(`[data-line-total="${item.key}"]`);
         if (lineTotalElement) {
-          // Update the main line total price span
           const lineTotalPriceSpan = lineTotalElement.querySelector(`[data-line-total-price="${item.key}"]`);
           if (lineTotalPriceSpan) {
             lineTotalPriceSpan.textContent = formatter.format(lineTotal / 100);
             
             // Apply green styling if discounted
-            if (hasDiscount && msrpPrice > finalUnitPrice) {
+            if (item.original_line_price > item.final_line_price) {
               lineTotalPriceSpan.style.color = '#28a745';
               lineTotalPriceSpan.style.fontWeight = '600';
             } else {
@@ -854,11 +839,14 @@
             }
           }
           
-          // Update compare line total (MSRP × quantity) if exists
+          // Update compare line total if exists
           const compareLineTotalElement = lineTotalElement.querySelector(`[data-compare-line-total="${item.key}"]`);
-          if (compareLineTotalElement && hasDiscount) {
-            const msrpLineTotal = msrpPrice * item.quantity;
+          if (compareLineTotalElement && hasComparePrice) {
+            const msrpLineTotal = item.variant.compare_at_price * item.quantity;
             compareLineTotalElement.textContent = formatter.format(msrpLineTotal / 100);
+            compareLineTotalElement.style.display = 'block';
+          } else if (compareLineTotalElement && item.original_line_price > item.final_line_price) {
+            compareLineTotalElement.textContent = formatter.format(item.original_line_price / 100);
             compareLineTotalElement.style.display = 'block';
           } else if (compareLineTotalElement) {
             compareLineTotalElement.style.display = 'none';
@@ -878,50 +866,43 @@
         }
         
         // Update data attributes for wholesale pricing compatibility
-        if (wpdLineElement) {
-          wpdLineElement.setAttribute('data-wpd-cart-drawer-quantity', item.quantity);
-          wpdLineElement.setAttribute('data-wpd-cart-drawer-variant-price', finalUnitPrice);
-        }
-        
-        // Update all price data attributes
-        const allPriceElements = document.querySelectorAll(`[data-wpd-cart-drawer-variant-price][data-wpd-cart-drawer-item="${item.key}"]`);
+        const allPriceElements = document.querySelectorAll(`[data-wpd-cart-drawer-item="${item.key}"]`);
         allPriceElements.forEach(el => {
+          el.setAttribute('data-wpd-cart-drawer-quantity', item.quantity);
           el.setAttribute('data-wpd-cart-drawer-variant-price', finalUnitPrice);
         });
       });
       
-      // Update cart subtotal (sum of all line totals)
+      // Update cart subtotal - use actual cart.total_price from Shopify
+      const actualTotal = cart.total_price;
+      
       const subtotalElement = document.querySelector('[data-cart-final]');
       if (subtotalElement) {
-        subtotalElement.textContent = formatter.format(calculatedTotal / 100);
+        subtotalElement.textContent = formatter.format(actualTotal / 100);
       }
       
       // Update original cart total display
       const originalTotal = document.querySelector('.wcp-original-cart-total');
       if (originalTotal) {
-        originalTotal.textContent = formatter.format(calculatedTotal / 100);
+        originalTotal.textContent = formatter.format(actualTotal / 100);
       }
       
       // Log pricing details for debugging
       console.log('Cart Pricing Summary:', {
         totalQuantity: totalQty,
         itemCount: cart.items.length,
+        shopifyCartTotal: formatter.format(cart.total_price / 100),
         calculatedTotal: formatter.format(calculatedTotal / 100),
-        discountTier: discountTier ? `${discountPercent}% off` : 'No discount',
-        items: cart.items.map(item => {
-          const hasDiscount = item.variant.compare_at_price && item.variant.compare_at_price > item.original_price;
-          const msrpPrice = hasDiscount ? item.variant.compare_at_price : item.original_price;
-          const volumeDiscountedPrice = hasDiscount ? PricingUtils.getDiscountedPrice(totalQty, msrpPrice) : item.original_price;
-          const lineTotal = PricingUtils.calculateLineTotal(item.quantity, volumeDiscountedPrice);
-          return {
-            title: item.product_title,
-            quantity: item.quantity,
-            hasDiscount: hasDiscount,
-            msrp: formatter.format(msrpPrice / 100),
-            finalPrice: formatter.format(volumeDiscountedPrice / 100),
-            lineTotal: formatter.format(lineTotal / 100)
-          };
-        })
+        match: calculatedTotal === cart.total_price ? '✓ Match' : '✗ Mismatch',
+        discountTier: discountTier ? `${discountPercent}% off` : 'No volume discount',
+        items: cart.items.map(item => ({
+          title: item.product_title,
+          quantity: item.quantity,
+          unitPrice: formatter.format(item.final_price / 100),
+          originalPrice: formatter.format(item.original_price / 100),
+          lineTotal: formatter.format(item.final_line_price / 100),
+          hasDiscount: item.original_price > item.final_price || item.variant.compare_at_price > item.final_price
+        }))
       });
     }
     
