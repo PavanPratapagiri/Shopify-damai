@@ -170,6 +170,25 @@
       color: #000;
     }
     
+    .cart__item__total--original {
+      font-size: 13px;
+      color: #666;
+      text-decoration: line-through;
+      font-weight: 400;
+      display: block;
+      margin-bottom: 4px;
+    }
+    
+    .cart__item__total--final {
+      font-weight: 700;
+      font-size: 16px;
+      color: #000;
+    }
+    
+    .cart__item__total--discounted {
+      color: #c62828;
+    }
+    
     @media (max-width: 768px) {
       .cart__items__table {
         display: block;
@@ -358,10 +377,29 @@
           
           <td data-label="Total">
             <div class="cart__item__total" data-line-item-total="{{ line_item.key }}">
-              {% if settings.currency_code_enable %}
-                {{ line_item.final_line_price | money_with_currency }}
+              {% if line_item.original_line_price > line_item.final_line_price %}
+                <span class="cart__item__total--original">
+                  {% if settings.currency_code_enable %}
+                    {{ line_item.original_line_price | money_with_currency }}
+                  {% else %}
+                    {{ line_item.original_line_price | money_without_trailing_zeros }}
+                  {% endif %}
+                </span>
+                <span class="cart__item__total--final cart__item__total--discounted">
+                  {% if settings.currency_code_enable %}
+                    {{ line_item.final_line_price | money_with_currency }}
+                  {% else %}
+                    {{ line_item.final_line_price | money_without_trailing_zeros }}
+                  {% endif %}
+                </span>
               {% else %}
-                {{ line_item.final_line_price | money_without_trailing_zeros }}
+                <span class="cart__item__total--final">
+                  {% if settings.currency_code_enable %}
+                    {{ line_item.final_line_price | money_with_currency }}
+                  {% else %}
+                    {{ line_item.final_line_price | money_without_trailing_zeros }}
+                  {% endif %}
+                </span>
               {% endif %}
             </div>
           </td>
