@@ -1272,32 +1272,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const subtotal = document.querySelector('.summary .price');
     const totalSavings = document.querySelector('.summary .total-savings');
     
-    btn.disabled = totalQuantity === 0;
+    if (btn) btn.disabled = totalQuantity === 0;
     if (count) count.textContent = totalQuantity;
     
-    // Calculate totals by summing up the displayed row totals
+    // Calculate totals by iterating through variant rows and using actual calculated values
     let calculatedSubtotal = 0;
     let originalTotal = 0;
     
     document.querySelectorAll('tr[data-variant-id]').forEach(row => {
       const qty = parseInt(row.querySelector('.qty').value) || 0;
-      const totalAmountElement = row.querySelector('.total-cell .total-amount');
-      const msrp = parseInt(row.dataset.msrpPrice, 10);
+      if (qty <= 0) return; // Skip zero quantity items
       
-      // Get the displayed total amount (remove currency symbol and parse)
-      if (totalAmountElement && qty > 0) {
-        const displayedTotal = totalAmountElement.textContent.replace(/[^0-9.-]/g, '');
-        calculatedSubtotal += parseFloat(displayedTotal) * 100; // Convert to cents
-      }
+      const msrpCents = parseInt(row.dataset.msrpPrice, 10) || 0;
+      const discountedPriceCents = getDiscountedPrice(totalQuantity, msrpCents);
+      const lineTotalCents = discountedPriceCents * qty;
       
-      originalTotal += msrp * qty;
+      calculatedSubtotal += lineTotalCents;
+      originalTotal += (msrpCents * qty);
     });
     
     const savings = originalTotal - calculatedSubtotal;
     
     // Show/hide original price based on whether there are items
     if (originalPrice) {
-      if (cart.item_count > 0 && savings > 0) {
+      if (totalQuantity > 0 && savings > 0) {
         originalPrice.style.display = 'block';
         originalPrice.textContent = formatPrice(originalTotal);
       } else {
