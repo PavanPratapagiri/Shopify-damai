@@ -446,8 +446,10 @@
                   {{ calculated_original_total | money_without_trailing_zeros }}
                 {% endif %}
               </span>
-              <span class="cart__item__total--final cart__item__total--discounted" 
+              <span class="cart__item__total--final cart__item__total--discounted wcp-line-item-price" 
                     data-cart-item-line-total="{{ line_item.key }}"
+                    data-line-item-key="{{ line_item.key }}"
+                    data-line-item-quantity="{{ line_item.quantity }}"
                     data-item-index="{{ forloop.index0 }}">
                 {% if settings.currency_code_enable %}
                   {{ line_item.final_line_price | money_with_currency }}

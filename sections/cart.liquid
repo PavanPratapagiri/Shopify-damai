@@ -296,7 +296,7 @@
                 {% assign customer_tags = customer_tags | prepend:tempTag %}
                 {% unless forloop.last %}
                   {% assign customer_tags = customer_tags | prepend:','  %}
-                {% endunless %}
+                {% endfor %}
               {% endfor %}
               {% assign customer_tags = customer_tags | split:',' %}
               {% assign active_discounts = active_discounts | downcase %}
@@ -725,16 +725,45 @@
     updateItemPrices(cart) {
       // Update WCP discounted prices in the Total column
       if (window.wcp_data && window.wcp_data.wcp_cart && window.wcp_data.wcp_cart.items) {
-        window.wcp_data.wcp_cart.items.forEach((item, index) => {
-          const totalElement = document.querySelector(`[data-item-index="${index}"]`);
-          if (totalElement && item.wcp_vd_price) {
-            const lineTotal = (item.wcp_vd_price * item.quantity) / 100;
+        window.wcp_data.wcp_cart.items.forEach((wcpItem, index) => {
+          // Find the line item by index
+          const priceElement = document.querySelector(`[data-item-index="${index}"]`);
+          
+          if (priceElement && wcpItem.wcp_vd_price) {
+            // Calculate the discounted line total
+            const discountedUnitPrice = wcpItem.wcp_vd_price;
+            const quantity = wcpItem.quantity;
+            const lineTotal = (discountedUnitPrice * quantity) / 100;
+            
+            // Get currency symbol from WCP data or default to $
             const currency = window.wcp_data.discounted_hash?.currency || '$';
-            totalElement.textContent = currency + lineTotal.toFixed(2);
+            
+            // Format the price
+            let formattedPrice;
+            if (window.Shopify && window.Shopify.formatMoney) {
+              formattedPrice = window.Shopify.formatMoney(lineTotal * 100, window.theme.moneyFormat || '${{amount}}');
+            } else {
+              formattedPrice = currency + lineTotal.toFixed(2);
+            }
+            
+            // Update the price display
+            priceElement.textContent = formattedPrice;
           }
         });
       }
-      console.log('Cart updated:', cart.item_count, 'items');
+      
+      // Fallback: update from cart.items if WCP data not available yet
+      cart.items.forEach((item, index) => {
+        const priceElement = document.querySelector(`[data-item-index="${index}"]`);
+        if (priceElement && !window.wcp_data) {
+          const lineTotal = item.final_line_price;
+          if (window.Shopify && window.Shopify.formatMoney) {
+            priceElement.textContent = window.Shopify.formatMoney(lineTotal, window.theme.moneyFormat || '${{amount}}');
+          }
+        }
+      });
+      
+      console.log('Cart prices updated:', cart.item_count, 'items');
     }
     
     showLoading() {
