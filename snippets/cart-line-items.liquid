@@ -487,8 +487,12 @@
                 {%- comment -%} WCP returns price in cents, so use it directly {%- endcomment -%}
                 {% assign discounted_line_total = wcp_line_price %}
               {% else %}
-                {%- comment -%} No WCP discount, use MSRP in cents {%- endcomment -%}
-                {% assign discounted_line_total = msrp_line_total | times: 100 %}
+                {%- comment -%} No WCP discount, use MSRP and apply tiered discount {%- endcomment -%}
+                {% assign discounted_line_total = msrp_line_total | times: 100 | times: 100 | divided_by: 100.0 %}
+                {% if current_discount > 0 %}
+                  {% assign discount_multiplier = 100 | minus: current_discount %}
+                  {% assign discounted_line_total = discounted_line_total | times: discount_multiplier | divided_by: 100 %}
+                {% endif %}
               {% endif %}
               
               <span class="cart__item__total--final cart__item__total--discounted" 
