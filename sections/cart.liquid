@@ -698,20 +698,8 @@
         this.updateSection('.wcp-minimums-note', doc);
         this.updateSection('.wcp-extra-note', doc);
         
-        // For wholesale customers, wait for WCP to apply discounts
-        if (CONFIG.isWholesaleCustomer) {
-          await this.waitForWCP();
-          // Fetch fresh cart data after WCP calculations
-          const updatedCart = await fetch('/cart.js', {
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          }).then(r => r.json());
-          this.updateItemPrices(updatedCart);
-        } else {
-          // For regular customers, update prices from the returned cart
-          this.updateItemPrices(cart);
-        }
+        // Update item prices from actual cart data (WCP handles the discounts)
+        this.updateItemPrices(cart);
         
         // Update inventory states for items
         this.updateInventoryStates(cart);
@@ -729,96 +717,24 @@
         
       } catch (error) {
         console.error('Cart refresh error:', error);
-        // Don't reload - just log the error and let user retry
-        this.showError('Failed to update cart. Please try again.');
+        window.location.reload();
       }
     }
     
-    // Update item prices from cart data
+    // Update item prices
     updateItemPrices(cart) {
-      // Update all line item totals with final prices (includes all discounts)
-      cart.items.forEach((item, index) => {
-        const totalElement = document.querySelector(`[data-cart-item-line-total="${item.key}"]`);
-        if (totalElement) {
-          const finalPrice = item.final_line_price;
-          const formattedPrice = this.formatMoney(finalPrice);
-          totalElement.textContent = formattedPrice;
-          
-          // Also update the comparison price (original)
-          const row = document.querySelector(`[data-line-item-total="${item.key}"]`);
-          if (row) {
-            // Calculate original price (MSRP)
-            const originalUnitPrice = item.compare_at_price || item.price;
-            const originalTotal = originalUnitPrice * item.quantity;
-            const formattedOriginal = this.formatMoney(originalTotal);
-            
-            const originalElement = row.querySelector('.cart__item__total--original');
-            if (originalElement) {
-              originalElement.textContent = formattedOriginal;
-            }
+      // Update WCP discounted prices in the Total column
+      if (window.wcp_data && window.wcp_data.wcp_cart && window.wcp_data.wcp_cart.items) {
+        window.wcp_data.wcp_cart.items.forEach((item, index) => {
+          const totalElement = document.querySelector(`[data-item-index="${index}"]`);
+          if (totalElement && item.wcp_vd_price) {
+            const lineTotal = (item.wcp_vd_price * item.quantity) / 100;
+            const currency = window.wcp_data.discounted_hash?.currency || '$';
+            totalElement.textContent = currency + lineTotal.toFixed(2);
           }
-        }
-      });
-      
-      // Force a re-render of the discount tier messages
-      this.updateTierMessages(cart);
-    }
-    
-    // Update tier messages based on cart quantity
-    updateTierMessages(cart) {
-      // Calculate total product quantity across all variants
-      let productTotalQty = 0;
-      cart.items.forEach(item => {
-        productTotalQty += item.quantity;
-      });
-      
-      // Update tier hints for each item
-      cart.items.forEach((item) => {
-        const messageElement = document.querySelector(`[data-line-item-total="${item.key}"]`)?.querySelector('.cart__item__total--message');
-        if (messageElement) {
-          let nextTierQty = 0;
-          let nextTierDiscount = 0;
-          let currentDiscount = 0;
-          
-          if (productTotalQty >= 1 && productTotalQty <= 4) {
-            currentDiscount = 39;
-            nextTierQty = 5;
-            nextTierDiscount = 43;
-          } else if (productTotalQty >= 5 && productTotalQty <= 9) {
-            currentDiscount = 43;
-            nextTierQty = 10;
-            nextTierDiscount = 45;
-          } else if (productTotalQty >= 10) {
-            currentDiscount = 45;
-            nextTierQty = 0;
-            nextTierDiscount = 0;
-          }
-          
-          if (nextTierQty > 0) {
-            const itemsNeeded = nextTierQty - productTotalQty;
-            const discountIncrease = nextTierDiscount - currentDiscount;
-            messageElement.textContent = `Buy ${itemsNeeded} more to get extra ${discountIncrease}% discount`;
-            messageElement.style.color = '#6b7280';
-          } else {
-            messageElement.textContent = 'Maximum discount applied!';
-            messageElement.style.color = '#059669';
-          }
-        }
-      });
-    }
-    
-    // Format money values consistently
-    formatMoney(cents) {
-      const dollars = (cents / 100).toFixed(2);
-      // Use browser locale or default
-      try {
-        return new Intl.NumberFormat(navigator.language || 'en-US', {
-          style: 'currency',
-          currency: 'USD'
-        }).format(dollars);
-      } catch (e) {
-        return `$${dollars}`;
+        });
       }
+      console.log('Cart updated:', cart.item_count, 'items');
     }
     
     showLoading() {
