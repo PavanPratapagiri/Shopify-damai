@@ -61,154 +61,6 @@ function reqJquery(onload) {
 
 reqJquery(function($){
 
-  // ========================================
-  // CUSTOM PRODUCT-BASED VOLUME DISCOUNT FIX
-  // ========================================
-  // This applies volume discounts per product, not per cart total
-  
-  window.VOLUME_DISCOUNT_TIERS = [
-    { min: 1, max: 4, discount: 0.39 },   // 39% off for 1-4 items
-    { min: 5, max: 9, discount: 0.43 },   // 43% off for 5-9 items
-    { min: 10, max: Infinity, discount: 0.45 }  // 45% off for 10+ items
-  ];
-  
-  window.applyProductBasedVolumeDiscount = function(wcp_cart_data) {
-    // CRITICAL FIX: Store original prices on first run to prevent NaN issues
-    if (!window.WCP_ORIGINAL_PRICES) {
-      window.WCP_ORIGINAL_PRICES = {};
-      for (var i = 0; i < wcp_cart_data.items.length; i++) {
-        var item = wcp_cart_data.items[i];
-        var variantId = item.variant_id || item.original_item.variant_id;
-        window.WCP_ORIGINAL_PRICES[variantId] = {
-          price: item.price,
-          compare_at_price: item.compare_at_price
-        };
-      }
-    }
-    
-    // Group items by product_id to calculate per-product quantity
-    var productQuantities = {};
-    
-    for (var i = 0; i < wcp_cart_data.items.length; i++) {
-      var item = wcp_cart_data.items[i];
-      var productId = item.product_id || item.original_item.product_id;
-      
-      if (!productQuantities[productId]) {
-        productQuantities[productId] = {
-          totalQty: 0,
-          items: []
-        };
-      }
-      
-      productQuantities[productId].totalQty += item.quantity;
-      productQuantities[productId].items.push(i);
-    }
-    
-    // Apply discount to each product based on its total quantity
-    for (var productId in productQuantities) {
-      var productData = productQuantities[productId];
-      var totalQty = productData.totalQty;
-      
-      // Find the correct discount tier for this product
-      var discountTier = null;
-      for (var j = 0; j < window.VOLUME_DISCOUNT_TIERS.length; j++) {
-        var tier = window.VOLUME_DISCOUNT_TIERS[j];
-        if (totalQty >= tier.min && totalQty <= tier.max) {
-          discountTier = tier;
-          break;
-        }
-      }
-      
-      if (!discountTier) {
-        console.warn('[Volume Discount] No tier found for product', productId, 'quantity:', totalQty);
-        continue;
-      }
-      
-      console.log('[Volume Discount] Product ID:', productId, 
-                  'Quantity:', totalQty, 
-                  'Discount:', (discountTier.discount * 100) + '%');
-      
-      // Apply the discount to all items of this product
-      for (var k = 0; k < productData.items.length; k++) {
-        var itemIndex = productData.items[k];
-        var item = wcp_cart_data.items[itemIndex];
-        
-        // CRITICAL FIX: Use stored original prices to prevent NaN
-        var variantId = item.variant_id || item.original_item.variant_id;
-        var originalPrices = window.WCP_ORIGINAL_PRICES[variantId];
-        
-        if (!originalPrices) {
-          console.warn('[Volume Discount] No original prices found for variant', variantId);
-          continue;
-        }
-        
-        // Get the base price from our stored original prices
-        var basePrice = originalPrices.compare_at_price;
-        if (!basePrice || basePrice === 0 || basePrice < originalPrices.price) {
-          basePrice = originalPrices.price;
-        }
-        
-        // Calculate discounted price
-        var discountedPrice = Math.floor(basePrice * (1 - discountTier.discount));
-        
-        // Update WCP prices
-        item.wcp_v_price = discountedPrice;
-        item.wcp_vd_price = discountedPrice;
-        
-        console.log('[Volume Discount] Item:', item.original_item.product_title, 
-                    'Variant:', item.original_item.variant_title,
-                    'Base:', (basePrice/100).toFixed(2), 
-                    'Discounted:', (discountedPrice/100).toFixed(2));
-      }
-    }
-    
-    return wcp_cart_data;
-  };
-
-  // New function to recalculate cart total after applying custom discounts
-  window.recalculateCartTotal = function(discounted_hash) {
-    // Safety check: ensure cart items exist
-    if (!window.wcp_data || !window.wcp_data.wcp_cart || !window.wcp_data.wcp_cart.items) {
-      console.warn('[Cart Total] Cart data not ready, skipping recalculation');
-      return discounted_hash;
-    }
-    
-    var total = 0;
-    var currency = discounted_hash.currency || '$';
-    
-    // Calculate total from our custom-discounted items
-    for (var i = 0; i < window.wcp_data.wcp_cart.items.length; i++) {
-      var item = window.wcp_data.wcp_cart.items[i];
-      
-      // Safety check: ensure item has required properties
-      if (!item || typeof item.wcp_v_price === 'undefined' || typeof item.quantity === 'undefined') {
-        console.warn('[Cart Total] Skipping item ' + i + ' - missing price or quantity');
-        continue;
-      }
-      
-      var itemTotal = item.wcp_v_price * item.quantity;
-      total += itemTotal;
-      
-      console.log('[Cart Total] Item ' + i + ':', item.original_item ? item.original_item.product_title : 'Unknown', 
-                  'Price:', (item.wcp_v_price/100).toFixed(2), 
-                  'Qty:', item.quantity,
-                  'Line Total:', (itemTotal/100).toFixed(2));
-    }
-    
-    // Only update if we have a valid total
-    if (total > 0) {
-      console.log('[Cart Total] Calculated Total:', currency + (total/100).toFixed(2));
-      
-      // Update the discounted hash with our calculated total
-      discounted_hash.wcp_total = (total / 100).toFixed(2);
-      discounted_hash.formatted_wcp_total = currency + (total / 100).toFixed(2);
-    } else {
-      console.warn('[Cart Total] Total is zero or invalid, keeping original WCP total');
-    }
-    
-    return discounted_hash;
-  };
-
   window.wcp_data = {}
   window.wcp_data.api_version = 1;
   window.wcp_data.shop = "{{shop.permanent_domain}}";
@@ -430,26 +282,15 @@ reqJquery(function($){
   }
 
   function sameDomainAjax (paramHash, successCallback) {
-    // CRITICAL: Apply custom discount BEFORE sending to WCP server
-    console.log('[CRITICAL FIX] Applying custom discount BEFORE WCP API call');
-    window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
-    paramHash.cart = window.wcp_data.wcp_cart;
-    
     $.ajax({
       data: JSON.stringify(paramHash),
       url: Wpd_domain +"storefront/validate-cart",
       contentType: "application/json; charset=utf-8",
+
       cache: false,
       datatype:'json',
       type: 'POST',
       success: function (data, success) {
-        // FORCE recalculation with our custom prices - NO EXCEPTIONS
-        console.log('[CRITICAL FIX] Forcing total recalculation after WCP response');
-        data = recalculateCartTotal(data);
-        
-        // Lock the total to prevent further changes
-        window.wcp_data.discounted_hash = data;
-        
         successCallback(data);
       }
     });
@@ -478,14 +319,8 @@ reqJquery(function($){
     	    paramHash.FBT=JSON.parse(localStorage.getItem('wpd_integration_fbt_bundle'));
        }        
       
-      // CRITICAL: Use OUR calculated total, not WCP's
       var TempNetOrderPrice=data.formatted_wcp_total;
       var TempShippingCharge = 0;
-      
-      // FORCE display update with our correct total immediately
-      console.log('[FORCE UPDATE] Setting cart total to:', data.formatted_wcp_total);
-      $(".wcp-cart-total").html(data.formatted_wcp_total);
-      $("#wpdNetTotalValue").html(data.formatted_wcp_total);
       
       {% if shop.metafields.wcp_net.isNetShippingsCost == "true" or shop.metafields.wcp_net.isNetShippingsCost == '1' %}
        if(data.hasOwnProperty('ShippingCharges') && data.ShippingCharges.hasOwnProperty('price')){
@@ -708,7 +543,6 @@ reqJquery(function($){
         data=JSON.parse(data);
         window.wcp_data.wcp_cart= data;
         window.wcp_data.wcp_cart.token=data.token.token;
-        window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
         wcpCheckCart(window.wcp_data);
     });
     }
@@ -851,9 +685,6 @@ var fnCalled = false;
     if(wcpCookieCode){
       window.wcp_data.discount_code = wcpCookieCode;
     }
-
-  // Apply product-based volume discount override
-  window.wcp_data.wcp_cart = applyProductBasedVolumeDiscount(window.wcp_data.wcp_cart);
 
   wcpCheckCart(window.wcp_data);
 
@@ -1259,7 +1090,6 @@ var fnCalled = false;
         Billingaddress.country  = $("select[name='wpdNetBillingAddress[country]']").val();
         Billingaddress.zip  = $("input[name='wpdNetBillingAddress[zip]']").val();
         Billingaddress.phone  = $("input[name='wpdNetBillingAddress[phone]']").val();  
-      
         window.wcp_data.isBillingSameAsShipping = document.getElementById('wpdSameBillingAddress').checked;         
         $("#wpdNetPlaceOrder").addClass("wpd-button-loading");
         $("#wpdNetPlaceOrder").prop("disabled", true);        
