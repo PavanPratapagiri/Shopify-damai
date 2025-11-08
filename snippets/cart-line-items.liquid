@@ -438,15 +438,17 @@
               {% endif %}
               {% assign msrp_line_total = msrp_unit_price | times: line_item.quantity %}
               
-              {%- comment -%} Show strikethrough MSRP unit price and bold MSRP line total {%- endcomment -%}
-              <span class="cart__item__total--original">
+              {%- comment -%} Show MSRP line total (strikethrough) {%- endcomment -%}
+              <span class="cart__item__total--original" data-msrp-total="{{ line_item.key }}">
                 {% if settings.currency_code_enable %}
-                  {{ msrp_unit_price | money_with_currency }}
+                  {{ msrp_line_total | money_with_currency }}
                 {% else %}
-                  {{ msrp_unit_price | money_without_trailing_zeros }}
+                  {{ msrp_line_total | money_without_trailing_zeros }}
                 {% endif %}
               </span>
-              <span class="cart__item__total--final" 
+              
+              {%- comment -%} Show discounted total (bold) - will be updated by WCP JavaScript {%- endcomment -%}
+              <span class="cart__item__total--final cart__item__total--discounted" 
                     data-cart-item-line-total="{{ line_item.key }}"
                     data-line-item-key="{{ line_item.key }}"
                     data-line-item-quantity="{{ line_item.quantity }}"
@@ -458,6 +460,7 @@
                   {{ msrp_line_total | money_without_trailing_zeros }}
                 {% endif %}
               </span>
+              
               {% if next_tier_qty > 0 %}
                 <div class="cart__item__total--message">
                   Buy {{ items_needed }} more to get extra {{ discount_increase }}% discount

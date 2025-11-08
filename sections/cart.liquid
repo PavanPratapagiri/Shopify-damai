@@ -725,18 +725,47 @@
     updateItemPrices(cart) {
       // Update WCP discounted prices in the Total column
       if (window.wcp_data && window.wcp_data.wcp_cart && window.wcp_data.wcp_cart.items) {
-        window.wcp_data.wcp_cart.items.forEach((item, index) => {
+        const wcpItems = window.wcp_data.wcp_cart.items;
+        const currency = window.wcp_data.discounted_hash?.currency || '$';
+        const useCurrencyCode = {{ settings.currency_code_enable | default: false }};
+        
+        // Batch DOM updates for better performance
+        const updates = [];
+        
+        wcpItems.forEach((item, index) => {
           const totalElement = document.querySelector(`[data-item-index="${index}"]`);
+          
           if (totalElement && item.wcp_vd_price) {
-            const lineTotal = (item.wcp_vd_price * item.quantity) / 100;
-            const currency = window.wcp_data.discounted_hash?.currency || '$';
-            totalElement.textContent = currency + lineTotal.toFixed(2);
+            // Calculate discounted line total (WCP price is in cents)
+            const discountedLineTotal = (item.wcp_vd_price * item.quantity) / 100;
+            
+            // Format price based on currency settings
+            let formattedPrice;
+            if (useCurrencyCode) {
+              formattedPrice = currency + discountedLineTotal.toFixed(2) + ' ' + (window.Shopify?.currency?.active || 'USD');
+            } else {
+              // Remove trailing zeros
+              formattedPrice = currency + discountedLineTotal.toFixed(2).replace(/\.?0+$/, '');
+            }
+            
+            updates.push({
+              element: totalElement,
+              text: formattedPrice
+            });
           }
         });
+        
+        // Apply all updates at once (minimize reflows)
+        requestAnimationFrame(() => {
+          updates.forEach(({ element, text }) => {
+            element.textContent = text;
+          });
+        });
       }
+      
       console.log('Cart updated:', cart.item_count, 'items');
     }
-    
+
     showLoading() {
       this.cartLoading?.classList.add('cart--loading');
     }
