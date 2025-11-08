@@ -1,4 +1,3 @@
-
 {% comment %}BSS B2B Login{% endcomment %}
 {% capture bsscommerce_login_require_template %}{% include 'bsscommerce_login_require' %}{% endcapture %}{% unless bsscommerce_login_require_template contains "Liquid error" %}{{ bsscommerce_login_require_template }}{% endunless %}
 {% comment %}BSS B2B Login{% endcomment %}
@@ -13,11 +12,11 @@
 <html class="no-js" lang="{{ request.locale.iso_code }}" {% if is_rtl %} dir="rtl"{% endif %}>
 {%- assign title_override = false -%}
 {%- assign default_description = false -%}
-<head>{{ 'bss-hide-variant.css' | asset_url | stylesheet_tag }}
-{% comment %}BSS B2B Login{% endcomment %}
-{{ 'tiny.content.min.css' | asset_url | stylesheet_tag }}
-{% comment %}BSS B2B Login{% endcomment %}
+<head>
+{% comment %}BSS B2B Login - Load only once{% endcomment %}
 {{ 'bss-hide-variant.css' | asset_url | stylesheet_tag }}
+{{ 'tiny.content.min.css' | asset_url | stylesheet_tag }}
+
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -28,7 +27,7 @@
 <meta name="google-site-verification" content="wXkcHK8lyhFNkCLTiB3CMG-w7B_MY0Zrhn2-28lHnnA" />
   <!-- ======================= Pipeline Theme V7.0.2 ========================= -->
 
-  <!-- Preloading ================================================================== -->
+  <!-- Preloading and DNS prefetching ================================================================== -->
 
   <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.shopify.com">
@@ -40,9 +39,9 @@
   <link rel="preload" href="{{ settings.font_heading_family | font_url }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ settings.font_accent_family | font_url }}" as="font" type="font/woff2" crossorigin>
 
+  {{ 'theme.css' | asset_url | preload_tag: as: 'style' }}
   {{ 'vendor.js' | asset_url | preload_tag: as: 'script' }}
   {{ 'theme.js' | asset_url | preload_tag: as: 'script' }}
-  {{ 'theme.css' | asset_url | preload_tag: as: 'script' }}
 
   <!-- Title and description ================================================ -->
   {%- if settings.favicon != blank -%}
@@ -90,6 +89,7 @@
   {% render 'css-variables' %}
 
   {{ 'theme.css' | asset_url | stylesheet_tag: preload: true }}
+  {{ 'custom.css' | asset_url | stylesheet_tag }}
 
   <script>
     document.documentElement.className = document.documentElement.className.replace('no-js', 'js');
@@ -182,12 +182,14 @@
   </script>
 
   {%- if request.page_type contains 'customers/' -%}
-    <script src="{{ 'shopify_common.js' | shopify_asset_url }}" defer="defer"></script>
+    <script src="{{ 'shopify_common.js' | shopify_asset_url }}" defer></script>
   {%- endif -%}
 
   <!-- Theme Javascript ============================================================== -->
   <script src="{{ 'vendor.js' | asset_url }}" defer="defer"></script>
   <script src="{{ 'theme.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'custom.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'cart-total-updater.js' | asset_url }}" defer="defer"></script>
 
   <script>
     (function () {
@@ -238,6 +240,8 @@
   {% unless request.design_mode %}{% include 'wlm-head' %}{% endunless %}
 {{ content_for_header }}
 {% section 'filter-menu-settings' %}
+
+{% comment %}Load jQuery only if needed - defer to improve performance{% endcomment %}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 
   {% render 'shogun-head' %}
@@ -269,43 +273,14 @@
 
   <div data-modal-container></div>
 
-  {%- comment -%}
-    In order to use your custom javascript file at assets/custom.js
-    just cut and paste this next line outside this comment.
-    <script src="{{ 'custom.js' | asset_url }}" defer="defer"></script>
-  {%- endcomment -%}
+  <script src="{{ 'custom.js' | asset_url }}" defer></script>
 
   <!-- Paste popup code or third party scripts below this comment line ============== -->
 
 
   <!-- And above this comment line ================================================== -->
-{% comment %}
-<!-- WPD Start -->
-{% if customer.tags.size > 0 and template != 'cart' %}
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-  let checkoutbtninterval = setInterval(function(){
-  var x=document.querySelectorAll("input[name='checkout'], button[name='checkout'], input[name='goto_pp'], button[name='goto_pp'], input[name='goto_gc'], button[name='goto_gc'], [href$='checkout']");
-  var WPD_RedirectToCart = function(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    window.location = '/cart';
-  };
-  for (var i = 0; i < x.length; i++) {
-    x[i].addEventListener('click', WPD_RedirectToCart, false);
-  }
-  },500)
-  });
-</script>
-{% endif %}
 
-{% if customer.tags.size > 0 and template == 'cart' %}
-{% include 'wcp_cart' %}
-{% endif %}
-
-<!-- WPD End -->
-{% endcomment %}
-
+{%- comment -%}WPD wholesale pricing - moved outside of commented section{%- endcomment -%}
 {% assign wcp_wholesale_customer = false %}
 {% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
 {% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
@@ -344,9 +319,6 @@
 #wcp_vd_table b {
   font-weight: bold;
 }
-</style>
-
-<style type="text/css">
 #wcp_vd_table table {
 	font-family: verdana,arial,sans-serif;
 	font-size:11px;
@@ -373,5 +345,29 @@
 </style>
 {% endif %}
   {% render 'wlm_custom' %}
-</body>
+<!-- WPD Start -->
+                {% if customer.tags.size > 0 and template != 'cart' %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                      let checkoutbtninterval = setInterval(function(){
+                        var x=document.querySelectorAll("input[name='checkout'], button[name='checkout'], input[name='goto_pp'], button[name='goto_pp'], input[name='goto_gc'], button[name='goto_gc'], [href$='checkout']");
+                        var WPD_RedirectToCart = function(e) {
+                          	e.stopPropagation();
+                            e.preventDefault();
+                            window.location = '/cart';
+                            };
+                            for (var i = 0; i < x.length; i++) {
+                                x[i].addEventListener('click', WPD_RedirectToCart, false);
+                            }
+                        },500)
+                });
+              </script>
+               {% endif %}
+         
+
+               {% if customer.tags.size > 0 and template == 'cart' %}
+                 {% include 'wcp_cart' %}
+               {% endif %}
+               <!-- WPD End -->
+  </body>
 </html>

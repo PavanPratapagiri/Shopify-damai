@@ -1,0 +1,243 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "page",
+      "disabled": true,
+      "settings": {
+        "kicker": "",
+        "kicker_size": 3,
+        "show_title": false,
+        "title_size": 8,
+        "show_content": true,
+        "content_size": 5,
+        "align_text": "text-left",
+        "text_color": "text--neutral",
+        "bg": "palette--light bg--accent",
+        "width": "wrapper",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "section_double_PkinzT": {
+      "type": "section-double",
+      "blocks": {
+        "text_deRhAb": {
+          "type": "text",
+          "settings": {
+            "kicker": "Experience the beauty and craftsmanship of Bali while growing your business with Damai Designs.",
+            "title": "",
+            "text": "<ul><li>Access to exclusive, handcrafted sterling silver jewelry designed with authenticity and artistry.</li><li>Competitive wholesale pricing with strong profit margins for retailers.</li><li>Reliable production and timely fulfillment from our vertically integrated team.</li><li>Dedicated account support to help you curate collections tailored to your customers.</li><li>Marketing assets and professional photography to help you promote and sell with ease.</li></ul><p>Join our family of retail partners today — create your wholesale account and start offering your customers the timeless elegance of Damai Designs.</p>",
+            "font_size": 5,
+            "text_columns": 1,
+            "align_text": "text-left",
+            "button_text": "Become a Retail Partner",
+            "button_url": "https://damaidesigns.com/apps/wpdapp",
+            "button_color": "btn--secondary",
+            "button_style": "btn-text-thick-line",
+            "text_color": "text--neutral",
+            "bg_color": ""
+          }
+        },
+        "image_qe3Ekp": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/2025_08_Damai_Designs_BY_RICARDO_SOLIS_02.jpg",
+            "overlay_opacity": 0,
+            "overlay_color": "#000",
+            "enable_overlay_text": false,
+            "kicker": "",
+            "title": "",
+            "richtext": "",
+            "text_align": "align--middle-center",
+            "text_color": "text--white",
+            "link_text": "",
+            "link": "",
+            "button_color": "btn--white",
+            "button_style": "btn"
+          }
+        }
+      },
+      "block_order": [
+        "text_deRhAb",
+        "image_qe3Ekp"
+      ],
+      "name": "Image with text",
+      "settings": {
+        "height": "use_screen_two_thirds",
+        "brick_gutter": 0,
+        "borders": false,
+        "bg_color": "",
+        "width": "wrapper",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "section_hero_PNytrn": {
+      "type": "section-hero",
+      "blocks": {
+        "text_xhCKPz": {
+          "type": "text",
+          "settings": {
+            "richtext": "<p>Damai is building a brand that blends innovation with tradition—creating modern, handcrafted jewelry that stays true to authentic artistry while continually pushing the boundaries of design.</p>",
+            "text_size": 6
+          }
+        }
+      },
+      "block_order": [
+        "text_xhCKPz"
+      ],
+      "name": "Image banner",
+      "settings": {
+        "image": "shopify://shop_images/KCFW-FW-2025-THR-IMG_1165-EliStack.png",
+        "height": "use_screen_full",
+        "overlay_opacity": 0,
+        "overlay_color": "#000",
+        "enable_overlay_text": false,
+        "preload_image": false,
+        "content_width": 1400,
+        "text_align": "align--bottom-center",
+        "text_color": "text--secondary",
+        "color_bg": "palette--light bg--neutral",
+        "width": "wrapper--none",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    },
+    "section_double_t3qBy3": {
+      "type": "section-double",
+      "blocks": {
+        "image_medVTk": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/Untitled_design-2_62b799fd-fbe3-44b7-8f5a-fd804a09a1a5.png",
+            "overlay_opacity": 10,
+            "overlay_color": "#000",
+            "enable_overlay_text": false,
+            "kicker": "",
+            "title": "",
+            "richtext": "",
+            "text_align": "align--middle-center",
+            "text_color": "text--white",
+            "link_text": "",
+            "link": "",
+            "button_color": "btn--white",
+            "button_style": "btn"
+          }
+        },
+        "text_AkA8am": {
+          "type": "text",
+          "settings": {
+            "kicker": "Image with text",
+            "title": "",
+            "text": "<p>Use this text to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.</p>",
+            "font_size": 5,
+            "text_columns": 1,
+            "align_text": "text-left",
+            "button_text": "",
+            "button_url": "",
+            "button_color": "btn--neutral",
+            "button_style": "btn-text-thick-line",
+            "text_color": "text--neutral",
+            "bg_color": ""
+          }
+        }
+      },
+      "block_order": [
+        "image_medVTk",
+        "text_AkA8am"
+      ],
+      "name": "Image with text",
+      "settings": {
+        "height": "use_screen_two_thirds",
+        "brick_gutter": 0,
+        "borders": false,
+        "bg_color": "",
+        "width": "wrapper",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "section_hero_TRKVaE": {
+      "type": "section-hero",
+      "blocks": {
+        "kicker_4rcXrQ": {
+          "type": "kicker",
+          "settings": {
+            "kicker": "Welcome to the World of Damai!",
+            "enable_line": false,
+            "text_size": 5
+          }
+        },
+        "heading_XFjUxf": {
+          "type": "heading",
+          "disabled": true,
+          "settings": {
+            "title": "Image banner",
+            "text_size": 10
+          }
+        },
+        "text_nePMAY": {
+          "type": "text",
+          "settings": {
+            "richtext": "<p>We look forward to partnering with you and serving your fine sterling silver jewelry procurement needs.</p>",
+            "text_size": 7
+          }
+        },
+        "spacer_M9LECX": {
+          "type": "spacer",
+          "settings": {
+            "spacer_padding": 40,
+            "show_line": false
+          }
+        },
+        "image_qdEfHK": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/Final-Logo-Rectangle.png",
+            "image_max_limit": 230,
+            "image_link": ""
+          }
+        }
+      },
+      "block_order": [
+        "kicker_4rcXrQ",
+        "heading_XFjUxf",
+        "text_nePMAY",
+        "spacer_M9LECX",
+        "image_qdEfHK"
+      ],
+      "name": "Image banner",
+      "settings": {
+        "image": "shopify://shop_images/2025_08_Damai_Designs_BY_RICARDO_SOLIS_08_dcaeac0a-51c2-474a-b0a3-1aef780bd637.jpg",
+        "height": "use_screen_two_thirds",
+        "overlay_opacity": 0,
+        "overlay_color": "#000",
+        "enable_overlay_text": false,
+        "preload_image": false,
+        "content_width": 700,
+        "text_align": "align--middle-right",
+        "text_color": "text--secondary",
+        "color_bg": "hero__content--transparent",
+        "width": "wrapper--none",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    }
+  },
+  "order": [
+    "main",
+    "section_double_PkinzT",
+    "section_hero_PNytrn",
+    "section_double_t3qBy3",
+    "section_hero_TRKVaE"
+  ]
+}

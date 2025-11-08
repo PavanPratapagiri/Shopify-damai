@@ -1,10 +1,15 @@
 <div data-api-content>
+  {%- assign total_item_quantity = 0 -%}
+  {%- for item in cart.items -%}
+    {%- assign total_item_quantity = total_item_quantity | plus: item.quantity -%}
+  {%- endfor -%}
+  
   <div class="product__popdown__outer">
     <div class="product__popdown__textbar">
       <span class="visually-hidden" aria-live="polite">
         {{ 'cart.general.add_message' | t }}
         {{ product_variant.product.title | strip_html | escape }} &nbsp;
-        {{ product_variant.title }} {{ 'cart.general.total_message' | t: count: cart.item_count }}
+        {{ product_variant.title }} {{ 'cart.general.total_message' | t: count: total_item_quantity }}
       </span>
 
         <span class="product__popdown__title product__popdown__title--bold">

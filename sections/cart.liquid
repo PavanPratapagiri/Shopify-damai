@@ -20,16 +20,115 @@
   endif
 -%}
 
+<style>
+  /* Loading state styles */
+  .cart--loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  
+  .cart--loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #333;
+    border-radius: 50%;
+    animation: cart-spin 1s linear infinite;
+    z-index: 9999;
+  }
+  
+  @keyframes cart-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Error message styles */
+  .cart__error {
+    background: #fee;
+    color: #c33;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  
+  .cart__error.active {
+    display: block;
+    animation: slideIn 0.3s ease;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Smooth transitions */
+  .cart__items__row {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  .cart__items__row.removing {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  
+  /* Prevent layout shift */
+  .cart__template {
+    min-height: 400px;
+  }
+  
+  /* Smooth quantity input transitions */
+  .quantity__input {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+  
+  .quantity__input.updating {
+    background-color: #f9f9f9;
+    border-color: #ccc;
+  }
+  
+  .quantity__button {
+    transition: opacity 0.15s ease, transform 0.1s ease;
+    user-select: none;
+  }
+  
+  .quantity__button:active {
+    transform: scale(0.95);
+  }
+  
+  .quantity__button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+</style>
+
 <div class="cart__template {{ no_ajax_class }} {{ hide_quantity }} {{ section.settings.bg }}"
   data-cart-message-container
   data-section-id="{{ section.id }}"
   data-section-type="cart"
   data-ajax-disable="{{ ajax_disable }}"
   style="--PT: {{ section.settings.padding_top }}px; --PB: {{ section.settings.padding_bottom }}px;">
+  
+  <!-- Error message container -->
+  <div class="cart__error" data-cart-error></div>
+  
   {% comment %} Cart is empty {% endcomment %}
   <div class="cart__empty__page {{ empty_init }}" data-cart-empty>
     {% render 'cart-empty' %}
   </div>
+  
   {% comment %} Cart is full {% endcomment %}
   <div class="{{ section.settings.width }} section-padding {{ full_init }}" data-cart-form data-cart-loading>
     <form action="{{ routes.cart_url }}" method="post" novalidate class="cart">
@@ -42,15 +141,6 @@
             &nbsp;
             {{ 'cart.general.continue_browsing' | t }}
           </a>
-        </div>
-        <div class="cart__items__price">
-          <p class="cart__heading">{{ 'cart.label.price' | t }}</p>
-        </div>
-        <div class="cart__items__quantity">
-          <p class="cart__heading">{{ 'cart.label.quantity' | t }}</p>
-        </div>
-        <div class="cart__items__total">
-          <p class="cart__heading">{{ 'cart.label.total' | t }}</p>
         </div>
       </div>
       <div class="template__cart__body">
@@ -180,71 +270,70 @@
 
             <p>
               <span class="cart__footer__label">{{ 'cart.general.subtotal' | t }}</span>
-              <span class="cart__footer__value wcp-original-cart-total" data-cart-final>
+              <span class="cart__footer__value wcp-original-cart-total" data-cart-footer-total>
                 {{ cart.total_price | money_with_currency }}
               </span>
-            
             </p>
-              <span class="cart__footer__value wcp-cart-total"></span>
-                       <div class="additional-notes">
-                          <span class="wcp-minimums-note"></span>
-                          <span class="wcp-extra-note "></span>
-                      </div>
-                      {% render "wcp_multi_currency_msg" %}  
+            
+            <span class="cart__footer__value wcp-cart-total"></span>
+            <div class="additional-notes">
+              <span class="wcp-minimums-note"></span>
+              <span class="wcp-extra-note "></span>
+            </div>
+            {% render "wcp_multi_currency_msg" %}  
             
             <p class="cart__footer__small">{{ 'cart.general.shipping_at_checkout' | t }}</p>
           </div>
 
           <div class="cart__footer__checkout">
-
-{% assign wcp_wholesale_customer = false %}
-{% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
-{% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
-{% assign active_discounts_array = active_discounts | split: ',' %}
-{% assign customer_tags = blank %}
-{% for tag in customer.tags %}
-{% assign tempTag = tag | downcase %}
-{% assign customer_tags = customer_tags | prepend:tempTag %}
-{% unless forloop.last %}
-{% assign customer_tags = customer_tags | prepend:','  %}
-{% endunless %}
-{% endfor %}
-{% assign customer_tags = customer_tags | split:',' %}
-{% assign active_discounts = active_discounts | downcase %}
-{% for discount_key in active_discounts_array %}
-{% assign key_split = discount_key | split: '-' %}
-{% assign key_split_length = key_split | size %}
-{% if key_split_length > 2 %}
-{% assign removeable_key = key_split.last | prepend: '-' %}
-{% assign wcp_customer_tag = discount_key | remove_last: removeable_key %}
-{% else %}
-{% assign wcp_customer_tag = key_split[0] %}
-{% endif %}
-{% assign wcp_customer_tag = wcp_customer_tag | downcase %}
-{% if customer_tags contains wcp_customer_tag %}
-{% assign wcp_wholesale_customer = true %}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if wcp_wholesale_customer == true %}
-            <button type="submit" class="wcp_checkout_btn btn btn--primary btn--large checkout__button WPDcheckoutBTN" style="color:white; padding: 12px 20px; margin-bottom: 2px;" disabled>{{ 'cart.general.checkout' | t }}</button>
-            <script>
-              document.addEventListener("DOMContentLoaded", function(){
-               var hidecheckoutBTN = setInterval(function(){
-                if(window.wcp_data){
-                	    document.getElementsByClassName("WPDcheckoutBTN")[0].removeAttribute("disabled");
-                        clearInterval(hidecheckoutBTN);
-            	}
-                },2500)
-                
-              });  
-            </script>   
-  {% else %}            
-            <button type="submit" name="checkout" class="btn btn--primary btn--large checkout__button">
-              {{ 'cart.general.checkout' | t }}
-            </button>
+            {% assign wcp_wholesale_customer = false %}
+            {% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
+              {% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
+              {% assign active_discounts_array = active_discounts | split: ',' %}
+              {% assign customer_tags = blank %}
+              {% for tag in customer.tags %}
+                {% assign tempTag = tag | downcase %}
+                {% assign customer_tags = customer_tags | prepend:tempTag %}
+                {% unless forloop.last %}
+                  {% assign customer_tags = customer_tags | prepend:','  %}
+                {% endunless %}
+              {% endfor %}
+              {% assign customer_tags = customer_tags | split:',' %}
+              {% assign active_discounts = active_discounts | downcase %}
+              {% for discount_key in active_discounts_array %}
+                {% assign key_split = discount_key | split: '-' %}
+                {% assign key_split_length = key_split | size %}
+                {% if key_split_length > 2 %}
+                  {% assign removeable_key = key_split.last | prepend: '-' %}
+                  {% assign wcp_customer_tag = discount_key | remove_last: removeable_key %}
+                {% else %}
+                  {% assign wcp_customer_tag = key_split[0] %}
+                {% endif %}
+                {% assign wcp_customer_tag = wcp_customer_tag | downcase %}
+                {% if customer_tags contains wcp_customer_tag %}
+                  {% assign wcp_wholesale_customer = true %}
+                {% endif %}
+              {% endfor %}
             {% endif %}
-         </div>
+            
+            {% if wcp_wholesale_customer == true %}
+              <button type="submit" class="wcp_checkout_btn btn btn--primary btn--large checkout__button WPDcheckoutBTN" style="color:white; padding: 12px 20px; margin-bottom: 2px;" disabled>{{ 'cart.general.checkout' | t }}</button>
+              <script>
+                document.addEventListener("DOMContentLoaded", function(){
+                  var hidecheckoutBTN = setInterval(function(){
+                    if(window.wcp_data){
+                      document.getElementsByClassName("WPDcheckoutBTN")[0].removeAttribute("disabled");
+                      clearInterval(hidecheckoutBTN);
+                    }
+                  },100) // Reduced from 2500ms to 100ms check interval
+                });  
+              </script>   
+            {% else %}            
+              <button type="submit" name="checkout" class="btn btn--primary btn--large checkout__button">
+                {{ 'cart.general.checkout' | t }}
+              </button>
+            {% endif %}
+          </div>
 
           <div class="cart__footer__update">
             <span class="cart__update" data-update-button>
@@ -279,20 +368,517 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    setTimeout(function(){
-    var x=document.querySelectorAll(".quantity__button--plus, .quantity__button--minus, .quantity__input, .cart__remove");
-    for (var i = 0; i < x.length; i++) {
-      x[i].addEventListener('click', function(){
-        setTimeout(function(){window.location.reload();},2500);
-      }, false);
+(function() {
+  'use strict';
+  
+  // Prevent legacy theme.js quantity handlers from running on cart page
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function disableLegacyHandlers() {
+      const cartQuantityButtons = document.querySelectorAll('[data-cart-loading] [data-increase-quantity], [data-cart-loading] [data-decrease-quantity]');
+      cartQuantityButtons.forEach(btn => {
+        btn.removeAttribute('data-increase-quantity');
+        btn.removeAttribute('data-decrease-quantity');
+      });
+    });
+  }
+  
+  // Configuration
+  const CONFIG = {
+    isWholesaleCustomer: {% if wcp_wholesale_customer == true %}true{% else %}false{% endif %},
+    wcpDelay: 500,
+    debounceDelay: 300,
+    maxRetries: 3
+  };
+  
+  // State management
+  const state = {
+    isUpdating: false,
+    updateQueue: [],
+    retryCount: 0
+  };
+  
+  // Cart Manager Class
+  class CartManager {
+    constructor() {
+      this.errorContainer = document.querySelector('[data-cart-error]');
+      this.cartLoading = document.querySelector('[data-cart-loading]');
+      this.cartEmpty = document.querySelector('[data-cart-empty]');
+      this.cartForm = document.querySelector('[data-cart-form]');
+      this.debounceTimers = new Map();
+      this.pendingUpdates = new Map();
     }
-    },2500);
-  }, false);
+    
+    // Initialize cart
+    init() {
+      this.attachEventListeners();
+      this.preventDefaultUpdate();
+      this.initializePrices();
+    }
+    
+    // Initialize prices on page load
+    async initializePrices() {
+      try {
+        const response = await fetch('/cart.js', {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        if (response.ok) {
+          const cart = await response.json();
+          this.updateItemPrices(cart);
+        }
+      } catch (error) {
+        console.error('Error initializing prices:', error);
+      }
+    }
+    
+    // Attach all event listeners
+    attachEventListeners() {
+      document.addEventListener('click', this.handleClick.bind(this));
+      document.addEventListener('change', this.handleChange.bind(this));
+      document.addEventListener('input', this.handleInput.bind(this));
+      document.addEventListener('keydown', this.handleKeydown.bind(this));
+      
+      // Prevent form submission on Enter key in quantity inputs
+      const cartForm = document.querySelector('.cart form');
+      if (cartForm) {
+        cartForm.addEventListener('submit', this.handleFormSubmit.bind(this));
+      }
+    }
+    
+    // Handle form submission
+    handleFormSubmit(e) {
+      const target = e.submitter;
+      
+      // Allow checkout button submissions
+      if (target && (target.classList.contains('checkout__button') || target.name === 'checkout')) {
+        return true;
+      }
+      
+      // Prevent all other form submissions (quantity changes, update button)
+      e.preventDefault();
+      return false;
+    }
+    
+    // Handle keydown events
+    handleKeydown(e) {
+      const qtyInput = e.target.closest('.quantity__input');
+      
+      // Prevent Enter key from submitting form in quantity inputs
+      if (qtyInput && e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Trigger change event to update cart
+        const key = qtyInput.getAttribute('data-update-cart');
+        const newQty = parseInt(qtyInput.value) || 0;
+        
+        if (newQty >= 0) {
+          qtyInput.blur(); // Remove focus to trigger change event
+          this.updateCartDebounced(key, newQty);
+        }
+        
+        return false;
+      }
+    }
+    
+    // Handle all click events
+    handleClick(e) {
+      const plusBtn = e.target.closest('.quantity__button--plus');
+      const minusBtn = e.target.closest('.quantity__button--minus');
+      const removeBtn = e.target.closest('[data-remove-key]');
+      const checkoutBtn = e.target.closest('.checkout__button');
+      
+      if (checkoutBtn) {
+        return;
+      }
+      
+      if (plusBtn) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.adjustQuantity(plusBtn, 1);
+      } else if (minusBtn) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.adjustQuantity(minusBtn, -1);
+      } else if (removeBtn) {
+        e.preventDefault();
+        const key = removeBtn.getAttribute('data-remove-key');
+        this.removeItem(key);
+      }
+    }
+    
+    // Handle change events with debounce
+    handleChange(e) {
+      const qtyInput = e.target.closest('.quantity__input');
+      if (qtyInput) {
+        const key = qtyInput.getAttribute('data-update-cart');
+        const newQty = parseInt(qtyInput.value) || 0;
+        
+        qtyInput.classList.add('updating');
+        
+        if (this.debounceTimers.has(key)) {
+          clearTimeout(this.debounceTimers.get(key));
+        }
+        
+        this.pendingUpdates.set(key, newQty);
+        
+        const timer = setTimeout(() => {
+          this.updateCartDebounced(key, newQty);
+          this.debounceTimers.delete(key);
+          qtyInput.classList.remove('updating');
+        }, CONFIG.debounceDelay);
+        
+        this.debounceTimers.set(key, timer);
+      }
+    }
+    
+    // Handle input events
+    handleInput(e) {
+      const qtyInput = e.target.closest('.quantity__input');
+      if (qtyInput) {
+        let value = parseInt(qtyInput.value) || 0;
+        if (value < 0) value = 0;
+        qtyInput.value = value;
+      }
+    }
+    
+    // Adjust quantity by delta
+    adjustQuantity(button, delta) {
+      const wrapper = button.closest('[data-quantity-selector]');
+      const input = wrapper.querySelector('.quantity__input');
+      const key = input.getAttribute('data-update-cart');
+      const currentQty = parseInt(input.value) || 0;
+      const newQty = Math.max(0, currentQty + delta);
+      
+      input.value = newQty;
+      input.classList.add('updating');
+      
+      const plusBtn = wrapper.querySelector('.quantity__button--plus');
+      const minusBtn = wrapper.querySelector('.quantity__button--minus');
+      plusBtn.disabled = true;
+      minusBtn.disabled = true;
+      
+      this.pendingUpdates.set(key, newQty);
+      
+      if (this.debounceTimers.has(key)) {
+        clearTimeout(this.debounceTimers.get(key));
+      }
+      
+      const timer = setTimeout(() => {
+        this.updateCartDebounced(key, newQty);
+        this.debounceTimers.delete(key);
+        
+        plusBtn.disabled = false;
+        minusBtn.disabled = false;
+        input.classList.remove('updating');
+      }, CONFIG.debounceDelay);
+      
+      this.debounceTimers.set(key, timer);
+    }
+    
+    // Debounced cart update
+    async updateCartDebounced(key, quantity) {
+      this.pendingUpdates.delete(key);
+      await this.updateCart(key, quantity);
+    }
+    
+    // Remove item with animation
+    removeItem(key) {
+      const row = document.querySelector(`[data-cart-item] input[data-update-cart="${key}"]`)?.closest('[data-cart-item]');
+      if (row) {
+        row.classList.add('removing');
+        setTimeout(() => this.updateCart(key, 0), 300);
+      } else {
+        this.updateCart(key, 0);
+      }
+    }
+    
+    // Update cart via AJAX
+    async updateCart(key, quantity) {
+      if (state.isUpdating) {
+        state.updateQueue.push({ key, quantity });
+        return;
+      }
+      
+      state.isUpdating = true;
+      this.showLoading();
+      this.hideError();
+      
+      try {
+        const response = await fetch('/cart/change.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ id: key, quantity: quantity })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const cart = await response.json();
+        
+        // Wait for WCP if needed
+        if (CONFIG.isWholesaleCustomer) {
+          await this.waitForWCP();
+        }
+        
+        await this.refreshCart(cart);
+        state.retryCount = 0;
+        
+        this.dispatchCartEvent('success', cart);
+        document.dispatchEvent(new Event('cartUpdateComplete'));
+        
+      } catch (error) {
+        console.error('Cart update error:', error);
+        this.showError('Unable to update cart. Please try again.');
+        
+        if (state.retryCount < CONFIG.maxRetries) {
+          state.retryCount++;
+          setTimeout(() => this.updateCart(key, quantity), 1000 * state.retryCount);
+        }
+        
+      } finally {
+        state.isUpdating = false;
+        this.hideLoading();
+        
+        if (state.updateQueue.length > 0) {
+          const next = state.updateQueue.shift();
+          setTimeout(() => this.updateCart(next.key, next.quantity), 100);
+        }
+      }
+    }
+    
+    // Wait for WCP to load
+    waitForWCP() {
+      return new Promise((resolve) => {
+        if (window.wcp_data) {
+          setTimeout(resolve, CONFIG.wcpDelay);
+        } else {
+          const checkInterval = setInterval(() => {
+            if (window.wcp_data) {
+              clearInterval(checkInterval);
+              setTimeout(resolve, CONFIG.wcpDelay);
+            }
+          }, 100);
+          
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve();
+          }, 5000);
+        }
+      });
+    }
+    
+    // Refresh cart display
+    async refreshCart(cart) {
+      try {
+        const response = await fetch(window.location.href + '?section_id=cart', {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Update specific sections
+        this.updateSection('[data-line-items]', doc);
+        this.updateSection('[data-cart-subtotal]', doc);
+        this.updateSection('[data-cart-final]', doc);
+        this.updateSection('[data-cart-message]', doc);
+        
+        // Update WCP elements if they exist
+        this.updateSection('.wcp-cart-total', doc);
+        this.updateSection('.wcp-minimums-note', doc);
+        this.updateSection('.wcp-extra-note', doc);
+        
+        // Update item prices from actual cart data (WCP handles the discounts)
+        this.updateItemPrices(cart);
+        
+        // Update inventory states for items
+        this.updateInventoryStates(cart);
+        
+        // Handle empty cart
+        this.toggleEmptyCart(cart.item_count === 0);
+        
+        // Update header cart
+        this.updateHeaderCart(cart);
+        
+        // Re-trigger WCP if needed
+        if (CONFIG.isWholesaleCustomer && window.wcpRefreshCartTotal) {
+          window.wcpRefreshCartTotal();
+        }
+        
+      } catch (error) {
+        console.error('Cart refresh error:', error);
+        window.location.reload();
+      }
+    }
+    
+    // Update item prices
+    updateItemPrices(cart) {
+      // Update WCP discounted prices in the Total column
+      if (window.wcp_data && window.wcp_data.wcp_cart && window.wcp_data.wcp_cart.items) {
+        const wcpItems = window.wcp_data.wcp_cart.items;
+        const currency = window.wcp_data.discounted_hash?.currency || '$';
+        const useCurrencyCode = {{ settings.currency_code_enable | default: false }};
+        
+        // Batch DOM updates for better performance
+        const updates = [];
+        
+        wcpItems.forEach((item, index) => {
+          const totalElement = document.querySelector(`[data-item-index="${index}"]`);
+          
+          if (totalElement && item.wcp_vd_price) {
+            // Calculate discounted line total (WCP price is in cents)
+            const discountedLineTotal = (item.wcp_vd_price * item.quantity) / 100;
+            
+            // Format price based on currency settings
+            let formattedPrice;
+            if (useCurrencyCode) {
+              formattedPrice = currency + discountedLineTotal.toFixed(2) + ' ' + (window.Shopify?.currency?.active || 'USD');
+            } else {
+              // Remove trailing zeros
+              formattedPrice = currency + discountedLineTotal.toFixed(2).replace(/\.?0+$/, '');
+            }
+            
+            updates.push({
+              element: totalElement,
+              text: formattedPrice
+            });
+          }
+        });
+        
+        // Apply all updates at once (minimize reflows)
+        requestAnimationFrame(() => {
+          updates.forEach(({ element, text }) => {
+            element.textContent = text;
+          });
+        });
+      }
+      
+      console.log('Cart updated:', cart.item_count, 'items');
+    }
+
+    showLoading() {
+      this.cartLoading?.classList.add('cart--loading');
+    }
+    
+    hideLoading() {
+      this.cartLoading?.classList.remove('cart--loading');
+    }
+    
+    showError(message) {
+      if (this.errorContainer) {
+        this.errorContainer.textContent = message;
+        this.errorContainer.classList.add('active');
+        setTimeout(() => this.hideError(), 5000);
+      }
+    }
+    
+    hideError() {
+      this.errorContainer?.classList.remove('active');
+    }
+    
+    preventDefaultUpdate() {
+      const updateButton = document.querySelector('[name="update"]');
+      if (updateButton) {
+        updateButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          return false;
+        });
+      }
+      
+      const checkoutButtons = document.querySelectorAll('.checkout__button');
+      checkoutButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          if (!button.disabled) {
+            return true;
+          }
+        });
+      });
+    }
+    
+    dispatchCartEvent(type, cart) {
+      document.dispatchEvent(new CustomEvent('theme:cart:change', {
+        detail: { type, cart },
+        bubbles: true
+      }));
+    }
+
+    // Update inventory states for all items
+    updateInventoryStates(cart) {
+      cart.items.forEach(item => {
+        const input = document.querySelector(`input[data-update-cart="${item.key}"]`);
+        if (!input) return;
+        
+        const inventoryQty = parseInt(input.getAttribute('data-inventory-quantity'));
+        const inventoryManagement = input.getAttribute('data-inventory-management');
+        const inventoryPolicy = input.getAttribute('data-inventory-policy');
+        
+        // Only enforce inventory limits if managed by Shopify and policy is 'deny'
+        if (inventoryManagement === 'shopify' && inventoryPolicy === 'deny') {
+          const wrapper = input.closest('[data-quantity-selector]');
+          const plusBtn = wrapper?.querySelector('.quantity__button--plus');
+          const minusBtn = wrapper?.querySelector('.quantity__button--minus');
+          
+          if (plusBtn) {
+            if (item.quantity >= inventoryQty) {
+              plusBtn.disabled = true;
+              plusBtn.setAttribute('title', 'Maximum available quantity reached');
+              plusBtn.style.opacity = '0.4';
+              plusBtn.style.cursor = 'not-allowed';
+            } else {
+              plusBtn.disabled = false;
+              plusBtn.removeAttribute('title');
+              plusBtn.style.opacity = '';
+              plusBtn.style.cursor = '';
+            }
+          }
+          
+          // Always enable minus button if quantity > 0
+          if (minusBtn) {
+            minusBtn.disabled = item.quantity <= 0;
+          }
+        }
+      });
+    }
+  }
+  
+  // Initialize
+  let cartManager;
+  
+  function initCartPage() {
+    if (!cartManager) {
+      cartManager = new CartManager();
+    }
+    cartManager.init();
+  }
+  
+  window.initCartPage = initCartPage;
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCartPage);
+  } else {
+    initCartPage();
+  }
+  
+  document.addEventListener('theme:cart:open', () => {
+    setTimeout(initCartPage, 100);
+  });
+  
+})();
 </script>
             
 {% schema %}
 {
+  "name": "Cart",
   "settings": [
     {
       "type": "select",

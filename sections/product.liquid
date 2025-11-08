@@ -1,4 +1,3 @@
-
 {% comment %}BSS B2B Login{% endcomment %}
 {% capture redirectScript %}{% render 'bsscommerce-redirect-product-page-logic', product: product, collection: collection %}{% endcapture %}{% unless redirectScript contains "Liquid error" %}{%- assign redirectScript = redirectScript | strip | split: ',' -%}{%- if redirectScript[0] != blank -%}<script type="text/javascript" id="hp-behavior">const url = "https://login-to-access-page-api.bsscommerce.com/behavior"; fetch(url, { method: "POST", headers: { "Content-Type": "application/json", }, body: JSON.stringify({domain: window.Shopify.shop, events: "hp-access" })});</script><script id="bss-redirect" type="text/javascript">if ( "{{ routes.root_url }}" != "/" && "{{ redirectScript[0] }}".indexOf("-") === -1) {window.location.replace( "{{ routes.root_url }}" + "{{ redirectScript[0] }}" )} else { window.location.replace("{{ redirectScript[0] }}")}</script>{% endif %}{%- if redirectScript[1] != blank -%}{{ redirectScript[1] }}{% endif -%}{% endunless %}
 {% comment %}BSS B2B Login{% endcomment %}
@@ -176,56 +175,231 @@
 
       <div class="product__main__content grid__item {{ product_description_width }}">
         <div class="product__inner is-sticky">
-          ```liquid
-{% if product.variants.size > 1 %}
-  <div class="variant-matrix mt-6">
-    <h3 class="text-base font-semibold mb-4">Order Multiple Sizes</h3>
-    <form id="variant-matrix-form">
-      <table class="table-auto w-full text-sm border-t border-b">
-        <thead>
-          <tr class="text-left">
-            <th class="py-2">Size</th>
-            <th class="py-2">SKU</th>
-            <th class="py-2">Price</th>
-            <th class="py-2">Quantity</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for variant in product.variants %}
-            <tr class="border-t">
-              <td class="py-2">{{ variant.title }}</td>
-              <td class="py-2">{{ variant.sku }}</td>
-              <td class="py-2">{{ variant.price | money }}</td>
-              <td class="py-2">
-                {% if variant.available %}
-                  <input
-                    type="number"
-                    name="quantity_{{ variant.id }}"
-                    min="0"
-                    value="0"
-                    class="border w-16 px-2 py-1 rounded quantity-input"
-                    data-variant-id="{{ variant.id }}">
-                {% else %}
-                  <span class="text-red-500">Out of Stock</span>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <button type="submit" class="mt-4 bg-black text-white px-4 py-2 rounded hover:bg-gray-800">
-        Add Selected to Cart
+          {% if product.variants.size > 1 %}
+  <div class="variant-matrix" style="margin-top: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Order Multiple Sizes</h3>
+      <button type="button" id="clear-all-btn" style="padding: 10px 20px; font-size: 14px; border: 2px solid #000; background: white; cursor: pointer; border-radius: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s ease;">
+        REMOVE ALL
       </button>
+    </div>
+    <form id="variant-matrix-form">
+      <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+          <thead>
+            <tr style="border-bottom: 2px solid #e5e5e5;">
+              <th style="padding: 12px 8px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; width: 15%;">SKU</th>
+              <th style="padding: 12px 8px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; width: 10%;">Size</th>
+              <th style="padding: 12px 8px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; width: 12%;">PRICE</th>
+              <th style="padding: 12px 8px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; width: 20%;">STOCK AVAILABILITY</th>
+              <th style="padding: 12px 8px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; width: 23%;">QUANTITY</th>
+              <th style="padding: 12px 8px; text-align: right; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; width: 20%;">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for variant in product.variants %}
+              <tr style="border-bottom: 1px solid #e5e5e5;">
+                <td style="padding: 16px 8px; font-size: 13px; color: #666;">{{ variant.sku }}</td>
+                <td style="padding: 16px 8px; font-size: 14px; font-weight: 500;">{{ variant.title }}</td>
+                <td style="padding: 16px 8px; font-size: 14px; font-weight: 600;">
+                  {% if variant.compare_at_price and variant.compare_at_price > variant.price %}
+                    <span style="font-size: 12px; color: #666; font-weight: 400;">PRICE: </span>${{ variant.compare_at_price | money_without_currency }}<br>
+                  {% endif %}
+                  ${{ variant.price | money_without_currency }}
+                </td>
+                <td style="padding: 16px 8px;">
+                  {% if variant.available %}
+                    <span style="display: inline-flex; align-items: center; padding: 4px 12px; background: #e8f5e9; color: #2e7d32; font-size: 13px; font-weight: 600; border-radius: 12px;">
+                      {{ variant.inventory_quantity | default: 40 }} in stock
+                    </span>
+                  {% else %}
+                    <span style="display: inline-flex; align-items: center; padding: 4px 12px; background: #ffebee; color: #c62828; font-size: 13px; font-weight: 600; border-radius: 12px;">
+                      Out of Stock
+                    </span>
+                  {% endif %}
+                </td>
+                <td style="padding: 16px 8px;">
+                  {% if variant.available %}
+                    <div class="quantity__wrapper" style="display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 4px;">
+                      <button class="quantity__button quantity__button--minus" type="button" onclick="decreaseQuantity('{{ variant.id }}')" style="width: 36px; height: 36px; border: none; background: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: #666;">&minus;</button>
+                      <input
+                        type="number"
+                        name="quantity_{{ variant.id }}"
+                        id="quantity_{{ variant.id }}"
+                        min="0"
+                        value="0"
+                        class="quantity__input variant-matrix-input"
+                        data-variant-id="{{ variant.id }}"
+                        style="width: 50px; height: 36px; border: none; border-left: 1px solid #d1d5db; border-right: 1px solid #d1d5db; text-align: center; font-size: 14px; font-weight: 600; padding: 0;">
+                      <button class="quantity__button quantity__button--plus" type="button" onclick="increaseQuantity('{{ variant.id }}')" style="width: 36px; height: 36px; border: none; background: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: #666;">&plus;</button>
+                    </div>
+                  {% else %}
+                    <span style="color: #999;">-</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 16px 8px; text-align: right;">
+                  <span id="total-{{ variant.id }}" data-variant-price="{{ variant.price }}" style="font-weight: 700; font-size: 16px;">$0.00</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 20px; background: #f9fafb; border-radius: 8px;">
+        <div style="font-size: 16px; font-weight: 600;">
+          <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+            <div>Total items: <span id="total-items" style="color: #000;">0</span></div>
+            <div>Grand Total: <span id="grand-total" style="color: #000; font-size: 18px;">$0.00</span></div>
+          </div>
+          <div style="margin-top: 8px; font-size: 14px; color: #059669; font-weight: 500;">
+            You save <span id="savings-amount" style="font-weight: 700;">$0.00</span>
+          </div>
+        </div>
+        <button type="submit" style="background: #000; color: white; padding: 14px 32px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.3s ease; min-width: 200px;">
+          Add Selected to Cart
+        </button>
+      </div>
     </form>
   </div>
 
+  <style>
+    .variant-matrix .quantity__button:hover {
+      background: #f3f4f6 !important;
+    }
+    
+    #clear-all-btn:hover {
+      background: #000 !important;
+      color: white !important;
+    }
+    
+    .variant-matrix table tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    @media (max-width: 1024px) {
+      .variant-matrix table {
+        min-width: 750px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .variant-matrix table {
+        min-width: 650px;
+        font-size: 12px;
+      }
+      .variant-matrix th,
+      .variant-matrix td {
+        padding: 10px 4px !important;
+      }
+      .variant-matrix .quantity__wrapper input {
+        width: 40px !important;
+        font-size: 13px;
+      }
+      .variant-matrix .quantity__button {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 16px;
+      }
+    }
+  </style>
+
   <script>
+    // Debounce function to prevent flickering
+    let grandTotalTimeout = null;
+    
+    function updateQuantityDisplay(variantId) {
+      const input = document.getElementById('quantity_' + variantId);
+      const totalSpan = document.getElementById('total-' + variantId);
+      const qty = parseInt(input.value) || 0;
+      const price = parseFloat(totalSpan.dataset.variantPrice);
+      
+      totalSpan.textContent = '$' + (qty * price / 100).toFixed(2);
+      
+      // Debounce the grand total update to prevent flickering
+      if (grandTotalTimeout) {
+        clearTimeout(grandTotalTimeout);
+      }
+      grandTotalTimeout = setTimeout(updateGrandTotal, 300);
+    }
+
+    function updateGrandTotal() {
+      let totalItems = 0;
+      let grandTotal = 0;
+      
+      const inputs = document.querySelectorAll('.variant-matrix-input');
+      
+      inputs.forEach(input => {
+        const qty = parseInt(input.value) || 0;
+        const variantId = input.dataset.variantId;
+        const totalSpan = document.getElementById('total-' + variantId);
+        
+        if (totalSpan) {
+          const price = parseFloat(totalSpan.dataset.variantPrice);
+          totalItems += qty;
+          grandTotal += qty * price;
+        }
+      });
+      
+      const totalItemsEl = document.getElementById('total-items');
+      const grandTotalEl = document.getElementById('grand-total');
+      
+      // Only update if the elements exist and values have changed
+      if (totalItemsEl && totalItemsEl.textContent !== totalItems.toString()) {
+        totalItemsEl.textContent = totalItems;
+      }
+      if (grandTotalEl) {
+        const formattedTotal = '$' + (grandTotal / 100).toFixed(2);
+        if (grandTotalEl.textContent !== formattedTotal) {
+          grandTotalEl.textContent = formattedTotal;
+        }
+      }
+    }
+
+    function increaseQuantity(variantId) {
+      const input = document.getElementById('quantity_' + variantId);
+      input.value = parseInt(input.value) + 1;
+      updateQuantityDisplay(variantId);
+    }
+
+    function decreaseQuantity(variantId) {
+      const input = document.getElementById('quantity_' + variantId);
+      const currentValue = parseInt(input.value);
+      if (currentValue > 0) {
+        input.value = currentValue - 1;
+        updateQuantityDisplay(variantId);
+      }
+    }
+
+    function clearAllQuantities() {
+      const inputs = document.querySelectorAll('.variant-matrix-input');
+      inputs.forEach(input => {
+        input.value = 0;
+        updateQuantityDisplay(input.dataset.variantId);
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
       const form = document.getElementById("variant-matrix-form");
+      const clearBtn = document.getElementById("clear-all-btn");
+      
+      if (!form) return;
+
+      updateGrandTotal();
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', clearAllQuantities);
+      }
+
+      const matrixInputs = document.querySelectorAll('.variant-matrix-input');
+      matrixInputs.forEach(input => {
+        input.addEventListener('input', function() {
+          updateQuantityDisplay(this.dataset.variantId);
+        });
+      });
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
-        const inputs = document.querySelectorAll(".quantity-input");
+        const inputs = document.querySelectorAll('.variant-matrix-input');
         const addPromises = [];
 
         inputs.forEach(input => {
@@ -242,12 +416,16 @@
           }
         });
 
-        Promise.all(addPromises)
-          .then(() => window.location.href = "/cart")
-          .catch(err => {
-            console.error("Cart add error:", err);
-            alert("There was an issue adding items to your cart.");
-          });
+        if (addPromises.length > 0) {
+          Promise.all(addPromises)
+            .then(() => window.location.href = "/cart")
+            .catch(err => {
+              console.error("Cart add error:", err);
+              alert("There was an issue adding items to your cart.");
+            });
+        } else {
+          alert("Please select at least one item to add to cart.");
+        }
       });
     });
   </script>
