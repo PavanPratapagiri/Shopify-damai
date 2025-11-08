@@ -54,36 +54,18 @@
         {% endif %}
 {% endcase %}
 {% if wcp_apply_vd == "true" %}
+  {% comment %} Calculate total quantity for this product across all variants in cart {% endcomment %}
   {% if wcp_vd_on == 'v' %}
     {% assign wcp_vd_Current_Prd_quantity = wcp_vd_discount.quantity %} 
   {% else %}
- {% for CartItem in cart.items %}        
-     {% case wcp_vd_on %}      
-      {% when 'p' %}
-        {% if CartItem.product_id == selected_product.id %}
-          {% assign wcp_vd_Current_Prd_quantity = wcp_vd_Current_Prd_quantity | plus:CartItem.quantity%}
-        {% endif %} 
-      {% when 'c' %}          
-          {% assign is_in_collection_found = CartItem.product.collections | where: "id" , is_collection_found[0].id %}              
-          {% if is_in_collection_found != blank %} 
-             {% assign discountGroupData = shop.metafields.wcp_discountgroup[discount_key] %}
-             {% if discountGroupData contains 'collection' %}            
-                {% for collection in CartItem.product.collections %}
-                  {% if discountGroupData contains collection.id %}
-                    {% assign wcp_vd_Current_Prd_quantity = wcp_vd_Current_Prd_quantity | plus:CartItem.quantity%}
-					{% break %}
-                  {% endif %}
-                {% endfor %}             
-             {% elsif discountGroupData contains 'product' and discountGroupData contains CartItem.product.id %}
-                {% assign wcp_vd_Current_Prd_quantity = wcp_vd_Current_Prd_quantity | plus:CartItem.quantity%}
-             {% elsif discountGroupData contains 'entire' %}               
-                 {% assign wcp_vd_Current_Prd_quantity = wcp_vd_Current_Prd_quantity | plus:CartItem.quantity%}                    
-             {% endif %}               
-          {% endif %}
-    {% endcase %}
-  {% endfor %}
+    {% comment %} For product-based or collection-based discounts, sum quantities across all variants {% endcomment %}
+    {% for cart_item in cart.items %}
+      {% if cart_item.product.id == selected_product.id %}
+        {% assign wcp_vd_Current_Prd_quantity = wcp_vd_Current_Prd_quantity | plus: cart_item.quantity %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
 {% endif %}
-{% endif %} 
 
 {% assign wcp_vd_v_price = wcp_v_price %}
 {% assign wcp_vd_price = wcp_price %}
@@ -435,4 +417,4 @@
 {% assign MSG=MSG | replace: "[percent]", MoreDiscount %}
 {% capture NextDiscountHtml %}<p class='wcp_netxDiscount'>{{MSG}}</p>{% endcapture %}
 {% endif %} 
-{% endif %} 
+{% endif %}

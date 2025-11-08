@@ -401,29 +401,34 @@
           
           <td data-label="Total">
             <div class="cart__item__total" data-line-item-total="{{ line_item.key }}">
-              {%- comment -%} Use line item quantity for discount tier calculation {%- endcomment -%}
-              {% assign item_qty = line_item.quantity %}
+              {%- comment -%} Calculate total quantity for this product across all variants {%- endcomment -%}
+              {% assign product_total_qty = 0 %}
+              {% for cart_item in cart.items %}
+                {% if cart_item.product.id == line_item.product.id %}
+                  {% assign product_total_qty = product_total_qty | plus: cart_item.quantity %}
+                {% endif %}
+              {% endfor %}
               
               {% assign next_tier_qty = 0 %}
               {% assign next_tier_discount = 0 %}
               {% assign current_discount = 0 %}
               
-              {%- comment -%} Calculate discount tiers based on line item quantity {%- endcomment -%}
-              {% if item_qty >= 1 and item_qty <= 4 %}
+              {%- comment -%} Calculate discount tiers based on total product quantity {%- endcomment -%}
+              {% if product_total_qty >= 1 and product_total_qty <= 4 %}
                 {% assign current_discount = 39 %}
                 {% assign next_tier_qty = 5 %}
                 {% assign next_tier_discount = 43 %}
-              {% elsif item_qty >= 5 and item_qty <= 9 %}
+              {% elsif product_total_qty >= 5 and product_total_qty <= 9 %}
                 {% assign current_discount = 43 %}
                 {% assign next_tier_qty = 10 %}
                 {% assign next_tier_discount = 45 %}
-              {% elsif item_qty >= 10 %}
+              {% elsif product_total_qty >= 10 %}
                 {% assign current_discount = 45 %}
                 {% assign next_tier_qty = 0 %}
                 {% assign next_tier_discount = 0 %}
               {% endif %}
               
-              {% assign items_needed = next_tier_qty | minus: item_qty %}
+              {% assign items_needed = next_tier_qty | minus: product_total_qty %}
               {% assign discount_increase = next_tier_discount | minus: current_discount %}
               
               {%- comment -%} Calculate MSRP line total (MSRP unit price × quantity) {%- endcomment -%}
