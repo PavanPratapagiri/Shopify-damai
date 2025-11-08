@@ -67,9 +67,9 @@ reqJquery(function($){
   // This applies volume discounts per product, not per cart total
   
   window.VOLUME_DISCOUNT_TIERS = [
-    { min: 1, max: 4, discount: 0.39, exactPrice: 21222 },   // 39% off = $212.22
-    { min: 5, max: 9, discount: 0.43, exactPrice: 19830 },   // 43% off = $198.30
-    { min: 10, max: Infinity, discount: 0.45, exactPrice: 19134 }  // 45% off = $191.34
+    { min: 1, max: 4, discount: 0.39 },   // 39% off for 1-4 items
+    { min: 5, max: 9, discount: 0.43 },   // 43% off for 5-9 items
+    { min: 10, max: Infinity, discount: 0.45 }  // 45% off for 10+ items
   ];
   
   window.applyProductBasedVolumeDiscount = function(wcp_cart_data) {
@@ -126,8 +126,7 @@ reqJquery(function($){
       
       console.log('[Volume Discount] Product ID:', productId, 
                   'Quantity:', totalQty, 
-                  'Discount:', (discountTier.discount * 100) + '%',
-                  'Exact Price:', '$' + (discountTier.exactPrice / 100).toFixed(2));
+                  'Discount:', (discountTier.discount * 100) + '%');
       
       // Apply the discount to all items of this product
       for (var k = 0; k < productData.items.length; k++) {
@@ -149,8 +148,8 @@ reqJquery(function($){
           basePrice = originalPrices.price;
         }
         
-        // Use exact price from pricing table to ensure accuracy
-        var discountedPrice = discountTier.exactPrice;
+        // Calculate discounted price
+        var discountedPrice = Math.floor(basePrice * (1 - discountTier.discount));
         
         // Update WCP prices
         item.wcp_v_price = discountedPrice;
