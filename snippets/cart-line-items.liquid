@@ -438,6 +438,22 @@
               {% endif %}
               {% assign calculated_original_total = original_unit_price | times: line_item.quantity %}
               
+              {%- comment -%} Calculate discounted line total based on tier {%- endcomment -%}
+              {% assign discounted_line_total = 0 %}
+              {% if product_total_qty >= 1 and product_total_qty <= 4 %}
+                {% assign discount_multiplier = 0.61 %}
+                {% assign discounted_unit_price = original_unit_price | times: discount_multiplier %}
+                {% assign discounted_line_total = discounted_unit_price | times: line_item.quantity %}
+              {% elsif product_total_qty >= 5 and product_total_qty <= 9 %}
+                {% assign discount_multiplier = 0.57 %}
+                {% assign discounted_unit_price = original_unit_price | times: discount_multiplier %}
+                {% assign discounted_line_total = discounted_unit_price | times: line_item.quantity %}
+              {% elsif product_total_qty >= 10 %}
+                {% assign discount_multiplier = 0.55 %}
+                {% assign discounted_unit_price = original_unit_price | times: discount_multiplier %}
+                {% assign discounted_line_total = discounted_unit_price | times: line_item.quantity %}
+              {% endif %}
+              
               {%- comment -%} Always show both prices for WCP customers {%- endcomment -%}
               <span class="cart__item__total--original">
                 {% if settings.currency_code_enable %}
@@ -449,10 +465,18 @@
               <span class="cart__item__total--final cart__item__total--discounted" 
                     data-cart-item-line-total="{{ line_item.key }}"
                     data-item-index="{{ forloop.index0 }}">
-                {% if settings.currency_code_enable %}
-                  {{ line_item.final_line_price | money_with_currency }}
+                {% if discounted_line_total > 0 %}
+                  {% if settings.currency_code_enable %}
+                    {{ discounted_line_total | money_with_currency }}
+                  {% else %}
+                    {{ discounted_line_total | money_without_trailing_zeros }}
+                  {% endif %}
                 {% else %}
-                  {{ line_item.final_line_price | money_without_trailing_zeros }}
+                  {% if settings.currency_code_enable %}
+                    {{ line_item.final_line_price | money_with_currency }}
+                  {% else %}
+                    {{ line_item.final_line_price | money_without_trailing_zeros }}
+                  {% endif %}
                 {% endif %}
               </span>
               {% if next_tier_qty > 0 %}
