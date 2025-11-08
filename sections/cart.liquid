@@ -723,47 +723,48 @@
     
     // Update item prices
     updateItemPrices(cart) {
-      // Update WCP discounted prices in the Total column
-      if (window.wcp_data && window.wcp_data.wcp_cart && window.wcp_data.wcp_cart.items) {
-        window.wcp_data.wcp_cart.items.forEach((wcpItem, index) => {
-          // Find the line item by index
-          const priceElement = document.querySelector(`[data-item-index="${index}"]`);
-          
-          if (priceElement && wcpItem.wcp_vd_price) {
-            // Calculate the discounted line total
-            const discountedUnitPrice = wcpItem.wcp_vd_price;
-            const quantity = wcpItem.quantity;
-            const lineTotal = (discountedUnitPrice * quantity) / 100;
-            
-            // Get currency symbol from WCP data or default to $
-            const currency = window.wcp_data.discounted_hash?.currency || '$';
-            
-            // Format the price
-            let formattedPrice;
-            if (window.Shopify && window.Shopify.formatMoney) {
-              formattedPrice = window.Shopify.formatMoney(lineTotal * 100, window.theme.moneyFormat || '${{amount}}');
-            } else {
-              formattedPrice = currency + lineTotal.toFixed(2);
-            }
-            
-            // Update the price display
-            priceElement.textContent = formattedPrice;
-          }
-        });
+      // ...existing code...
+    }
+    
+    // Update a section of the DOM
+    updateSection(selector, doc) {
+      const currentElement = document.querySelector(selector);
+      const newElement = doc.querySelector(selector);
+      
+      if (currentElement && newElement) {
+        currentElement.innerHTML = newElement.innerHTML;
+      }
+    }
+    
+    // Toggle empty cart display
+    toggleEmptyCart(isEmpty) {
+      if (isEmpty) {
+        this.cartEmpty?.classList.remove('cart--hidden');
+        this.cartLoading?.classList.add('cart--hidden');
+      } else {
+        this.cartEmpty?.classList.add('cart--hidden');
+        this.cartLoading?.classList.remove('cart--hidden');
+      }
+    }
+    
+    // Update header cart count
+    updateHeaderCart(cart) {
+      const cartCount = document.querySelector('[data-cart-count]');
+      if (cartCount) {
+        cartCount.textContent = cart.item_count;
+        cartCount.setAttribute('data-cart-count', cart.item_count);
       }
       
-      // Fallback: update from cart.items if WCP data not available yet
-      cart.items.forEach((item, index) => {
-        const priceElement = document.querySelector(`[data-item-index="${index}"]`);
-        if (priceElement && !window.wcp_data) {
-          const lineTotal = item.final_line_price;
-          if (window.Shopify && window.Shopify.formatMoney) {
-            priceElement.textContent = window.Shopify.formatMoney(lineTotal, window.theme.moneyFormat || '${{amount}}');
-          }
+      // Update any cart bubbles
+      const cartBubbles = document.querySelectorAll('.cart-count-bubble');
+      cartBubbles.forEach(bubble => {
+        bubble.textContent = cart.item_count;
+        if (cart.item_count === 0) {
+          bubble.style.display = 'none';
+        } else {
+          bubble.style.display = '';
         }
       });
-      
-      console.log('Cart prices updated:', cart.item_count, 'items');
     }
     
     showLoading() {
