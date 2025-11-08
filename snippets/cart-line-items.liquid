@@ -400,6 +400,41 @@
           </td>
           
           <td data-label="Total">
+            {%- comment -%} Calculate WCP discount for this line item {%- endcomment -%}
+            {% if customer %}
+              {% assign p_discount_tag = '' %}
+              {% assign p_discount_value = '' %}
+              
+              {%- comment -%} Find customer's discount tag {%- endcomment -%}
+              {% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
+              {% assign active_discounts_array = active_discounts | split: ',' %}
+              {% for tag in customer.tags %}
+                {% assign tempTag = tag | downcase %}
+                {% for discount_key in active_discounts_array %}
+                  {% assign key_split = discount_key | split: '-' %}
+                  {% assign wcp_customer_tag = key_split[0] | downcase %}
+                  {% if tempTag == wcp_customer_tag %}
+                    {% assign p_discount_tag = key_split[0] %}
+                    {% assign p_discount_value = key_split[1] %}
+                    {% break %}
+                  {% endif %}
+                {% endfor %}
+                {% if p_discount_tag != '' %}
+                  {% break %}
+                {% endif %}
+              {% endfor %}
+              
+              {%- comment -%} Render WCP discount calculation {%- endcomment -%}
+              {% if p_discount_tag != '' %}
+                {% render 'wcp_vd_discount', 
+                   wcp_vd_discount: line_item, 
+                   p_discount_tag: p_discount_tag, 
+                   p_discount_value: p_discount_value, 
+                   wcp_v_price: line_item.variant.price, 
+                   wcp_price: line_item.price %}
+              {% endif %}
+            {% endif %}
+            
             <div class="cart__item__total" data-line-item-total="{{ line_item.key }}">
               {%- comment -%} Calculate total quantity for this product across all variants {%- endcomment -%}
               {% assign product_total_qty = 0 %}
@@ -447,17 +482,24 @@
                 {% endif %}
               </span>
               
-              {%- comment -%} Show discounted total (bold) - will be updated by WCP JavaScript {%- endcomment -%}
+              {%- comment -%} Show discounted total - use WCP calculated price if available {%- endcomment -%}
+              {% if wcp_line_price and wcp_line_price > 0 %}
+                {% assign discounted_line_total = wcp_line_price %}
+              {% else %}
+                {% assign discounted_line_total = msrp_line_total %}
+              {% endif %}
+              
               <span class="cart__item__total--final cart__item__total--discounted" 
                     data-cart-item-line-total="{{ line_item.key }}"
                     data-line-item-key="{{ line_item.key }}"
                     data-line-item-quantity="{{ line_item.quantity }}"
                     data-msrp-total="{{ msrp_line_total }}"
+                    data-discounted-price="{{ discounted_line_total }}"
                     data-item-index="{{ forloop.index0 }}">
                 {% if settings.currency_code_enable %}
-                  {{ msrp_line_total | money_with_currency }}
+                  {{ discounted_line_total | money_with_currency }}
                 {% else %}
-                  {{ msrp_line_total | money_without_trailing_zeros }}
+                  {{ discounted_line_total | money_without_trailing_zeros }}
                 {% endif %}
               </span>
               
