@@ -438,11 +438,6 @@
               {% endif %}
               {% assign calculated_original_total = original_unit_price | times: line_item.quantity %}
               
-              {%- comment -%} Calculate the discounted price by applying the tier discount {%- endcomment -%}
-              {% assign discount_decimal = current_discount | times: 1.0 | divided_by: 100.0 %}
-              {% assign discount_amount = calculated_original_total | times: discount_decimal %}
-              {% assign calculated_discounted_total = calculated_original_total | minus: discount_amount %}
-              
               {%- comment -%} Always show both prices for WCP customers {%- endcomment -%}
               <span class="cart__item__total--original">
                 {% if settings.currency_code_enable %}
@@ -453,12 +448,11 @@
               </span>
               <span class="cart__item__total--final cart__item__total--discounted" 
                     data-cart-item-line-total="{{ line_item.key }}"
-                    data-item-index="{{ forloop.index0 }}"
-                    data-discounted-price="{{ calculated_discounted_total }}">
+                    data-item-index="{{ forloop.index0 }}">
                 {% if settings.currency_code_enable %}
-                  {{ calculated_discounted_total | money_with_currency }}
+                  {{ line_item.final_line_price | money_with_currency }}
                 {% else %}
-                  {{ calculated_discounted_total | money_without_trailing_zeros }}
+                  {{ line_item.final_line_price | money_without_trailing_zeros }}
                 {% endif %}
               </span>
               {% if next_tier_qty > 0 %}
