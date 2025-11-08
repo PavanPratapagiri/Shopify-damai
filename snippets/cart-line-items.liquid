@@ -431,22 +431,27 @@
               {% assign items_needed = next_tier_qty | minus: product_total_qty %}
               {% assign discount_increase = next_tier_discount | minus: current_discount %}
               
-              {%- comment -%} Calculate original line total from compare_at_price or variant price {%- endcomment -%}
-              {% assign original_unit_price = line_item.variant.compare_at_price %}
-              {% if original_unit_price == blank or original_unit_price == 0 or original_unit_price < line_item.variant.price %}
-                {% assign original_unit_price = line_item.variant.price %}
+              {%- comment -%} Calculate MSRP total - use compare_at_price if it exists and is higher {%- endcomment -%}
+              {% assign msrp_unit_price = line_item.variant.compare_at_price %}
+              {% if msrp_unit_price == blank or msrp_unit_price == 0 %}
+                {% assign msrp_unit_price = line_item.original_price %}
               {% endif %}
-              {% assign calculated_original_total = original_unit_price | times: line_item.quantity %}
+              {% if msrp_unit_price < line_item.original_price %}
+                {% assign msrp_unit_price = line_item.original_price %}
+              {% endif %}
+              {% assign msrp_total = msrp_unit_price | times: line_item.quantity %}
               
-              {%- comment -%} Always show both prices for WCP customers {%- endcomment -%}
-              <span class="cart__item__total--original">
-                {% if settings.currency_code_enable %}
-                  {{ calculated_original_total | money_with_currency }}
-                {% else %}
-                  {{ calculated_original_total | money_without_trailing_zeros }}
-                {% endif %}
-              </span>
-              <span class="cart__item__total--final cart__item__total--discounted" 
+              {%- comment -%} Only show strikethrough price if there's an actual discount {%- endcomment -%}
+              {% if msrp_total > line_item.final_line_price %}
+                <span class="cart__item__total--original">
+                  {% if settings.currency_code_enable %}
+                    {{ msrp_total | money_with_currency }}
+                  {% else %}
+                    {{ msrp_total | money_without_trailing_zeros }}
+                  {% endif %}
+                </span>
+              {% endif %}
+              <span class="cart__item__total--final{% if msrp_total > line_item.final_line_price %} cart__item__total--discounted{% endif %}" 
                     data-cart-item-line-total="{{ line_item.key }}"
                     data-item-index="{{ forloop.index0 }}">
                 {% if settings.currency_code_enable %}
