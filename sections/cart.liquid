@@ -296,7 +296,7 @@
                 {% assign customer_tags = customer_tags | prepend:tempTag %}
                 {% unless forloop.last %}
                   {% assign customer_tags = customer_tags | prepend:','  %}
-                {% endfor %}
+                {% endunless %}
               {% endfor %}
               {% assign customer_tags = customer_tags | split:',' %}
               {% assign active_discounts = active_discounts | downcase %}
@@ -723,48 +723,18 @@
     
     // Update item prices
     updateItemPrices(cart) {
-      // ...existing code...
-    }
-    
-    // Update a section of the DOM
-    updateSection(selector, doc) {
-      const currentElement = document.querySelector(selector);
-      const newElement = doc.querySelector(selector);
-      
-      if (currentElement && newElement) {
-        currentElement.innerHTML = newElement.innerHTML;
+      // Update WCP discounted prices in the Total column
+      if (window.wcp_data && window.wcp_data.wcp_cart && window.wcp_data.wcp_cart.items) {
+        window.wcp_data.wcp_cart.items.forEach((item, index) => {
+          const totalElement = document.querySelector(`[data-item-index="${index}"]`);
+          if (totalElement && item.wcp_vd_price) {
+            const lineTotal = (item.wcp_vd_price * item.quantity) / 100;
+            const currency = window.wcp_data.discounted_hash?.currency || '$';
+            totalElement.textContent = currency + lineTotal.toFixed(2);
+          }
+        });
       }
-    }
-    
-    // Toggle empty cart display
-    toggleEmptyCart(isEmpty) {
-      if (isEmpty) {
-        this.cartEmpty?.classList.remove('cart--hidden');
-        this.cartLoading?.classList.add('cart--hidden');
-      } else {
-        this.cartEmpty?.classList.add('cart--hidden');
-        this.cartLoading?.classList.remove('cart--hidden');
-      }
-    }
-    
-    // Update header cart count
-    updateHeaderCart(cart) {
-      const cartCount = document.querySelector('[data-cart-count]');
-      if (cartCount) {
-        cartCount.textContent = cart.item_count;
-        cartCount.setAttribute('data-cart-count', cart.item_count);
-      }
-      
-      // Update any cart bubbles
-      const cartBubbles = document.querySelectorAll('.cart-count-bubble');
-      cartBubbles.forEach(bubble => {
-        bubble.textContent = cart.item_count;
-        if (cart.item_count === 0) {
-          bubble.style.display = 'none';
-        } else {
-          bubble.style.display = '';
-        }
-      });
+      console.log('Cart updated:', cart.item_count, 'items');
     }
     
     showLoading() {
