@@ -186,8 +186,10 @@
   {%- endif -%}
 
   <!-- Theme Javascript ============================================================== -->
-  <script src="{{ 'vendor.js' | asset_url }}" defer></script>
-  <script src="{{ 'theme.js' | asset_url }}" defer></script>
+  <script src="{{ 'vendor.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'theme.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'custom.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'cart-total-updater.js' | asset_url }}" defer="defer"></script>
 
   <script>
     (function () {
