@@ -453,7 +453,8 @@
               </span>
               <span class="cart__item__total--final cart__item__total--discounted" 
                     data-cart-item-line-total="{{ line_item.key }}"
-                    data-item-index="{{ forloop.index0 }}">
+                    data-item-index="{{ forloop.index0 }}"
+                    data-discounted-price="{{ calculated_discounted_total }}">
                 {% if settings.currency_code_enable %}
                   {{ calculated_discounted_total | money_with_currency }}
                 {% else %}
