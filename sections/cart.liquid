@@ -296,7 +296,7 @@
                 {% assign customer_tags = customer_tags | prepend:tempTag %}
                 {% unless forloop.last %}
                   {% assign customer_tags = customer_tags | prepend:','  %}
-                {% endunless %}
+                {% endfor %}
               {% endfor %}
               {% assign customer_tags = customer_tags | split:',' %}
               {% assign active_discounts = active_discounts | downcase %}
@@ -723,18 +723,39 @@
     
     // Update item prices
     updateItemPrices(cart) {
-      // Update WCP discounted prices in the Total column
-      if (window.wcp_data && window.wcp_data.wcp_cart && window.wcp_data.wcp_cart.items) {
-        window.wcp_data.wcp_cart.items.forEach((item, index) => {
-          const totalElement = document.querySelector(`[data-item-index="${index}"]`);
-          if (totalElement && item.wcp_vd_price) {
-            const lineTotal = (item.wcp_vd_price * item.quantity) / 100;
-            const currency = window.wcp_data.discounted_hash?.currency || '$';
-            totalElement.textContent = currency + lineTotal.toFixed(2);
-          }
-        });
+      // DON'T update prices here - preserve the Liquid template's tiered discount calculations
+      // The prices are already correctly calculated in cart-line-items.liquid with tiered discounts
+      // and stored in the data-discounted-price attribute
+      
+      // Just preserve the existing prices from the data attributes
+      const priceElements = document.querySelectorAll('[data-discounted-price]');
+      priceElements.forEach(element => {
+        const discountedPrice = element.getAttribute('data-discounted-price');
+        if (discountedPrice) {
+          // Format the price using theme settings
+          const price = parseFloat(discountedPrice);
+          const formatted = this.formatMoney(price);
+          element.textContent = formatted;
+        }
+      });
+      
+      console.log('Cart updated:', cart.item_count, 'items - preserving tiered discount prices');
+    }
+    
+    // Format money helper
+    formatMoney(cents) {
+      const moneyFormat = window.theme && window.theme.moneyFormat ? window.theme.moneyFormat : '${{amount}}';
+      const currencyCode = window.theme && window.theme.currencyCode ? window.theme.currencyCode : '';
+      const currencyEnabled = window.theme && window.theme.settings && window.theme.settings.currency_code_enable;
+      
+      let formatted = moneyFormat.replace('{{amount}}', (cents / 100).toFixed(2));
+      formatted = formatted.replace('.00', '');
+      
+      if (currencyEnabled && currencyCode) {
+        formatted += ' ' + currencyCode;
       }
-      console.log('Cart updated:', cart.item_count, 'items');
+      
+      return formatted;
     }
     
     showLoading() {
