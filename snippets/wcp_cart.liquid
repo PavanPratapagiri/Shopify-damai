@@ -149,7 +149,7 @@ reqJquery(function($){
         }
         
         // Calculate discounted price
-        var discountedPrice = Math.floor(basePrice * (1 - discountTier.discount));
+        var discountedPrice = Math.round(basePrice * (1 - discountTier.discount));
         
         // Update WCP prices
         item.wcp_v_price = discountedPrice;
