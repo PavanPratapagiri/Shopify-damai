@@ -1196,7 +1196,9 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function formatPrice(cents) {
-    return moneyFmt.format(cents / 100);
+    // Manually format to ensure proper rounding down
+    const dollars = Math.floor(cents) / 100;
+    return moneyFmt.format(dollars);
   }
   
   // Update header cart count and price
@@ -1320,7 +1322,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (totalQuantity === 0) return msrp;
     const tier = discountTiers.find(t => totalQuantity >= t.min && totalQuantity <= t.max);
     if (tier) {
-      return Math.round(msrp * (1 - tier.discount));
+      // Use floor rounding to ensure prices round down (e.g., 191.35 becomes 191.34)
+      return Math.floor(msrp * (1 - tier.discount));
     }
     return msrp;
   }
