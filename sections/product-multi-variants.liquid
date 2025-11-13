@@ -940,7 +940,7 @@ data-wpd-product-id="{{ product.id }}"
       
       <div class="summary">
         <span class="original-price" style="display: none;"></span>
-        <p class="price">{{ cart.total_price | money }}</p>
+        <p class="price" data-wpd-cart-total>{{ cart.total_price | money }}</p>
         <p class="total-savings" style="display: none;"></p>
         <p class="subtotal">Product subtotal</p>
         <p>Discounts and Shipping calculated at checkout</p>
