@@ -888,7 +888,15 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">
               {% if variant.compare_at_price > variant.price %}
                 <div class="msrp">PRICE: {{ variant.compare_at_price | money }}</div>
               {% endif %}
-              <div class="current-price">
+              <div class="current-price"
+              data-wpd-cart-drawer-product-handle="{{ product.handle }}"                                  
+data-wpd-cart-drawer-variant-id="{{ variant.id }}"                                   
+data-wpd-cart-drawer-variant-price="{{ variant.price }}"                                  
+data-wpd-cart-drawer-variant-compare-at-price="{{ variant.compare_at_price }}"                                  
+data-wpd-cart-drawer-product-collection-ids="{% assign wpdProductCollectionIds = product.collections | map:'id' %}{{ wpdProductCollectionIds | join:',' }}"                                  
+data-wpd-cart-drawer-product-id="{{ product.id }}"                                   
+data-wpd-cart-drawer-item="{{ variant_key }}"                          
+data-wpd-cart-drawer-quantity="{{ variant_qty }}">
                 {{ variant.price | money }}
               </div>
             </td>
