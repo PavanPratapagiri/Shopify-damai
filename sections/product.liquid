@@ -444,6 +444,7 @@
                 {% render 'product-title', product: product, block: block, section: section %}
               {% when 'price' %}
                 {% render 'product-price', product: product, block: block, section: section %}
+                <div id='wcp_vd_table'></div>   
               {% when 'add-buttons' %}
                 {% render 'product-buttons' product: product, uniq_id: product_form_id, block: block %}
               {% when 'quantity' %}
