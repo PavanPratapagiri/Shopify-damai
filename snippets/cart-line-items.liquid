@@ -361,7 +361,7 @@
               {% if msrp_price == blank or msrp_price == 0 or msrp_price < line_item.variant.price %}
                 {% assign msrp_price = line_item.variant.price %}
               {% endif %}
-              <span data-wpd-cart-variant-id="{{ line_item.variant.id }}" data-wpd-cart-item="{{ line_item.key }}" class="cart__item__price--final">
+              <span data-wpd-cart-variant-id="{{ line_item.variant.id }}" data-wpd-cart-item="{{ line_item.key }}" class="">
                 {% if settings.currency_code_enable %}
                   {{ msrp_price | money_with_currency }}
                 {% else %}
