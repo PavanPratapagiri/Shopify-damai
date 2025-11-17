@@ -439,7 +439,7 @@
               {% assign calculated_original_total = original_unit_price | times: line_item.quantity %}
               
               {%- comment -%} Always show both prices for WCP customers {%- endcomment -%}
-              <span class="cart__item__total--original">
+              <span class="data-wpd-hide cart__item__total--original">
                 {% if settings.currency_code_enable %}
                   {{ calculated_original_total | money_with_currency }}
                 {% else %}
