@@ -126,59 +126,7 @@
     });
   }
   
-  /**
-   * Apply price updates to cart drawer elements
-   */
-  function applyPriceUpdates(cart) {
-    const currency = cart.currency || 'USD';
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency
-    });
-    
-    cart.items.forEach(item => {
-      const key = item.key;
-      
-      // Update unit price (MSRP column)
-      updatePrice(`[data-item-price="${key}"]`, item.final_price, formatter);
-      updatePrice(`[data-wpd-cart-variant-id="${item.variant_id}"][data-wpd-cart-item="${key}"] span`, item.final_price, formatter);
-      updatePrice(`[data-wpd-cart-variant-id="${item.variant_id}"][data-wpd-cart-item="${key}"] mark`, item.final_price, formatter);
-      
-      // Update compare-at price if exists
-      if (item.variant && item.variant.compare_at_price > item.final_price) {
-        updatePrice(`[data-compare-price="${key}"]`, item.variant.compare_at_price, formatter);
-      }
-      
-      // Update original price if discounted
-      if (item.original_price > item.final_price) {
-        updatePrice(`[data-original-price="${key}"]`, item.original_price, formatter);
-      }
-      
-      // Update line total (TOTAL column)
-      updatePrice(`[data-line-total="${key}"]`, item.final_line_price, formatter);
-      updatePrice(`[data-wpd-cart-line-price][data-wpd-cart-item="${key}"]`, item.final_line_price, formatter);
-      
-      // Update quantity ONLY if the input is not currently being interacted with
-      const qtyInput = document.querySelector(`input[data-update-cart="${key}"]`);
-      if (qtyInput && parseInt(qtyInput.value) !== item.quantity) {
-        // Don't update if user is currently typing/focused or recently interacted
-        if (document.activeElement !== qtyInput && !interactingInputs.has(key)) {
-          qtyInput.value = item.quantity;
-        }
-      }
-    });
-    
-    // Update cart total
-    updatePrice('[data-cart-final]', cart.total_price, formatter);
-    updatePrice('.wcp-original-cart-total', cart.total_price, formatter);
-    
-    // Trigger WCP refresh if available
-    if (typeof window.wcpRefreshCartTotal === 'function') {
-      setTimeout(() => {
-        window.wcpRefreshCartTotal();
-      }, 100);
-    }
-  }
+
   
   /**
    * Update a specific price element
