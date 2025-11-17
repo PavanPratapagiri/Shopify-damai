@@ -129,7 +129,7 @@
   /**
    * Apply price updates to cart drawer elements
    */
-  /*function applyPriceUpdates(cart) {
+  function applyPriceUpdates(cart) {
     const currency = cart.currency || 'USD';
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -178,7 +178,7 @@
         window.wcpRefreshCartTotal();
       }, 100);
     }
-  }*/
+  }
   
   /**
    * Update a specific price element
