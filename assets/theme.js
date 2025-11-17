@@ -4012,7 +4012,7 @@
             window.fetch(`${window.theme.routes.root_url}?section_id=api-cart-items`).then(this.handleErrors).then((t => t.text())).then((t => {
                 const e = document.createElement("div");
                 e.innerHTML = t,
-                window.is_wcp_wholesale_customer == true && window.wpdExtensionIsCartPage == true?"":this.items.innerHTML = e.querySelector(hn).innerHTML,
+                //window.is_wcp_wholesale_customer == true && window.wpdExtensionIsCartPage == true?"":this.items.innerHTML = e.querySelector(hn).innerHTML,
                 this.showForm(),
                 this.initQuantity(),
                 this.initQuickview(),
