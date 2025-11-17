@@ -447,7 +447,7 @@
                 {% endif %}
               </span>
               <span data-wpd-cart-variant-id="{{ line_item.variant.id }}" data-wpd-cart-item="{{ line_item.key }}" data-wpd-cart-line-price class="cart__item__total--final cart__item__total--discounted" 
-                    data-cart-item-line-total="{{ line_item.key }}"
+                    
                     data-item-index="{{ forloop.index0 }}">
                 {% if settings.currency_code_enable %}
                   {{ line_item.final_line_price | money_with_currency }}
