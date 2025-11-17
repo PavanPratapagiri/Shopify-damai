@@ -343,30 +343,33 @@
 </style>
 {% endif %}
   {% render 'wlm_custom' %}
-<!-- WPD Start -->
-                {% if customer.tags.size > 0 and template != 'cart' %}
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                      let checkoutbtninterval = setInterval(function(){
-                        var x=document.querySelectorAll("input[name='checkout'], button[name='checkout'], input[name='goto_pp'], button[name='goto_pp'], input[name='goto_gc'], button[name='goto_gc'], [href$='checkout']");
-                        var WPD_RedirectToCart = function(e) {
-                          	e.stopPropagation();
-                            e.preventDefault();
-                            window.location = '/cart';
-                            };
-                            for (var i = 0; i < x.length; i++) {
-                                x[i].addEventListener('click', WPD_RedirectToCart, false);
-                            }
-                        },500)
-                });
-              </script>
-               {% endif %}
-         
 
-               {% if customer.tags.size > 0 and template == 'cart' %}
-                 {% include 'wcp_cart' %}
-               {% endif %}
-               <!-- WPD End -->
+{% comment %}
+<!-- WPD Start -->
+{% if customer.tags.size > 0 and template != 'cart' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      let checkoutbtninterval = setInterval(function(){
+        var x=document.querySelectorAll("input[name='checkout'], button[name='checkout'], input[name='goto_pp'], button[name='goto_pp'], input[name='goto_gc'], button[name='goto_gc'], [href$='checkout']");
+        var WPD_RedirectToCart = function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            window.location = '/cart';
+            };
+            for (var i = 0; i < x.length; i++) {
+                x[i].addEventListener('click', WPD_RedirectToCart, false);
+            }
+        },500)
+});
+</script>
+{% endif %}
+
+
+{% if customer.tags.size > 0 and template == 'cart' %}
+  {% include 'wcp_cart' %}
+{% endif %}
+<!-- WPD End -->
+{% endcomment %}
                {% assign wcp_wholesale_customer = false %}
 {% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
 {% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
