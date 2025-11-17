@@ -270,16 +270,7 @@
   {% render 'template-swatch' %}
 
   <div data-modal-container></div>
-
-  <script src="{{ 'custom.js' | asset_url }}" defer></script>
-
-  <!-- Paste popup code or third party scripts below this comment line ============== -->
-
-
-  <!-- And above this comment line ================================================== -->
-
-{%- comment -%}WPD wholesale pricing - moved outside of commented section{%- endcomment -%}
-{% assign wcp_wholesale_customer = false %}
+  {% assign wcp_wholesale_customer = false %}
 {% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
 {% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
 {% assign active_discounts_array = active_discounts | split: ',' %}
@@ -308,6 +299,17 @@
 {% endif %}
 {% endfor %}
 {% endif %}
+{% if wcp_wholesale_customer == true and template == 'cart' %}  
+{% else %}
+
+  <script src="{{ 'custom.js' | asset_url }}" defer></script>
+{% endif %}
+  <!-- Paste popup code or third party scripts below this comment line ============== -->
+
+
+  <!-- And above this comment line ================================================== -->
+
+{%- comment -%}WPD wholesale pricing - moved outside of commented section{%- endcomment -%}
 {% if wcp_wholesale_customer == true %}  
 <style>
 #wcp_vd_table {
