@@ -363,9 +363,9 @@
               {% endif %}
               <span data-wpd-cart-variant-id="{{ line_item.variant.id }}" data-wpd-cart-item="{{ line_item.key }}" class="cart__item__price--final">
                 {% if settings.currency_code_enable %}
-                  {{ line_item.variant.price | money_with_currency }}
+                  {{ msrp_price | money_with_currency }}
                 {% else %}
-                  {{ line_item.variant.price | money_without_trailing_zeros }}
+                  {{ msrp_price | money_without_trailing_zeros }}
                 {% endif %}
               </span>
             </div>
