@@ -986,19 +986,6 @@ data-wpd-cart-drawer-quantity="{{ variant_qty }}">{{ discounted_total | money }}
 
 <script>
   document.addEventListener('DOMContentLoaded', function(){
-    var WPD_reloadPage = function(e) {setTimeout(function(){window.location.reload();},2500);};
-    function wcp_build_event(x){for (var i = 0; i < x.length; i++) {x[i].addEventListener('click', WPD_reloadPage, false);}}
-//     var x=document.querySelectorAll(".CartItem__Remove");wcp_build_event(x);
-    var x=document.querySelectorAll(".MA-quantity__button, .remove-variant");wcp_build_event(x);
-     function wcp_build_event_change(x){for (var i = 0; i < x.length; i++) {x[i].addEventListener('change', WPD_reloadPage, false);}}
-//      var x=document.querySelectorAll(".QuantitySelector__CurrentQuantity");wcp_build_event_change(x);
-    
-  }, false);
-</script>
-
-
-<script>
-  document.addEventListener('DOMContentLoaded', function(){
     // Listen for cart updates completion - refresh display without full page reload
     document.addEventListener('cartUpdateComplete', function() {
       // Wait for WCP to calculate prices
