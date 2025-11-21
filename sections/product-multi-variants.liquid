@@ -1565,6 +1565,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // Update all rows with wholesale pricing
           document.querySelectorAll('tr[data-variant-id]').forEach(r => {
             const variantId = r.dataset.variantId;
+            console.log(updatedCart);
             const updatedItem = updatedCart.items.find(i => i.variant_id == variantId);
             const qInput = r.querySelector('.qty');
             
