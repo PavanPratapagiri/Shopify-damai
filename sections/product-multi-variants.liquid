@@ -1724,12 +1724,3 @@ document.addEventListener('DOMContentLoaded', function() {
     "name": "Product multi variants"
   }
 {% endschema %}
-
-{% for block in section.blocks %}
-  {% case block.type %}
-    {% when 'custom_text' %}
-      <div class="custom-text-block">
-        {{ block.settings.text }}
-      </div>
-  {% endcase %}
-{% endfor %}
