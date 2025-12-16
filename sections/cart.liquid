@@ -714,7 +714,36 @@
           }
         });
         
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
         
+        // Update specific sections
+        this.updateSection('[data-line-items]', doc);
+        this.updateSection('[data-cart-subtotal]', doc);
+        this.updateSection('[data-cart-final]', doc);
+        this.updateSection('[data-cart-message]', doc);
+        
+        // Update WCP elements if they exist
+        this.updateSection('.wcp-cart-total', doc);
+        this.updateSection('.wcp-minimums-note', doc);
+        this.updateSection('.wcp-extra-note', doc);
+        
+        // Update item prices from actual cart data (WCP handles the discounts)
+        this.updateItemPrices(cart);
+        
+        // Update inventory states for items
+        this.updateInventoryStates(cart);
+        
+        // Handle empty cart
+        this.toggleEmptyCart(cart.item_count === 0);
+        
+        // Update header cart
+        this.updateHeaderCart(cart);
+        
+        // Re-trigger WCP if needed
+        if (CONFIG.isWholesaleCustomer && window.wcpRefreshCartTotal) {
+          window.wcpRefreshCartTotal();
         }
         
       } catch (error) {
