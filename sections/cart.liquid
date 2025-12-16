@@ -271,7 +271,7 @@
           {%- assign math_pi = 3.14159265359 -%}
           {%- assign stroke_circumference = 28 | times: math_pi -%}
           {%- assign stroke_calculate = percent | times: stroke_circumference -%}
-          {%- assign stroke_calculate = stroke_calculate | divided_by: 100 | divided_by: 2 -%}
+          
           {%- assign stroke_dashoffset = stroke_circumference | minus: stroke_calculate -%}
         {%- endif -%}
 
@@ -308,7 +308,7 @@
             
             
             <div class="additional-notes">
-             
+              <span class="wcp-minimums-note"></span>
               <span class="wcp-extra-note "></span>
             </div>
             {% render "wcp_multi_currency_msg" %}  
