@@ -516,7 +516,7 @@
     
     // Handle all click events
     handleClick(e) {
-      
+      const plusBtn = e.target.closest('.quantity__button--plus');
       const minusBtn = e.target.closest('.quantity__button--minus');
       const removeBtn = e.target.closest('[data-remove-key]');
       const checkoutBtn = e.target.closest('.checkout__button');
