@@ -98,6 +98,7 @@
           },
           "price_8MJmUQ": {
             "type": "price",
+            "disabled": true,
             "settings": {
               "price_size": 5,
               "padding_bottom": 20
