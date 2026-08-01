@@ -3088,6 +3088,12 @@
               bubbles: true,
             })
           );
+          
+          // Reload the page if we're on the cart page to show updated items
+          if (window.location.pathname === window.theme.routes.cart || 
+              window.location.pathname === `${window.theme.routes.cart}/`) {
+            window.location.reload();
+          }
         })
         .catch((e) => {
           console.error(e);
@@ -4450,7 +4456,12 @@
       this.underlay.addEventListener(
         'click',
         function () {
-          this.hideDrawer();
+          // Check if this is the cart drawer and redirect to cart page
+          if (this.key === 'drawer-cart') {
+            window.location.href = window.theme.routes.cart || '/cart';
+          } else {
+            this.hideDrawer();
+          }
         }.bind(this)
       );
     }

@@ -85,6 +85,29 @@
     --LOGO-PADDING: {{ section.settings.logo_padding | append: 'px' }};
     --menu-backfill-height: auto;
   }
+  
+  /* Cart count badge styling - HIDDEN */
+  .navlink--cart,
+  .header__mobile__button {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .header__cart__count-badge {
+    display: none !important;
+  }
+  
+  /* Ensure cart icon wrapper has proper positioning */
+  .navlink--cart .icon-cart,
+  .header__mobile__button .icon-cart {
+    display: block;
+    position: relative;
+  }
+  
+  /* Add some spacing for the badge */
+  .header__desktop__button.navlink--cart {
+    margin-right: 5px;
+  }
 {% endstyle %}
 
 {% capture logos %}
@@ -156,15 +179,20 @@
 {% endcapture %}
 
 {% capture cart_status %}
+  {%- assign total_item_quantity = 0 -%}
+  {%- for item in cart.items -%}
+    {%- assign total_item_quantity = total_item_quantity | plus: item.quantity -%}
+  {%- endfor -%}
+  
   <span class="header__cart__status">
     <span data-header-cart-price="{{ cart.total_price }}">
       {{ cart.total_price | money }}
     </span>
-    <span data-header-cart-count="{{ cart.item_count }}">
-      ({{ cart.item_count }})
+    <span data-header-cart-count="{{ total_item_quantity }}">
+      ({{ total_item_quantity }})
     </span>
     {% assign cart_full =  false %}
-    {%- if cart.item_count > 0 -%}
+    {%- if total_item_quantity > 0 -%}
       {% assign cart_full =  true %}
     {%- endif -%}
     <span data-header-cart-full="{{ cart_full }}"></span>
@@ -274,10 +302,17 @@
     </div>
     {{ logos }}
     <div class="header__mobile__right">
+      {%- assign total_item_quantity = 0 -%}
+      {%- for item in cart.items -%}
+        {%- assign total_item_quantity = total_item_quantity | plus: item.quantity -%}
+      {%- endfor -%}
+      
       <a class="header__mobile__button"
-       data-drawer-toggle="drawer-cart"
         href="{{ routes.cart_url }}">
-        {%- include 'icon' with 'cart' -%}
+        <div class="icon-cart">
+          {%- render 'icon-cart' -%}
+        </div>
+        <span class="header__cart__count-badge" data-cart-count-badge>{{ total_item_quantity }}</span>
         <span class="visually-hidden">{{ 'layout.cart.title' | t }}</span>
         {{ cart_status }}
       </a>
@@ -325,11 +360,18 @@
     {% endif %}
 
     <div class="header__desktop__button {% if request.path contains routes.cart_url %} main-menu--active{% endif %}" {{ text_hover }}>
+      {%- assign total_item_quantity = 0 -%}
+      {%- for item in cart.items -%}
+        {%- assign total_item_quantity = total_item_quantity | plus: item.quantity -%}
+      {%- endfor -%}
+      
       <a href="{{ routes.cart_url }}"
-        class="navlink navlink--cart"
-        data-drawer-toggle="drawer-cart">
+        class="navlink navlink--cart">
         {% if section.settings.use_icons %}
-          {%- include 'icon' with 'cart' -%}
+          <div class="icon-cart">
+            {%- render 'icon-cart' -%}
+          </div>
+          <span class="header__cart__count-badge" data-cart-count-badge>{{ total_item_quantity }}</span>
           <span class="visually-hidden">{{ 'layout.cart.title' | t }}</span>
           {{ cart_status }}
         {% else %}

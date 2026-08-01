@@ -1,0 +1,48 @@
+/*
+* Pipeline Theme - Custom CSS
+*
+* Use this file to add custom CSS to Pipeline. Keeping your custom
+* CSS in this file will make it easier to update the theme without
+* losing your customizations.
+*/
+
+/* ============================================================================
+  Cart Template - Remove Total Column (4-column layout)
+============================================================================== */
+
+/* Update cart grid to 4 columns (remove total column) */
+.cart__template .cart__items__grid {
+  display: grid;
+  grid-template-areas: "image title price quantity" "image remove price quantity" "image savings price quantity";
+  grid-template-columns: 90px 2fr 1fr 1fr;
+}
+
+/* Grid area assignments for cart items */
+.cart__template .cart__items__image {
+  grid-area: image;
+}
+
+.cart__template .cart__items__title {
+  grid-area: title;
+}
+
+.cart__template .cart__items__remove {
+  grid-area: remove;
+}
+
+.cart__template .cart__items__price {
+  grid-area: price;
+}
+
+.cart__template .cart__items__qty {
+  grid-area: quantity;
+}
+
+.cart__template .cart__items__savings {
+  grid-area: savings;
+}
+
+/* Hide the total column completely */
+.cart__template .cart__items__total {
+  display: none;
+}
